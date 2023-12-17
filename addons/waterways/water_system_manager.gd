@@ -1,35 +1,34 @@
-# Copyright © 2021 Kasper Arnklit Frandsen - MIT License
+# Copyright © 2022 Kasper Arnklit Frandsen - MIT License
 # See `LICENSE.md` included in the source distribution for details.
-tool
-extends Spatial
+@tool
+extends Node3D
 
-const SystemMapRenderer = preload("res://addons/waterways/system_map_renderer.tscn")
-const FilterRenderer = preload("res://addons/waterways/filter_renderer.tscn")
-const RiverManager = preload("res://addons/waterways/river_manager.gd")
+const RiverManager = preload("./river_manager.gd")
+const SystemMapRenderer = preload("./system_map_renderer.gd")
+const FilterRenderer = preload("./filter_renderer.gd")
 
-var system_map : ImageTexture = null setget set_system_map
+var system_map : ImageTexture = null: set = set_system_map
 var system_bake_resolution := 2
 var system_group_name := "waterways_system"
 var minimum_water_level := 0.0
 # Auto assign
-var wet_group_name : String = "waterways_wet"
-var surface_index : int = -1
-var material_override : bool = false
+var wet_group_name := "waterways_wet"
+var surface_index := -1
+var material_override := false
 
 var _system_aabb : AABB
 var _system_img : Image
 var _first_enter_tree := true
 
 func _enter_tree() -> void:
-	if Engine.editor_hint and _first_enter_tree:
+	if Engine.is_editor_hint() and _first_enter_tree:
 		_first_enter_tree = false
 	add_to_group(system_group_name)
 
 
 func _ready() -> void:
 	if system_map != null:
-		_system_img = system_map.get_data()
-		_system_img.lock()
+		_system_img = system_map.get_image()
 	else:
 		push_warning("No WaterSystem map!")
 
@@ -51,7 +50,7 @@ func _get_property_list() -> Array:
 			type = TYPE_OBJECT,
 			hint = PROPERTY_HINT_RESOURCE_TYPE,
 			usage = PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SCRIPT_VARIABLE,
-			hint_string = "Texture"
+			hint_string = "Texture2D"
 		},
 		{
 			name = "system_bake_resolution",
@@ -67,7 +66,7 @@ func _get_property_list() -> Array:
 		},
 		{
 			name = "minimum_water_level",
-			type = TYPE_REAL,
+			type = TYPE_FLOAT,
 			usage = PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SCRIPT_VARIABLE
 		},
 		{
@@ -100,34 +99,33 @@ func _get_property_list() -> Array:
 
 
 func generate_system_maps() -> void:
-	var rivers := []
-
+	var rivers: Array[RiverManager]
+	
 	for child in get_children():
 		if child is RiverManager:
 			rivers.append(child)
 	
 	# We need to make the aabb out of the first river, so we don't include 0,0
 	if rivers.size() > 0:
-		_system_aabb = rivers[0].mesh_instance.get_transformed_aabb()
+		_system_aabb = rivers[0].get_transformed_aabb()
 	
 	for river in rivers:
-		var river_aabb = river.mesh_instance.get_transformed_aabb()
+		var river_aabb = river.get_transformed_aabb()
 		_system_aabb = _system_aabb.merge(river_aabb)
 	
-	var renderer = SystemMapRenderer.instance()
+	var renderer: SystemMapRenderer = SystemMapRenderer.new()
 	add_child(renderer)
-	var resolution = pow(2, system_bake_resolution + 7)
-	var flow_map = yield(renderer.grab_flow(rivers, _system_aabb, resolution), "completed")
-	var height_map = yield(renderer.grab_height(rivers, _system_aabb, resolution), "completed")
-	var alpha_map = yield(renderer.grab_alpha(rivers, _system_aabb, resolution), "completed")
+	var resolution := pow(2, system_bake_resolution + 7)
+	var flow_map: ImageTexture = await renderer.grab_flow(rivers, _system_aabb, resolution)
+	var height_map: ImageTexture = await renderer.grab_height(rivers, _system_aabb, resolution)
+	var alpha_map: ImageTexture = await renderer.grab_alpha(rivers, _system_aabb, resolution)
 	
 	remove_child(renderer)
 	
-	var filter_renderer = FilterRenderer.instance()
+	var filter_renderer: FilterRenderer = FilterRenderer.new()
 	add_child(filter_renderer)
 	
-	#var dilated_height = yield(filter_renderer.apply_dilate(alpha_map, 0.1, 1.0, resolution, height_map), "completed")
-	self.system_map = yield(filter_renderer.apply_combine(flow_map, flow_map, height_map), "completed")
+	self.system_map = await filter_renderer.apply_combine(flow_map, flow_map, height_map) as ImageTexture
 	
 	remove_child(filter_renderer)
 	
@@ -136,14 +134,14 @@ func generate_system_maps() -> void:
 	for node in wet_nodes:
 		var material
 		if surface_index != -1:
-			if node.get_surface_material_count() > surface_index:
-				material = node.get_surface_material(surface_index)
+			if node.get_surface_override_material_count() > surface_index:
+				material = node.get_surface_override_material(surface_index)
 		if material_override:
 			material = node.material_override
 		
 		if material != null:
-			material.set_shader_param("water_systemmap", system_map)
-			material.set_shader_param("water_systemmap_coords", get_system_map_coordinates())
+			material.set_shader_parameter("water_systemmap", system_map)
+			material.set_shader_parameter("water_systemmap_coords", get_system_map_coordinates())
 
 
 # Returns the vetical distance to the water, positive values above water level,
@@ -193,9 +191,9 @@ func get_system_map() -> ImageTexture:
 	return system_map
 
 
-func get_system_map_coordinates() -> Transform:
+func get_system_map_coordinates() -> Transform3D:
 	# storing the AABB info in a transform, seems dodgy
-	var offset = Transform(_system_aabb.position, _system_aabb.size, _system_aabb.end, Vector3())
+	var offset = Transform3D(_system_aabb.position, _system_aabb.size, _system_aabb.end, Vector3())
 	return offset
 
 
@@ -203,5 +201,5 @@ func set_system_map(texture : ImageTexture) -> void:
 	system_map = texture
 	if _first_enter_tree:
 		return
-	property_list_changed_notify()
-	update_configuration_warning()
+	notify_property_list_changed()
+	update_configuration_warnings()

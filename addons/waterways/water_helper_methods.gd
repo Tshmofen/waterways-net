@@ -1,5 +1,6 @@
-# Copyright © 2021 Kasper Arnklit Frandsen - MIT License
+# Copyright © 2022 Kasper Arnklit Frandsen - MIT License
 # See `LICENSE.md` included in the source distribution for details.
+#const RiverManager = preload("./river_manager.gd")
 
 static func cart2bary(p : Vector3, a : Vector3, b : Vector3, c: Vector3) -> Vector3:
 	var v0 := b - a
@@ -29,14 +30,14 @@ static func reset_all_colliders(node):
 	for n in node.get_children():
 		if n.get_child_count() > 0:
 			reset_all_colliders(n)
-		if n is CollisionShape:
+		if n is CollisionShape3D:
 			if n.disabled == false:
 				n.disabled = true
 				n.disabled = false
 
 
-static func sum_array(array) -> float:
-	var sum = 0.0
+static func sum_array(array : Array) -> float:
+	var sum := 0.0
 	for element in array:
 			sum += element
 	return sum
@@ -49,18 +50,18 @@ static func calculate_side(steps : int) -> int:
 	return int(side_float)
 
 
-static func generate_river_width_values(curve : Curve3D, steps : int, step_length_divs : int, step_width_divs : int, widths : Array) -> Array:
-	var river_width_values := []
-	var length = curve.get_baked_length()
+static func generate_river_width_values(curve : Curve3D, steps : int, step_length_divs : int, step_width_divs : int, widths : Array) -> Array[float]:
+	var river_width_values: Array[float]
+	var length := curve.get_baked_length()
 	for step in steps * step_length_divs + 1:
-		var target_pos = curve.interpolate_baked((float(step) / float(steps * step_length_divs + 1)) * curve.get_baked_length())
+		var target_pos := curve.sample_baked((float(step) / float(steps * step_length_divs + 1)) * curve.get_baked_length())
 		var closest_dist := 4096.0
 		var closest_interpolate : float
 		var closest_point : int
 		for c_point in curve.get_point_count() - 1:
 			for i in 100:
 				var interpolate := float(i) / 100.0
-				var pos = curve.interpolate(c_point, interpolate)
+				var pos := curve.sample(c_point, interpolate)
 				var dist = pos.distance_to(target_pos)
 				if dist < closest_dist:
 					closest_dist = dist
@@ -71,24 +72,24 @@ static func generate_river_width_values(curve : Curve3D, steps : int, step_lengt
 	return river_width_values
 
 
-static func generate_river_mesh(curve : Curve3D, steps : int, step_length_divs : int, step_width_divs : int, smoothness : float, river_width_values : Array) -> Mesh:
+static func generate_river_mesh(curve: Curve3D, steps: int, step_length_divs: int, step_width_divs: int, smoothness: float, river_width_values: Array[float]) -> Mesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var curve_length := curve.get_baked_length()
-	st.add_smooth_group(true)
+	st.set_smooth_group(0)
 	
 	# Generating the verts
 	for step in steps * step_length_divs + 1:
-		var position := curve.interpolate_baked(float(step) / float(steps * step_length_divs) * curve_length, false)
-		var backward_pos := curve.interpolate_baked((float(step) - smoothness) / float(steps * step_length_divs) * curve_length, false)
-		var forward_pos := curve.interpolate_baked((float(step) + smoothness) / float(steps * step_length_divs) * curve_length, false)
+		var position := curve.sample_baked(float(step) / float(steps * step_length_divs) * curve_length, false)
+		var backward_pos := curve.sample_baked((float(step) - smoothness) / float(steps * step_length_divs) * curve_length, false)
+		var forward_pos := curve.sample_baked((float(step) + smoothness) / float(steps * step_length_divs) * curve_length, false)
 		var forward_vector := forward_pos - backward_pos
 		var right_vector := forward_vector.cross(Vector3.UP).normalized()
 		
 		var width_lerp : float = river_width_values[step]
 		
 		for w_sub in step_width_divs + 1:
-			st.add_uv(Vector2(float(w_sub) / (float(step_width_divs)), float(step) / float(step_length_divs) ))
+			st.set_uv(Vector2(float(w_sub) / (float(step_width_divs)), float(step) / float(step_length_divs) ))
 			st.add_vertex(position + right_vector * width_lerp - 2.0 * right_vector * width_lerp * float(w_sub) / (float(step_width_divs)))
 	
 	# Defining the tris
@@ -157,27 +158,40 @@ static func generate_river_mesh(curve : Curve3D, steps : int, step_length_divs :
 	return mesh3
 
 
-static func generate_collisionmap(image : Image, mesh_instance : MeshInstance, raycast_dist : float, raycast_layers : int, steps : int, step_length_divs : int, step_width_divs : int, river) -> Image:
-	var space_state := mesh_instance.get_world().direct_space_state
+static func generate_collisionmap(image: Image, mesh_instance: MeshInstance3D, raycast_dist: float, raycast_layers: int, steps: int, step_length_divs: int, step_width_divs: int, river) -> Image:
+	var space_state := mesh_instance.get_world_3d().direct_space_state
+	print("is the space state what we expect?")
+	print(space_state)
 	
-	var uv2 := mesh_instance.mesh.surface_get_arrays(0)[5] as PoolVector2Array
-	var verts := mesh_instance.mesh.surface_get_arrays(0)[0] as PoolVector3Array
+	var uv2 := mesh_instance.mesh.surface_get_arrays(0)[5] as PackedVector2Array
+	var verts := mesh_instance.mesh.surface_get_arrays(0)[0] as PackedVector3Array
 	# We need to move the verts into world space
-	var world_verts := PoolVector3Array()
+	var world_verts := PackedVector3Array()
 	for v in verts.size():
-		world_verts.append( mesh_instance.global_transform.xform(verts[v]) )
+		world_verts.append( mesh_instance.global_transform * (verts[v]) )
 	
 	var tris_in_step_quad := step_length_divs * step_width_divs * 2
 	var side := calculate_side(steps)
 	var percentage = 0.0
+	
 	river.emit_signal("progress_notified", percentage, "Calculating Collisions (" + str(image.get_width()) + "x" + str(image.get_width()) + ")")
-	yield(river.get_tree(), "idle_frame")
+	await river.get_tree().process_frame
+	
+	var ray_params := PhysicsRayQueryParameters3D.create(Vector3(0.0, 5.0, 0.0), Vector3(0.0, 0.0, 0.0))
+	#ray_params_up.collision_mask = raycast_layers
+	var result = space_state.intersect_ray(ray_params)
+	
+	print("Single cast test!")
+	print(result)
+	print("done")
+	
 	for x in image.get_width():
-		var cur_percentage = float(x) / float(image.get_width())
+		var cur_percentage := float(x) / float(image.get_width())
 		if cur_percentage > percentage + 0.1:
 			percentage += 0.1
+			
 			river.emit_signal("progress_notified", percentage, "Calculating Collisions (" + str(image.get_width()) + "x" + str(image.get_width()) + ")")
-			yield(river.get_tree(), "idle_frame")
+			await river.get_tree().process_frame
 		for y in image.get_height():
 			var uv_coordinate := Vector2( ( 0.5 + float(x))  / float(image.get_width()), ( 0.5 + float(y)) / float(image.get_height()) )
 			var baryatric_coords : Vector3
@@ -192,8 +206,8 @@ static func generate_collisionmap(image : Image, mesh_instance : MeshInstance, r
 				break # we are in the empty part of UV2 so we break to the next column
 			
 			for tris in tris_in_step_quad:
-				var offset_tris : int = (tris_in_step_quad * step_quad) + tris
-				var triangle := PoolVector2Array()
+				var offset_tris: int = (tris_in_step_quad * step_quad) + tris
+				var triangle := PackedVector2Array()
 				triangle.append(uv2[offset_tris * 3])
 				triangle.append(uv2[offset_tris * 3 + 1])
 				triangle.append(uv2[offset_tris * 3 + 2])
@@ -206,18 +220,32 @@ static func generate_collisionmap(image : Image, mesh_instance : MeshInstance, r
 				if point_in_bariatric(baryatric_coords):
 					correct_triangle = [offset_tris * 3, offset_tris * 3 + 1, offset_tris * 3 + 2]
 					break # we have the correct triangle so we break out of loop
-			
+
 			if correct_triangle:
-				var vert0 : Vector3 = world_verts[correct_triangle[0]] 
-				var vert1 : Vector3 = world_verts[correct_triangle[1]] 
-				var vert2 : Vector3 = world_verts[correct_triangle[2]]
+				var vert0: Vector3 = world_verts[correct_triangle[0]] 
+				var vert1: Vector3 = world_verts[correct_triangle[1]] 
+				var vert2: Vector3 = world_verts[correct_triangle[2]]
 				
 				var real_pos := bary2cart(vert0, vert1, vert2, baryatric_coords)
 				var real_pos_up := real_pos + Vector3.UP * raycast_dist
-				
-				var result_up = space_state.intersect_ray(real_pos, real_pos_up, [], raycast_layers)
-				var result_down = space_state.intersect_ray(real_pos_up, real_pos, [], raycast_layers)
-				
+
+				var ray_params_up := PhysicsRayQueryParameters3D.create(real_pos, real_pos_up)
+				#ray_params_up.collision_mask = raycast_layers
+				var result_up = space_state.intersect_ray(ray_params_up)
+
+				var ray_params_down := PhysicsRayQueryParameters3D.create(real_pos_up, real_pos)
+				#ray_params_down.collision_mask = raycast_layers
+				var result_down = space_state.intersect_ray(ray_params_down)
+
+				if (x == 32 and y == 32) or (x == 50 and y == 50):
+					print("real pos at x: ", x, ", y: ", y)
+					print(real_pos)
+					print(real_pos_up)
+					print("ray_params_down")
+					print(var_to_str(ray_params_down))
+					print(result_up)
+					print(result_down)
+
 				var up_hit_frontface := false
 				if result_up:
 					if result_up.normal.y < 0:
@@ -225,49 +253,18 @@ static func generate_collisionmap(image : Image, mesh_instance : MeshInstance, r
 				
 				if result_up or result_down:
 					if not up_hit_frontface and result_down:
+						# print("Does this ever happen") - Nope
 						image.set_pixel(x, y, Color(1.0, 1.0, 1.0))
 	return image
 
 
 # Adds offset margins so filters will correctly extend across UV edges
-static func add_margins(image : Image, resolution : float, margin : float) -> Image:
+static func add_margins(image : Image, resolution : int, margin : int) -> Image:
 	var with_margins_size := resolution + 2 * margin
 	
-	var image_with_margins := Image.new()
-	image_with_margins.create(with_margins_size, with_margins_size, true, Image.FORMAT_RGB8)
-	image_with_margins.lock()
-	image_with_margins.blend_rect(image, Rect2(0.0, resolution - margin, resolution, margin), Vector2(margin + margin, 0.0))
-	image_with_margins.blend_rect(image, Rect2(0.0, 0.0, resolution, resolution), Vector2(margin, margin))
-	image_with_margins.blend_rect(image, Rect2(0.0, 0.0, resolution, margin), Vector2(0.0, resolution + margin))
-	image_with_margins.unlock()
+	var image_with_margins := Image.create(with_margins_size, with_margins_size, true, Image.FORMAT_RGB8)
+	image_with_margins.blend_rect(image, Rect2i(0, resolution - margin, resolution, margin), Vector2i(margin + margin, 0))
+	image_with_margins.blend_rect(image, Rect2i(0, 0, resolution, resolution), Vector2i(margin, margin))
+	image_with_margins.blend_rect(image, Rect2i(0, 0, resolution, margin), Vector2i(0, resolution + margin))
 	
 	return image_with_margins
-
-
-static func reorder_params(unordered_params : Array) -> Array:
-	var ordered = []
-	
-	for param in unordered_params:
-		if param.hint_string != "Texture":
-			ordered.append(param)
-		else:
-			#find the last index in ordered with the same
-			var prefix = param.name.rsplit("_")[0]
-			var index = last_prefix_occurence(ordered, prefix)
-			if index != -1:
-				ordered.insert(index, param)
-			else:
-				ordered.append(param)
-	return ordered
-
-
-static func last_prefix_occurence(array : Array, search : String) -> int:
-	var inverted_array = array.duplicate(true)
-	inverted_array.invert()
-	
-	for i in array.size():
-		var prefix = inverted_array[i].name.rsplit("_")[0]
-		if prefix ==  search:
-			return array.size() - i
-	
-	return -1

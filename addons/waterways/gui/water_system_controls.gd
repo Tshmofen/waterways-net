@@ -1,6 +1,6 @@
-# Copyright © 2021 Kasper Arnklit Frandsen - MIT License
+# Copyright © 2022 Kasper Arnklit Frandsen - MIT License
 # See `LICENSE.md` included in the source distribution for details.
-tool
+@tool
 extends HBoxContainer
 
 var menu
