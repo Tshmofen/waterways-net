@@ -17,6 +17,8 @@ public partial class WaterwaysPlugin : EditorPlugin
     // TODO: find a way to make static!!!
     private dynamic _editedNode;
 
+    public const string PluginPath = "res://addons/waterways-net";
+
     public RiverGizmo RiverGizmo { get; set; } = new();
     public InspectorPlugin GradientInspector { get; set; } = new();
     public RiverControls.Constraints Constraint { get; set; } = RiverControls.Constraints.None;

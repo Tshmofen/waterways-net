@@ -7,8 +7,8 @@ namespace Waterways;
 [Tool]
 public partial class SystemMapRenderer : SubViewport
 {
-    private const string HeightShaderPath = "res://addons/waterways/shaders/system_renders/system_height.gdshader";
-    private const string FlowShaderPath = "res://addons/waterways/shaders/system_renders/system_flow.gdshader";
+    private const string HeightShaderPath = $"{WaterwaysPlugin.PluginPath}/shaders/system_renders/system_height.gdshader";
+    private const string FlowShaderPath = $"{WaterwaysPlugin.PluginPath}/shaders/system_renders/system_flow.gdshader";
 
     private Camera3D _camera;
     private Node3D _container;

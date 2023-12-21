@@ -6,17 +6,17 @@ namespace Waterways;
 [Tool]
 public partial class FilterRenderer : SubViewport
 {
-    private const string DilatePass1Path = "res://addons/waterways/shaders/filters/dilate_filter_pass1.gdshader";
-    private const string DilatePass2Path = "res://addons/waterways/shaders/filters/dilate_filter_pass2.gdshader";
-    private const string DilatePass3Path = "res://addons/waterways/shaders/filters/dilate_filter_pass3.gdshader";
-    private const string NormalMapPassPath = "res://addons/waterways/shaders/filters/normal_map_pass.gdshader";
-    private const string NormalToFlowPassPath = "res://addons/waterways/shaders/filters/normal_to_flow_filter.gdshader";
-    private const string BlurPass1Path = "res://addons/waterways/shaders/filters/blur_pass1.gdshader";
-    private const string BlurPass2Path = "res://addons/waterways/shaders/filters/blur_pass2.gdshader";
-    private const string FoamPassPath = "res://addons/waterways/shaders/filters/foam_pass.gdshader";
-    private const string CombinePassPath = "res://addons/waterways/shaders/filters/combine_pass.gdshader";
-    private const string DotProductPassPath = "res://addons/waterways/shaders/filters/dotproduct.gdshader";
-    private const string FlowPressurePassPath = "res://addons/waterways/shaders/filters/flow_pressure_pass.gdshader";
+    private const string DilatePass1Path = $"{WaterwaysPlugin.PluginPath}/shaders/filters/dilate_filter_pass1.gdshader";
+    private const string DilatePass2Path = $"{WaterwaysPlugin.PluginPath}/shaders/filters/dilate_filter_pass2.gdshader";
+    private const string DilatePass3Path = $"{WaterwaysPlugin.PluginPath}/shaders/filters/dilate_filter_pass3.gdshader";
+    private const string NormalMapPassPath = $"{WaterwaysPlugin.PluginPath}/shaders/filters/normal_map_pass.gdshader";
+    private const string NormalToFlowPassPath = $"{WaterwaysPlugin.PluginPath}/shaders/filters/normal_to_flow_filter.gdshader";
+    private const string BlurPass1Path = $"{WaterwaysPlugin.PluginPath}/shaders/filters/blur_pass1.gdshader";
+    private const string BlurPass2Path = $"{WaterwaysPlugin.PluginPath}/shaders/filters/blur_pass2.gdshader";
+    private const string FoamPassPath = $"{WaterwaysPlugin.PluginPath}/shaders/filters/foam_pass.gdshader";
+    private const string CombinePassPath = $"{WaterwaysPlugin.PluginPath}/shaders/filters/combine_pass.gdshader";
+    private const string DotProductPassPath = $"{WaterwaysPlugin.PluginPath}/shaders/filters/dotproduct.gdshader";
+    private const string FlowPressurePassPath = $"{WaterwaysPlugin.PluginPath}/shaders/filters/flow_pressure_pass.gdshader";
 
     public Shader DilatePass1Shader { get; set; }
     public Shader DilatePass2Shader { get; set; }

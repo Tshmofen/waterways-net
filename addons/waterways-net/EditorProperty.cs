@@ -10,7 +10,7 @@ public partial class CustomEditorProperty : EditorProperty
 
 	public CustomEditorProperty()
 	{
-		var uiScene = (PackedScene)ResourceLoader.Load("res://addons/waterways/gui/gradient_inspector.tscn");
+		var uiScene = (PackedScene)ResourceLoader.Load($"{WaterwaysPlugin.PluginPath}/gui/gradient_inspector.tscn");
         _ui = uiScene.Instantiate<GradientInspector>();
 
 		AddChild(_ui);

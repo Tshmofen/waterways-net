@@ -16,9 +16,9 @@ public partial class RiverManager : Node3D
         public List<(string name, string path)> TexturePaths { get; init; }
     }
 
-    private const string FilterRendererPath = "res://addons/waterways/filter_renderer.tscn";
-    private const string FlowOffsetNoiseTexturePath = "res://addons/waterways/textures/flow_offset_noise.png";
-    private const string FoamNoisePath = "res://addons/waterways/textures/foam_noise.png";
+    private const string FilterRendererPath = $"{WaterwaysPlugin.PluginPath}/filter_renderer.tscn";
+    private const string FlowOffsetNoiseTexturePath = $"{WaterwaysPlugin.PluginPath}/textures/flow_offset_noise.png";
+    private const string FoamNoisePath = $"{WaterwaysPlugin.PluginPath}/textures/foam_noise.png";
 
     private static class MaterialCategories
     {
@@ -41,18 +41,18 @@ public partial class RiverManager : Node3D
         new RiverShader
         {
             Name = "Water",
-            ShaderPath = "res://addons/waterways/shaders/river.gdshader",
+            ShaderPath = $"{WaterwaysPlugin.PluginPath}/shaders/river.gdshader",
             TexturePaths = [
-                ("normal_bump_texture", "res://addons/waterways/textures/water1_normal_bump.png")
+                ("normal_bump_texture", $"{WaterwaysPlugin.PluginPath}/textures/water1_normal_bump.png")
             ]
         },
         new RiverShader
         {
             Name = "Lava",
-            ShaderPath = "res://addons/waterways/shaders/lava.gdshader",
+            ShaderPath = $"{WaterwaysPlugin.PluginPath}/shaders/lava.gdshader",
             TexturePaths = [
-                ("normal_bump_texture", "res://addons/waterways/textures/lava_normal_bump.png"),
-                ("emission_texture", "res://addons/waterways/textures/lava_emission.png")
+                ("normal_bump_texture", $"{WaterwaysPlugin.PluginPath}/textures/lava_normal_bump.png"),
+                ("emission_texture", $"{WaterwaysPlugin.PluginPath}/textures/lava_emission.png")
             ]
         }
     ];
@@ -60,10 +60,10 @@ public partial class RiverManager : Node3D
     private static readonly RiverShader DebugShader = new()
     {
         Name = "Debug",
-        ShaderPath = "res://addons/waterways/shaders/river_debug.gdshader",
+        ShaderPath = $"{WaterwaysPlugin.PluginPath}shaders/river_debug.gdshader",
         TexturePaths = [
-            ("debug_pattern", "res://addons/waterways/textures/debug_pattern.png"),
-            ("debug_arrow", "res://addons/waterways/textures/debug_arrow.svg")
+            ("debug_pattern", $"{WaterwaysPlugin.PluginPath}/textures/debug_pattern.png"),
+            ("debug_arrow", $"{WaterwaysPlugin.PluginPath}/textures/debug_arrow.svg")
         ]
     };
 
