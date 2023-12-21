@@ -21,3 +21,7 @@ gdscript/warnings/exclude_addons=false
 [dotnet]
 
 project/assembly_name="Waterways-net"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/waterways-net/plugin.cfg")

@@ -535,7 +535,7 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         for (var i = 0; i < bakedPoints.Length; i++)
         {
             path.Add(bakedPoints[i]);
-            path.Add(bakedPoints[i + 1]);
+            path.Add(bakedPoints[(i + 1) % bakedPoints.Length]);
         }
 
         gizmo.AddLines([.. path], _pathMat);

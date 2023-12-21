@@ -27,7 +27,7 @@ public partial class RiverControls : HBoxContainer
 
     public override void _EnterTree()
     {
-        Menu = GetNode<RiverMenu>("RiverMenuType");
+        Menu = GetNode<RiverMenu>("RiverMenu");
         ConstraintsOption = GetNode<OptionButton>("Constraints");
     }
 

@@ -8,8 +8,8 @@ namespace Waterways;
 [Tool]
 public partial class WaterwaysPlugin : EditorPlugin
 {
-    private readonly RiverControls _riverControls = new();
-    private readonly WaterSystemControls _waterSystemControls = new();
+    private RiverControls _riverControls;
+    private WaterSystemControls _waterSystemControls;
 
     private EditorSelection _editorSelection;
     private ProgressWindow _progressWindow;
@@ -23,6 +23,12 @@ public partial class WaterwaysPlugin : EditorPlugin
     public InspectorPlugin GradientInspector { get; set; } = new();
     public RiverControls.Constraints Constraint { get; set; } = RiverControls.Constraints.None;
     public bool LocalEditing { get; set; }
+
+    public override void _Ready()
+    {
+        _riverControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/river_controls.tscn").Instantiate<RiverControls>();
+        _waterSystemControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/water_system_controls.tscn").Instantiate<WaterSystemControls>();
+    }
 
     public override void _EnterTree()
     {
