@@ -5,8 +5,8 @@ namespace Waterways.Gui;
 [Tool]
 public partial class RiverControls : HBoxContainer
 {
-    [Signal] public delegate void ModeEventHandler();
-    [Signal] public delegate void OptionsEventHandler();
+    [Signal] public delegate void ModeEventHandler(string mode);
+    [Signal] public delegate void OptionsEventHandler(string type, int index);
 
     private bool _mouseDown;
 
@@ -116,7 +116,7 @@ public partial class RiverControls : HBoxContainer
         UnToggleButtons();
         DisableConstraintUi(false);
         GetNode<BaseButton>("$Select").ButtonPressed = true;
-        EmitSignal("mode", "select");
+        EmitSignal(SignalName.Mode, "select");
     }
 
     private void OnAdd()
@@ -124,7 +124,7 @@ public partial class RiverControls : HBoxContainer
         UnToggleButtons();
         DisableConstraintUi(false);
         GetNode<BaseButton>("$Add").ButtonPressed = true;
-        EmitSignal("mode", "add");
+        EmitSignal(SignalName.Mode, "add");
     }
 
     private void OnRemove()
@@ -132,16 +132,16 @@ public partial class RiverControls : HBoxContainer
         UnToggleButtons();
         DisableConstraintUi(true);
         GetNode<BaseButton>("$Remove").ButtonPressed = true;
-        EmitSignal("mode", "remove");
+        EmitSignal(SignalName.Mode, "remove");
     }
     private void OnConstraintSelected(int index)
     {
-        EmitSignal("options", "constraint", index);
+        EmitSignal(SignalName.Options, "constraint", index);
     }
 
     private void OnLocalModeToggled(bool enabled)
     {
-        EmitSignal("options", "local_mode", enabled);
+        EmitSignal(SignalName.Options, "local_mode", enabled);
     }
 
     private void DisableConstraintUi(bool disable)

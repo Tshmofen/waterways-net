@@ -15,16 +15,16 @@ public partial class WaterSystemMenu : MenuButton
 	public override void _EnterTree()
 	{
 		GetPopup().Clear();
-        GetPopup().Connect("id_pressed", Callable.From<int>(OnMenuItemSelected));
+        GetPopup().IdPressed += OnMenuItemSelected;
         GetPopup().AddItem("Generate System Maps");
     }
 
 	public override void _ExitTree()
 	{
-		GetPopup().Disconnect("id_pressed", Callable.From<int>(OnMenuItemSelected));
+		GetPopup().IdPressed -= OnMenuItemSelected;
     }
 
-	private void OnMenuItemSelected(int index)
+	private void OnMenuItemSelected(long index)
 	{
 		if (index == (int)RiverMenuType.GenerateSystemMaps)
         {

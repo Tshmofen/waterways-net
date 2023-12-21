@@ -222,7 +222,7 @@ public static class WaterHelperMethods
         var side = CalculateSide(steps);
         var percentage = 0.0f;
 
-        river.EmitSignal("progress_notified", percentage, "Calculating Collisions (" + image.GetWidth() + "x" + image.GetWidth() + ")");
+        river.EmitSignal(RiverManager.SignalName.ProgressNotified, percentage, "Calculating Collisions (" + image.GetWidth() + "x" + image.GetWidth() + ")");
         await river.ToSignal(river.GetTree(), "process_frame");
 
         for (var x = 0; x < image.GetWidth(); x++)
@@ -232,7 +232,7 @@ public static class WaterHelperMethods
             if (curPercentage > percentage + 0.1f)
             {
                 percentage += 0.1f;
-                river.EmitSignal("progress_notified", percentage, "Calculating Collisions (" + image.GetWidth() + "x" + image.GetWidth() + ")");
+                river.EmitSignal(RiverManager.SignalName.ProgressNotified, percentage, "Calculating Collisions (" + image.GetWidth() + "x" + image.GetWidth() + ")");
                 await river.ToSignal(river.GetTree(), "process_frame");
             }
 

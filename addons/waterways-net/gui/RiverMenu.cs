@@ -7,7 +7,7 @@ public partial class RiverMenu : MenuButton
 {
     [Signal] public delegate void GenerateFlowmapEventHandler();
     [Signal] public delegate void GenerateMeshEventHandler();
-    [Signal] public delegate void DebugViewChangedEventHandler();
+    [Signal] public delegate void DebugViewChangedEventHandler(int index);
 
     public enum RiverMenuType
     {
@@ -22,7 +22,7 @@ public partial class RiverMenu : MenuButton
     public override void _EnterTree()
     {
         GetPopup().Clear();
-        GetPopup().Connect("id_pressed", Callable.From<int>(OnMenuItemSelected));
+        GetPopup().IdPressed += OnMenuItemSelected;
         GetPopup().AddItem("Generate Flow & Foam Map");
         GetPopup().AddItem("Generate MeshInstance3D Sibling");
 
@@ -30,8 +30,8 @@ public partial class RiverMenu : MenuButton
         {
             Name = "DebugViewMenu"
         };
-        DebugViewMenu.Connect("about_to_popup", Callable.From(OnDebugViewMenuAboutToPopup));
-        DebugViewMenu.Connect("id_pressed", Callable.From<int>(OnDebugMenuItemSelected));
+        DebugViewMenu.AboutToPopup += OnDebugViewMenuAboutToPopup;
+        DebugViewMenu.IdPressed += OnDebugMenuItemSelected;
 
         GetPopup().AddChild(DebugViewMenu);
         GetPopup().AddSubmenuItem("Debug View", DebugViewMenu.Name);
@@ -39,12 +39,12 @@ public partial class RiverMenu : MenuButton
 
     public override void _ExitTree()
     {
-        GetPopup().Disconnect("id_pressed", Callable.From<int>(OnMenuItemSelected));
-        DebugViewMenu.Disconnect("about_to_popup", Callable.From(OnDebugViewMenuAboutToPopup));
-        DebugViewMenu.Disconnect("id_pressed", Callable.From<int>(OnDebugMenuItemSelected));
+        GetPopup().IdPressed -= OnMenuItemSelected;
+        DebugViewMenu.AboutToPopup -= OnDebugViewMenuAboutToPopup;
+        DebugViewMenu.IdPressed -= OnDebugMenuItemSelected;
     }
 
-    private void OnMenuItemSelected(int index)
+    private void OnMenuItemSelected(long index)
     {
         switch ((RiverMenuType)index)
         {
@@ -61,10 +61,10 @@ public partial class RiverMenu : MenuButton
         }
     }
 
-    private void OnDebugMenuItemSelected(int index)
+    private void OnDebugMenuItemSelected(long index)
     {
-        DebugViewMenuSelected = index;
-        EmitSignal("debug_view_changed", index);
+        DebugViewMenuSelected = (int) index;
+        EmitSignal( SignalName.DebugViewChanged, (int) index);
     }
 
     private void OnDebugViewMenuAboutToPopup()

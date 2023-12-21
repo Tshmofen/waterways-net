@@ -9,6 +9,12 @@ namespace Waterways;
 [Tool]
 public partial class RiverManager : Node3D
 {
+    // river_changed used to update handles when values are changed on script side
+    // progress_notified used to up progress bar when baking maps
+    // albedo_set is needed since the gradient is a custom inspector that needs a signal to update from script side
+    [Signal] public delegate void RiverChangedEventHandler();
+    [Signal] public delegate void ProgressNotifiedEventHandler();
+
     private class RiverShader
     {
         public string Name { get; init; }
@@ -194,12 +200,6 @@ public partial class RiverManager : Node3D
     private ShaderMaterial _material;
     private int _selectedShader = (int)ShaderTypes.Water;
     private int _uv2Sides;
-
-    // river_changed used to update handles when values are changed on script side
-    // progress_notified used to up progress bar when baking maps
-    // albedo_set is needed since the gradient is a custom inspector that needs a signal to update from script side
-    [Signal] public delegate void RiverChangedEventHandler();
-    [Signal] public delegate void ProgressNotifiedEventHandler();
 
     // Internal Methods
     public override Array<Dictionary> _GetPropertyList()
@@ -797,12 +797,12 @@ public partial class RiverManager : Node3D
         var image = Image.Create((int)flowmapResolution, (int)flowmapResolution, true, Image.Format.Rgb8);
         image.Fill(new Color(0, 0, 0));
 
-        EmitSignal("progress_notified", 0.0f, "Calculating Collisions (" + flowmapResolution + "x" + flowmapResolution + ")");
+        EmitSignal(SignalName.ProgressNotified, 0.0f, "Calculating Collisions (" + flowmapResolution + "x" + flowmapResolution + ")");
         await ToSignal(GetTree(), "process_frame");
 
         image = await WaterHelperMethods.GenerateCollisionMap(image, MeshInstance, BakingRaycastDistance, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, this);
 
-        EmitSignal("progress_notified", 0.95f, "Applying filters (" + flowmapResolution + "x" + flowmapResolution + ")");
+        EmitSignal(SignalName.ProgressNotified, 0.95f, "Applying filters (" + flowmapResolution + "x" + flowmapResolution + ")");
         await ToSignal(GetTree(), "process_frame");
 
         // Calculate how many columns are in UV2
@@ -861,7 +861,7 @@ public partial class RiverManager : Node3D
         SetMaterials("i_uv2_sides", _uv2Sides);
 
         ValidFlowmap = true;
-        EmitSignal("progress_notified", 100.0, "finished");
+        EmitSignal(SignalName.ProgressNotified, 100.0, "finished");
         UpdateConfigurationWarnings();
     }
 }

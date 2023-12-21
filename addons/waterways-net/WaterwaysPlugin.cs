@@ -26,21 +26,22 @@ public partial class WaterwaysPlugin : EditorPlugin
 
     public override void _EnterTree()
     {
-        AddCustomType("River", "Node3D", ResourceLoader.Load<Script>("./river_manager.gd"), ResourceLoader.Load<Texture2D>("./icons/river.svg"));
-        AddCustomType("WaterSystem", "Node3D", ResourceLoader.Load<Script>("./water_system_manager.gd"), ResourceLoader.Load<Texture2D>("./icons/system.svg"));
-        AddCustomType("Buoyant", "Node3D", ResourceLoader.Load<Script>("./buoyant_manager.gd"), ResourceLoader.Load<Texture2D>("./icons/buoyant.svg"));
+        AddCustomType("River", "Node3D", ResourceLoader.Load<Script>($"{PluginPath}/RiverManager.cs"), ResourceLoader.Load<Texture2D>($"{PluginPath}/icons/river.svg"));
+        AddCustomType("WaterSystem", "Node3D", ResourceLoader.Load<Script>($"{PluginPath}/WaterSystemManager.cs"), ResourceLoader.Load<Texture2D>($"{PluginPath}/icons/system.svg"));
+        AddCustomType("Buoyant", "Node3D", ResourceLoader.Load<Script>($"{PluginPath}/BuoyantManager.cs"), ResourceLoader.Load<Texture2D>($"{PluginPath}/icons/buoyant.svg"));
 
         AddNode3DGizmoPlugin(RiverGizmo);
         AddInspectorPlugin(GradientInspector);
 
         RiverGizmo.EditorPlugin = this;
-        _riverControls.Connect("mode", Callable.From<string>(OnModeChange));
-        _riverControls.Connect("options", Callable.From<string, int>(OnOptionChange));
-        _progressWindow = ResourceLoader.Load<ProgressWindow>("./gui/progress_window.tscn");
+        _riverControls.Mode += OnModeChange;
+        _riverControls.Options += OnOptionChange;
+
+        _progressWindow = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/progress_window.tscn").Instantiate<ProgressWindow>();
         _riverControls.AddChild(_progressWindow);
 
         _editorSelection = EditorInterface.Singleton.GetSelection();
-        _editorSelection.Connect("selection_changed", Callable.From(OnSelectionChange));
+        _editorSelection.SelectionChanged += OnSelectionChange;
 
         SceneChanged += OnSceneChanged;
         SceneClosed += OnSceneClosed;
@@ -74,11 +75,12 @@ public partial class WaterwaysPlugin : EditorPlugin
         RemoveNode3DGizmoPlugin(RiverGizmo);
         RemoveInspectorPlugin(GradientInspector);
 
-        _riverControls.Disconnect("mode", Callable.From<string>(OnModeChange));
-        _riverControls.Disconnect("options", Callable.From<string, int>(OnOptionChange));
-        _editorSelection.Disconnect("selection_changed", Callable.From(OnSelectionChange));
-        Disconnect("scene_changed", Callable.From<Node>(OnSceneChanged));
-        Disconnect("scene_closed", Callable.From<string>(OnSceneClosed));
+        _riverControls.Mode -= OnModeChange;
+        _riverControls.Options -= OnOptionChange;
+        _editorSelection.SelectionChanged -= OnSelectionChange;
+
+        SceneChanged -= OnSceneChanged;
+        SceneClosed -= OnSceneClosed;
 
         HideRiverControlPanel();
         HideWaterSystemControlPanel();
@@ -106,9 +108,9 @@ public partial class WaterwaysPlugin : EditorPlugin
                 _editedNode = manager;
                 _riverControls.Menu.DebugViewMenuSelected = _editedNode.debug_view;
 
-                if (!_editedNode.IsConnected("progress_notified", Callable.From<float, string>(RiverProgressNotified)))
+                if (!_editedNode.IsConnected(RiverManager.SignalName.ProgressNotified, Callable.From<float, string>(RiverProgressNotified)))
                 {
-                    _editedNode.Connect("progress_notified", Callable.From<float, string>(RiverProgressNotified));
+                    _editedNode.Connect(RiverManager.SignalName.ProgressNotified, Callable.From<float, string>(RiverProgressNotified));
                 }
 
                 HideWaterSystemControlPanel();
@@ -122,7 +124,6 @@ public partial class WaterwaysPlugin : EditorPlugin
                 break;
 
             default:
-                GD.Print("_edited_node set to null");
                 _editedNode = null;
                 HideRiverControlPanel();
                 HideWaterSystemControlPanel();
@@ -188,7 +189,7 @@ public partial class WaterwaysPlugin : EditorPlugin
             var g1 = globalInverse * (rayFrom);
             var g2 = globalInverse * (rayFrom + (rayDir * 4096));
 
-            // Iterate through points to find closest segment
+            // Iterate through points to find the closest segment
             var curvePoints = _editedNode.get_curve_points();
             var closestDistance = 4096f;
             var closestSegment = -1;
@@ -438,9 +439,9 @@ public partial class WaterwaysPlugin : EditorPlugin
         }
 
         AddControlToContainer(CustomControlContainer.SpatialEditorMenu, _riverControls);
-        _riverControls.Menu.Connect("generate_flowmap", Callable.From(OnGenerateFlowMapPressed));
-        _riverControls.Menu.Connect("generate_mesh", Callable.From(OnGenerateMeshPressed));
-        _riverControls.Menu.Connect("debug_view_changed", Callable.From<int>(OnDebugViewChanged));
+        _riverControls.Menu.GenerateFlowmap += OnGenerateFlowMapPressed;
+        _riverControls.Menu.GenerateMesh += OnGenerateMeshPressed;
+        _riverControls.Menu.DebugViewChanged += OnDebugViewChanged;
     }
 
     private void HideRiverControlPanel()
@@ -451,9 +452,10 @@ public partial class WaterwaysPlugin : EditorPlugin
         }
 
         RemoveControlFromContainer(CustomControlContainer.SpatialEditorMenu, _riverControls);
-        _riverControls.Menu.Disconnect("generate_flowmap", Callable.From(OnGenerateFlowMapPressed));
-        _riverControls.Menu.Disconnect("generate_mesh", Callable.From(OnGenerateMeshPressed));
-        _riverControls.Menu.Disconnect("debug_view_changed", Callable.From<int>(OnDebugViewChanged));
+
+        _riverControls.Menu.GenerateFlowmap -= OnGenerateFlowMapPressed;
+        _riverControls.Menu.GenerateMesh -= OnGenerateMeshPressed;
+        _riverControls.Menu.DebugViewChanged -= OnDebugViewChanged;
     }
 
     private void ShowWaterSystemControlPanel()
@@ -464,7 +466,7 @@ public partial class WaterwaysPlugin : EditorPlugin
         }
 
         AddControlToContainer(CustomControlContainer.SpatialEditorMenu, _waterSystemControls);
-        _waterSystemControls.Menu.Connect("GenerateSystemMaps", Callable.From(OnGenerateSystemMapsPressed));
+        _waterSystemControls.Menu.GenerateSystemMaps += OnGenerateSystemMapsPressed;
     }
 
     private void HideWaterSystemControlPanel()
@@ -475,6 +477,6 @@ public partial class WaterwaysPlugin : EditorPlugin
         }
 
         RemoveControlFromContainer(CustomControlContainer.SpatialEditorMenu, _waterSystemControls);
-        _waterSystemControls.Menu.Disconnect("GenerateSystemMaps", Callable.From(OnGenerateSystemMapsPressed));
+        _waterSystemControls.Menu.GenerateSystemMaps -= OnGenerateSystemMapsPressed;
     }
 }

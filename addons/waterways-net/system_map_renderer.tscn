@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dy1hxw3ejv2a3"]
 
-[ext_resource type="Script" path="res://addons/waterways/system_map_renderer.gd" id="1"]
+[ext_resource type="Script" path="res://addons/waterways-net/SystemMapRenderer.cs" id="1"]
 
 [node name="SystemMatRenderer" type="SubViewport"]
 transparent_bg = true

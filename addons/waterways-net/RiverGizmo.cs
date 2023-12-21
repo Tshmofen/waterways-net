@@ -517,7 +517,7 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         gizmo.Clear();
         var river = (RiverManager) gizmo.GetNode3D();
 
-        if (!river.IsConnected("river_changed", Callable.From<EditorNode3DGizmo>(_Redraw)))
+        if (!river.IsConnected( RiverManager.SignalName.RiverChanged, Callable.From<EditorNode3DGizmo>(_Redraw)))
         {
             river.RiverChanged += gizmo._Redraw;
         }
