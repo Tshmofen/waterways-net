@@ -27,8 +27,8 @@ public partial class RiverControls : HBoxContainer
 
     public override void _EnterTree()
     {
-        Menu = GetNode<RiverMenu>("$RiverMenuType");
-        ConstraintsOption = GetNode<OptionButton>("$Constraints");
+        Menu = GetNode<RiverMenu>("RiverMenuType");
+        ConstraintsOption = GetNode<OptionButton>("Constraints");
     }
 
     public bool SpatialGuiInput(InputEvent @event)
@@ -57,7 +57,7 @@ public partial class RiverControls : HBoxContainer
                 if (eventKey.Keycode == Key.T)
                 {
                     // Set the input as handled to prevent default actions from the keys
-                    GetNode<BaseButton>("$LocalMode").ButtonPressed = !GetNode<BaseButton>("$LocalMode").ButtonPressed;
+                    GetNode<BaseButton>("LocalMode").ButtonPressed = !GetNode<BaseButton>("LocalMode").ButtonPressed;
                     GetViewport().SetInputAsHandled();
                     return true;
                 }
@@ -115,7 +115,7 @@ public partial class RiverControls : HBoxContainer
     {
         UnToggleButtons();
         DisableConstraintUi(false);
-        GetNode<BaseButton>("$Select").ButtonPressed = true;
+        GetNode<BaseButton>("Select").ButtonPressed = true;
         EmitSignal(SignalName.Mode, "select");
     }
 
@@ -123,7 +123,7 @@ public partial class RiverControls : HBoxContainer
     {
         UnToggleButtons();
         DisableConstraintUi(false);
-        GetNode<BaseButton>("$Add").ButtonPressed = true;
+        GetNode<BaseButton>("Add").ButtonPressed = true;
         EmitSignal(SignalName.Mode, "add");
     }
 
@@ -131,7 +131,7 @@ public partial class RiverControls : HBoxContainer
     {
         UnToggleButtons();
         DisableConstraintUi(true);
-        GetNode<BaseButton>("$Remove").ButtonPressed = true;
+        GetNode<BaseButton>("Remove").ButtonPressed = true;
         EmitSignal(SignalName.Mode, "remove");
     }
     private void OnConstraintSelected(int index)
@@ -146,14 +146,14 @@ public partial class RiverControls : HBoxContainer
 
     private void DisableConstraintUi(bool disable)
     {
-        GetNode<BaseButton>("$Constraints").Disabled = disable;
-        GetNode<BaseButton>("$LocalMode").Disabled = disable;
+        GetNode<BaseButton>("Constraints").Disabled = disable;
+        GetNode<BaseButton>("LocalMode").Disabled = disable;
     }
 
     private void UnToggleButtons()
     {
-        GetNode<BaseButton>("$Select").ButtonPressed = false;
-        GetNode<BaseButton>("$Add").ButtonPressed = false;
-        GetNode<BaseButton>("$Remove").ButtonPressed = false;
+        GetNode<BaseButton>("Select").ButtonPressed = false;
+        GetNode<BaseButton>("Add").ButtonPressed = false;
+        GetNode<BaseButton>("Remove").ButtonPressed = false;
     }
 }

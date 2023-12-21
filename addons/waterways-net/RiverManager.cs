@@ -66,7 +66,7 @@ public partial class RiverManager : Node3D
     private static readonly RiverShader DebugShader = new()
     {
         Name = "Debug",
-        ShaderPath = $"{WaterwaysPlugin.PluginPath}shaders/river_debug.gdshader",
+        ShaderPath = $"{WaterwaysPlugin.PluginPath}/shaders/river_debug.gdshader",
         TexturePaths = [
             ("debug_pattern", $"{WaterwaysPlugin.PluginPath}/textures/debug_pattern.png"),
             ("debug_arrow", $"{WaterwaysPlugin.PluginPath}/textures/debug_arrow.svg")

@@ -9,7 +9,7 @@ public partial class ProgressWindow : Window
 
     public override void _Ready()
     {
-        _progressBar = GetNode<ProgressBar>("$ProgressBar");
+        _progressBar = GetNode<ProgressBar>("ProgressBar");
     }
 
     public void ShowProgress(string message, float progress)

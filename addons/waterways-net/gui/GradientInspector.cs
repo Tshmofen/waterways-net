@@ -11,9 +11,9 @@ public partial class GradientInspector : HBoxContainer
 
     public override void _Ready()
     {
-        Color1 = GetNode<ColorPickerButton>("$Color1");
-        Color2 = GetNode<ColorPickerButton>("$Color2");
-        Gradient = GetNode<ColorRect>("$Gradient");
+        Color1 = GetNode<ColorPickerButton>("Color1");
+        Color2 = GetNode<ColorPickerButton>("Color2");
+        Gradient = GetNode<ColorRect>("Gradient");
     }
 
     public void SetValue(Projection newGradient)

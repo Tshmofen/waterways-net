@@ -15,8 +15,8 @@ public partial class SystemMapRenderer : SubViewport
 
     public async Task<ImageTexture> GrabHeight(List<RiverManager> waterObjects, Aabb aabb)
     {
-        _camera = GetNode<Camera3D>("$Camera3D");
-        _container = GetNode<Node3D>("$Container");
+        _camera = GetNode<Camera3D>("Camera3D");
+        _container = GetNode<Node3D>("Container");
 
         var heightMat = new ShaderMaterial
         {
@@ -71,8 +71,8 @@ public partial class SystemMapRenderer : SubViewport
 
     public async Task<ImageTexture> GrabFlow(List<RiverManager> waterObjects, Aabb aabb)
     {
-        _camera = GetNode<Camera3D>("$Camera3D");
-        _container = GetNode<Node3D>("$Container");
+        _camera = GetNode<Camera3D>("Camera3D");
+        _container = GetNode<Node3D>("Container");
 
         var flowMat = new ShaderMaterial
         {

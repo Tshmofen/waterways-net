@@ -10,6 +10,6 @@ public partial class WaterSystemControls : HBoxContainer
 
     public override void _EnterTree()
     {
-        Menu = GetNode<WaterSystemMenu>("$WaterSystemMenu");
+        Menu = GetNode<WaterSystemMenu>("WaterSystemMenu");
     }
 }

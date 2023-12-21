@@ -45,7 +45,7 @@ public partial class FilterRenderer : SubViewport
         DotProductPassShader = ResourceLoader.Load(DotProductPassPath) as Shader;
         FlowPressurePassShader = ResourceLoader.Load(FlowPressurePassPath) as Shader;
         FilterMat = new ShaderMaterial();
-        GetNode<ColorRect>("$ColorRect").Material = FilterMat;
+        GetNode<ColorRect>("ColorRect").Material = FilterMat;
     }
 
     public async Task<ImageTexture> ApplyCombine(Texture2D rTexture, Texture2D gTexture, Texture2D bTexture = null, Texture2D aTexture = null)
@@ -53,7 +53,7 @@ public partial class FilterRenderer : SubViewport
         FilterMat.Shader = CombinePassShader;
         var size = rTexture.GetSize();
         Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("$ColorRect");
+        var rect = GetNode<ColorRect>("ColorRect");
         rect.Position = new Vector2(0, 0);
         rect.Size = Size;
 
@@ -75,7 +75,7 @@ public partial class FilterRenderer : SubViewport
         FilterMat.Shader = FlowPressurePassShader;
         var size = inputTexture.GetSize();
         Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("$ColorRect");
+        var rect = GetNode<ColorRect>("ColorRect");
 
         rect.Position = new Vector2(0, 0);
         rect.Size = Size;
@@ -98,7 +98,7 @@ public partial class FilterRenderer : SubViewport
         FilterMat.Shader = FoamPassShader;
         var size = inputTexture.GetSize();
         Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("$ColorRect");
+        var rect = GetNode<ColorRect>("ColorRect");
 
         rect.Position = new Vector2(0, 0);
         rect.Size = Size;
@@ -120,7 +120,7 @@ public partial class FilterRenderer : SubViewport
         FilterMat.Shader = BlurPass1Shader;
         var size = inputTexture.GetSize();
         Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("$ColorRect");
+        var rect = GetNode<ColorRect>("ColorRect");
 
         rect.Position = new Vector2(0, 0);
         rect.Size = Size;
@@ -153,7 +153,7 @@ public partial class FilterRenderer : SubViewport
         FilterMat.Shader = BlurPass2Shader;
         var size = inputTexture.GetSize();
         Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("$ColorRect");
+        var rect = GetNode<ColorRect>("ColorRect");
 
         rect.Position = new Vector2(0, 0);
         rect.Size = Size;
@@ -174,7 +174,7 @@ public partial class FilterRenderer : SubViewport
         FilterMat.Shader = NormalToFlowPassShader;
         var size = inputTexture.GetSize();
         Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("$ColorRect");
+        var rect = GetNode<ColorRect>("ColorRect");
 
         rect.Position = new Vector2(0, 0);
         rect.Size = Size;
@@ -195,7 +195,7 @@ public partial class FilterRenderer : SubViewport
         FilterMat.Shader = NormalMapPassShader;
         var size = inputTexture.GetSize();
         Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("$ColorRect");
+        var rect = GetNode<ColorRect>("ColorRect");
 
         rect.Position = new Vector2(0, 0);
         rect.Size = Size;
@@ -216,7 +216,7 @@ public partial class FilterRenderer : SubViewport
         FilterMat.Shader = DilatePass1Shader;
         var size = inputTexture.GetSize();
         Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("$ColorRect");
+        var rect = GetNode<ColorRect>("ColorRect");
 
         rect.Position = new Vector2(0, 0);
         rect.Size = Size;
