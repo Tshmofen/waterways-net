@@ -5,16 +5,16 @@ namespace Waterway;
 [Tool]
 public partial class ProgressWindow : Window
 {
-    private ProgressBar _progress_bar;
+    private ProgressBar _progressBar;
 
     public override void _Ready()
     {
-        _progress_bar = GetNode<ProgressBar>("$ProgressBar");
+        _progressBar = GetNode<ProgressBar>("$ProgressBar");
     }
 
-    public void show_progress(string message, float progress)
+    public void ShowProgress(string message, float progress)
     {
         Title = message;
-        _progress_bar.Ratio = progress;
+        _progressBar.Ratio = progress;
     }
 }

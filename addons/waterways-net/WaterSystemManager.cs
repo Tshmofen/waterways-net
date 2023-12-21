@@ -1,67 +1,77 @@
 ﻿using Godot;
 using Godot.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Waterways;
 
 public partial class WaterSystemManager : Node3D
 {
-	private ImageTexture _system_map;
-    [Export] public ImageTexture system_map 
-	{ 
-		get => _system_map;
-		set 
-		{
-            _system_map = value;
-            if (_first_enter_tree)
+    private ImageTexture _systemMap;
+    public ImageTexture SystemMap
+    {
+        get => _systemMap;
+        set
+        {
+            _systemMap = value;
+            if (_firstEnterTree)
+            {
                 return;
+            }
+
             NotifyPropertyListChanged();
             UpdateConfigurationWarnings();
-        } 
-	}
-
-	[Export] public int system_bake_resolution { get; set; } = 2;
-	[Export] public string system_group_name { get; set; } = "waterways_system";
-	[Export] public float minimum_water_level { get; set; }
-
-	// Auto assign
-	[Export] public string wet_group_name { get; set; } = "waterways_wet";
-	[Export] public int surface_index { get; set; } = -1;
-	[Export] public bool material_override { get; set; }
-
-	private Aabb _system_aabb;
-	private Image _system_img;
-	private bool _first_enter_tree = true;
-
-	public override void _EnterTree()
-	{
-		if (Engine.IsEditorHint() && _first_enter_tree)
-		{
-			_first_enter_tree = false;
-		}
-		AddToGroup(system_group_name);
-	}
-
-	public override void _Ready()
-	{
-		if (system_map != null)
-			_system_img = system_map.GetImage();
-		else
-			GD.PushWarning("No WaterSystem map!");
-	}
-
-
-	public override void _ExitTree()
-	{
-		RemoveFromGroup(system_group_name);
+        }
     }
 
-	public override string[] _GetConfigurationWarnings()
-	{
-		if (system_map == null)
-			return ["No System Map is set. Select WaterSystem -> Generate System Map to generate and assign one."];
-		return [""];
+    public int SystemBakeResolution { get; set; } = 2;
+    public string SystemGroupName { get; set; } = "waterways_system";
+    public float MinimumWaterLevel { get; set; }
+
+    // Auto assign
+    public string WetGroupName { get; set; } = "waterways_wet";
+    public int SurfaceIndex { get; set; } = -1;
+    public bool MaterialOverride { get; set; }
+
+    private Aabb _systemAabb;
+    private Image _systemImg;
+    private bool _firstEnterTree = true;
+
+    public override void _EnterTree()
+    {
+        if (Engine.IsEditorHint() && _firstEnterTree)
+        {
+            _firstEnterTree = false;
+        }
+        AddToGroup(SystemGroupName);
+    }
+
+    public override void _Ready()
+    {
+        if (SystemMap != null)
+        {
+            _systemImg = SystemMap.GetImage();
+        }
+        else
+        {
+            GD.PushWarning("No WaterSystem map!");
+        }
+    }
+
+    public override void _ExitTree()
+    {
+        RemoveFromGroup(SystemGroupName);
+    }
+
+    public override string[] _GetConfigurationWarnings()
+    {
+        if (SystemMap == null)
+        {
+            return ["No System Map is set. Select WaterSystem -> Generate System Map to generate and assign one."];
+        }
+
+        return [""];
     }
 
     public override Array<Dictionary> _GetPropertyList()
@@ -129,120 +139,131 @@ public partial class WaterSystemManager : Node3D
         ];
     }
 
-    public async Task generate_system_maps()
-	{
-		var rivers = new List<RiverManager>();
-	
-		foreach (var child in GetChildren())
+    public async Task GenerateSystemMaps()
+    {
+        var rivers = new List<RiverManager>();
+
+        foreach (var child in GetChildren())
         {
-			if (child is RiverManager m)
-				rivers.Add(m);
+            if (child is RiverManager m)
+            {
+                rivers.Add(m);
+            }
         }
 
-		// We need to make the aabb out of the first river, so we don't include 0,0
-		if (rivers.Count > 0)
-			_system_aabb = rivers[0].get_transformed_aabb();
-	
-		foreach (var river in rivers)
-		{
-			var river_aabb = river.get_transformed_aabb();
-			_system_aabb = _system_aabb.Merge(river_aabb);
+        // We need to make the aabb out of the first river, so we don't include 0,0
+        if (rivers.Count > 0)
+        {
+            _systemAabb = rivers[0].GetTransformedAabb();
         }
 
-		var renderer = new SystemMapRenderer();
-		AddChild(renderer);
-		var resolution = (int) Mathf.Pow(2, system_bake_resolution + 7);
-		var flow_map = await renderer.grab_flow(rivers, _system_aabb, resolution);
-		var height_map = await renderer.grab_height(rivers, _system_aabb, resolution);
-		var alpha_map = await renderer.grab_alpha(rivers, _system_aabb, resolution);
-		RemoveChild(renderer);
+        foreach (var riverAabb in rivers.Select(river => river.GetTransformedAabb()))
+        {
+            _systemAabb = _systemAabb.Merge(riverAabb);
+        }
 
-		var filter_renderer = new FilterRenderer();
-		AddChild(filter_renderer);
-		system_map = await filter_renderer.apply_combine(flow_map, flow_map, height_map) as ImageTexture;
-		RemoveChild(filter_renderer);
+        var renderer = new SystemMapRenderer();
+        AddChild(renderer);
+        var resolution = (int)Mathf.Pow(2, SystemBakeResolution + 7);
+        var flowMap = await renderer.GrabFlow(rivers, _systemAabb);
+        var heightMap = await renderer.GrabHeight(rivers, _systemAabb);
+        RemoveChild(renderer);
 
-		// give the map and coordinates to all nodes in the wet_group
-		var wet_nodes = GetTree().GetNodesInGroup(wet_group_name);
-		foreach (var node in wet_nodes)
-		{
-			var mesh = (MeshInstance3D)node;
-			ShaderMaterial material = null;
-			if (surface_index != -1)
-				if (mesh.GetSurfaceOverrideMaterialCount() > surface_index)
-					material = mesh.GetSurfaceOverrideMaterial(surface_index) as ShaderMaterial;
+        var filterRenderer = new FilterRenderer();
+        AddChild(filterRenderer);
+        SystemMap = await filterRenderer.ApplyCombine(flowMap, flowMap, heightMap) as ImageTexture;
+        RemoveChild(filterRenderer);
 
-			if (material_override)
-				material = mesh.MaterialOverride as ShaderMaterial;
-		
-			if (material != null)
-			{
-				material.SetShaderParameter("water_systemmap", system_map);
-				material.SetShaderParameter("water_systemmap_coords", get_system_map_coordinates());
+        // give the map and coordinates to all nodes in the wet_group
+        foreach (var node in GetTree().GetNodesInGroup(WetGroupName))
+        {
+            var mesh = (MeshInstance3D)node;
+            ShaderMaterial material = null;
+            if (SurfaceIndex != -1)
+            {
+                if (mesh.GetSurfaceOverrideMaterialCount() > SurfaceIndex)
+                {
+                    material = mesh.GetSurfaceOverrideMaterial(SurfaceIndex) as ShaderMaterial;
+                }
+            }
+
+            if (MaterialOverride)
+            {
+                material = mesh.MaterialOverride as ShaderMaterial;
+            }
+
+            if (material != null)
+            {
+                material.SetShaderParameter("water_systemmap", SystemMap);
+                material.SetShaderParameter("water_systemmap_coords", GetSystemMapCoordinates());
             }
         }
     }
 
-	// Returns the vetical distance to the water, positive values above water level,
-	// negative numbers below the water
-	public float get_water_altitude(Vector3 query_pos)
-	{
-		if (_system_img == null)
-			return query_pos.Y - minimum_water_level;
+    // Returns the vetical distance to the water, positive values above water level,
+    // negative numbers below the water
+    public float GetWaterAltitude(Vector3 queryPos)
+    {
+        if (_systemImg == null)
+        {
+            return queryPos.Y - MinimumWaterLevel;
+        }
 
-		var position_in_aabb = query_pos - _system_aabb.Position;
-		var pos_2d = new Vector2(position_in_aabb.X, position_in_aabb.Z);
-		pos_2d = pos_2d / _system_aabb.GetLongestAxisSize();
-		if (pos_2d.X > 1.0f || pos_2d.X < 0.0f || pos_2d.Y > 1.0f || pos_2d.Y < 0.0f)
-		{
-			// We are outside the aabb of the Water System
-			return query_pos.Y - minimum_water_level;
-		}
+        var positionInAabb = queryPos - _systemAabb.Position;
+        var pos2D = new Vector2(positionInAabb.X, positionInAabb.Z);
+        pos2D /= _systemAabb.GetLongestAxisSize();
 
-		pos_2d = pos_2d * _system_img.GetWidth();
-		var col = _system_img.GetPixelv(new Vector2I((int) pos_2d.X, (int) pos_2d.Y));
-		if (col == new Color(0, 0, 0))
-		{
-			// We hit the empty part of the System Map
-			return query_pos.Y - minimum_water_level;
-		}
+        if (pos2D.X > 1.0f || pos2D.X < 0.0f || pos2D.Y > 1.0f || pos2D.Y < 0.0f)
+        {
+            // We are outside the aabb of the Water System
+            return queryPos.Y - MinimumWaterLevel;
+        }
 
-		// Throw a warning if the map is not baked
-		var height = col.B * _system_aabb.Size.Y + _system_aabb.Position.Y;
-		return query_pos.Y - height;
-	}
+        pos2D *= _systemImg.GetWidth();
+        var col = _systemImg.GetPixelv(new Vector2I((int)pos2D.X, (int)pos2D.Y));
+        if (col == new Color(0, 0, 0))
+        {
+            // We hit the empty part of the System Map
+            return queryPos.Y - MinimumWaterLevel;
+        }
 
-	// Returns the flow vector from the system flowmap
-	public Vector3 get_water_flow(Vector3 query_pos)
-	{
-
-		if (_system_img == null)
-			return Vector3.Zero;
-
-		var position_in_aabb = query_pos - _system_aabb.Position;
-		var pos_2d = new Vector2(position_in_aabb.X, position_in_aabb.Z);
-		pos_2d = pos_2d / _system_aabb.GetLongestAxisSize();
-		if (pos_2d.X > 1.0f || pos_2d.X < 0.0f || pos_2d.Y > 1.0f || pos_2d.Y < 0.0f)
-			return Vector3.Zero;
-
-		pos_2d = pos_2d * _system_img.GetWidth();
-		var col = _system_img.GetPixelv(new Vector2I((int)pos_2d.X, (int)pos_2d.Y));
-	
-		if (col == new Color(0, 0, 0))
-		{
-
-			// We hit the empty part of the System Map
-			return Vector3.Zero;
-		}
-
-		var flow = new Vector3(col.R, 0.5f, col.G) * 2.0f - new Vector3(1.0f, 1.0f, 1.0f);
-		return flow;
+        // Throw a warning if the map is not baked
+        var height = (col.B * _systemAabb.Size.Y) + _systemAabb.Position.Y;
+        return queryPos.Y - height;
     }
 
-	public Transform3D get_system_map_coordinates()
-	{
-		// storing the AABB info in a transform, seems dodgy
-		var offset = new Transform3D(_system_aabb.Position, _system_aabb.Size, _system_aabb.End, new Vector3());
-		return offset;
-	}
+    // Returns the flow vector from the system flowmap
+    public Vector3 GetWaterFlow(Vector3 queryPos)
+    {
+        if (_systemImg == null)
+        {
+            return Vector3.Zero;
+        }
+
+        var positionInAabb = queryPos - _systemAabb.Position;
+        var pos2D = new Vector2(positionInAabb.X, positionInAabb.Z);
+        pos2D /= _systemAabb.GetLongestAxisSize();
+
+        if (pos2D.X > 1.0f || pos2D.X < 0.0f || pos2D.Y > 1.0f || pos2D.Y < 0.0f)
+        {
+            return Vector3.Zero;
+        }
+
+        pos2D *= _systemImg.GetWidth();
+        var col = _systemImg.GetPixelv(new Vector2I((int)pos2D.X, (int)pos2D.Y));
+
+        if (col == new Color(0, 0, 0))
+        {
+            // We hit the empty part of the System Map
+            return Vector3.Zero;
+        }
+
+        return (new Vector3(col.R, 0.5f, col.G) * 2.0f) - new Vector3(1.0f, 1.0f, 1.0f);
+    }
+
+    public Transform3D GetSystemMapCoordinates()
+    {
+        // storing the AABB info in a transform, seems dodgy
+        return new Transform3D(_systemAabb.Position, _systemAabb.Size, _systemAabb.End, new Vector3());
+    }
 }

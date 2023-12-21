@@ -1,4 +1,3 @@
-
 using Godot;
 
 namespace Waterways.Gui;
@@ -6,29 +5,30 @@ namespace Waterways.Gui;
 [Tool]
 public partial class WaterSystemMenu : MenuButton
 {
+	[Signal] public delegate void GenerateSystemMapsEventHandler();
 
-	[Signal] public delegate void generate_system_mapsEventHandler();
-
-    enum RIVER_MENU {
-		GENERATE_SYSTEM_MAPS
+    public enum RiverMenuType
+	{
+		GenerateSystemMaps
 	}
 
 	public override void _EnterTree()
 	{
 		GetPopup().Clear();
-        GetPopup().Connect("id_pressed", Callable.From<int>(_menu_item_selected));
+        GetPopup().Connect("id_pressed", Callable.From<int>(OnMenuItemSelected));
         GetPopup().AddItem("Generate System Maps");
     }
 
 	public override void _ExitTree()
 	{
-		GetPopup().Disconnect("id_pressed", Callable.From<int>(_menu_item_selected));
+		GetPopup().Disconnect("id_pressed", Callable.From<int>(OnMenuItemSelected));
     }
 
-	private void _menu_item_selected(int index)
+	private void OnMenuItemSelected(int index)
 	{
-		if (index == (int)RIVER_MENU.GENERATE_SYSTEM_MAPS)
-			EmitSignal("generate_system_maps");
-
+		if (index == (int)RiverMenuType.GenerateSystemMaps)
+        {
+            EmitSignal("GenerateSystemMaps");
+        }
     }
 }

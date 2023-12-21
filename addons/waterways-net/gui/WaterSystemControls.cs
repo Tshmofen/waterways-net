@@ -6,10 +6,10 @@ namespace Waterway.Gui;
 [Tool]
 public partial class WaterSystemControls : HBoxContainer
 {
-    public WaterSystemMenu menu { get; set; }
+    public WaterSystemMenu Menu { get; set; }
 
     public override void _EnterTree()
     {
-        menu = GetNode<WaterSystemMenu>("$WaterSystemMenu");
+        Menu = GetNode<WaterSystemMenu>("$WaterSystemMenu");
     }
 }
