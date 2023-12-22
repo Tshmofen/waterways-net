@@ -2,6 +2,7 @@ using Godot;
 using Waterway;
 using Waterway.Gui;
 using Waterways.Gui;
+using Waterways.Util;
 
 namespace Waterways;
 

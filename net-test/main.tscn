@@ -1,3 +1,113 @@
-[gd_scene format=3 uid="uid://dlja74wt2jt47"]
+[gd_scene load_steps=12 format=3 uid="uid://dlja74wt2jt47"]
+
+[ext_resource type="Script" path="res://addons/waterways-net/RiverManager.cs" id="1_o4ryg"]
+[ext_resource type="Shader" path="res://addons/waterways-net/shaders/river_debug.gdshader" id="2_ftov7"]
+[ext_resource type="Texture2D" uid="uid://c0csrap4yt6oo" path="res://addons/waterways-net/textures/debug_arrow.svg" id="3_uer28"]
+[ext_resource type="Texture2D" uid="uid://dwi2k45x8qyrv" path="res://addons/waterways-net/textures/debug_pattern.png" id="4_tjanf"]
+[ext_resource type="Texture2D" uid="uid://lx1nyoh45ge8" path="res://addons/waterways-net/textures/foam_noise.png" id="5_rud86"]
+[ext_resource type="PackedScene" uid="uid://dvyvnh61c27fq" path="res://addons/waterways-net/filter_renderer.tscn" id="6_ehw3g"]
+[ext_resource type="Shader" path="res://addons/waterways-net/shaders/river.gdshader" id="7_ru8mn"]
+[ext_resource type="Texture2D" uid="uid://b85tlq8wcklbo" path="res://addons/waterways-net/textures/water1_normal_bump.png" id="8_pl6ee"]
+
+[sub_resource type="Curve3D" id="Curve3D_n2p7l"]
+bake_interval = 0.05
+_data = {
+"points": PackedVector3Array(0, 0, -0.25, 0, 0, 0.25, 0, 0, 0, -0.343505, -0.152263, 0.164155, 0.343505, 0.152263, -0.164155, -3.03678, 0.0468998, 2.53319),
+"tilts": PackedFloat32Array(0, 0)
+}
+point_count = 2
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7rs7u"]
+render_priority = 0
+shader = ExtResource("2_ftov7")
+shader_parameter/mode = 1
+shader_parameter/flow_speed = 1.0
+shader_parameter/flow_base = 0.0
+shader_parameter/flow_steepness = 2.0
+shader_parameter/flow_distance = 1.0
+shader_parameter/flow_pressure = 1.0
+shader_parameter/flow_max = 4.0
+shader_parameter/foam_amount = 1.0
+shader_parameter/foam_steepness = 2.0
+shader_parameter/foam_smoothness = 1.0
+shader_parameter/uv_scale = Vector3(1, 1, 1)
+shader_parameter/i_valid_flowmap = false
+shader_parameter/i_uv2_sides = 0
+shader_parameter/debug_pattern = ExtResource("4_tjanf")
+shader_parameter/debug_arrow = ExtResource("3_uer28")
+shader_parameter/i_texture_foam_noise = ExtResource("5_rud86")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fuxfy"]
+render_priority = 0
+shader = ExtResource("7_ru8mn")
+shader_parameter/normal_scale = 1.0
+shader_parameter/uv_scale = Vector3(1, 1, 1)
+shader_parameter/roughness = 0.2
+shader_parameter/edge_fade = 0.25
+shader_parameter/albedo_color = Projection(0, 0.15, 0, 0, 0.8, 0.2, 0, 0, 1, 0.5, 0, 0, 0, 0, 0, 0)
+shader_parameter/albedo_depth = 10.0
+shader_parameter/albedo_depth_curve = 0.25
+shader_parameter/transparency_clarity = 10.0
+shader_parameter/transparency_depth_curve = 0.25
+shader_parameter/transparency_refraction = 0.05
+shader_parameter/flow_speed = 1.0
+shader_parameter/flow_base = 0.0
+shader_parameter/flow_steepness = 2.0
+shader_parameter/flow_distance = 1.0
+shader_parameter/flow_pressure = 1.0
+shader_parameter/flow_max = 4.0
+shader_parameter/foam_color = Color(0.9, 0.9, 0.9, 1)
+shader_parameter/foam_amount = 2.0
+shader_parameter/foam_steepness = 2.0
+shader_parameter/foam_smoothness = 0.3
+shader_parameter/i_lod0_distance = 50.0
+shader_parameter/i_valid_flowmap = false
+shader_parameter/i_uv2_sides = 0
+shader_parameter/normal_bump_texture = ExtResource("8_pl6ee")
+shader_parameter/i_texture_foam_noise = ExtResource("5_rud86")
 
 [node name="Main" type="Node3D"]
+
+[node name="River" type="Node3D" parent="."]
+script = ExtResource("1_o4ryg")
+ShapeStepLengthDivs = 1
+ShapeStepWidthDivs = 1
+ShapeSmoothness = 0.5
+MatShaderType = 0
+MatCustomShader = null
+LodLod0Distance = 50.0
+BakingResolution = 2
+BakingRaycastDistance = 10.0
+BakingRaycastLayers = 1
+BakingDilate = 0.6
+BakingFlowmapBlur = 0.04
+BakingFoamCutoff = 0.9
+BakingFoamOffset = 0.1
+BakingFoamBlur = 0.02
+Curve = SubResource("Curve3D_n2p7l")
+ValidFlowmap = false
+MeshInstance = Object(MeshInstance3D,"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"editor_description":"","transform":Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0),"rotation_edit_mode":0,"rotation_order":2,"top_level":false,"visible":true,"visibility_parent":NodePath(""),"layers":1,"sorting_offset":0.0,"sorting_use_aabb_center":true,"material_override":null,"material_overlay":null,"transparency":0.0,"cast_shadow":1,"extra_cull_margin":0.0,"custom_aabb":AABB(0, 0, 0, 0, 0, 0),"lod_bias":1.0,"ignore_occlusion_culling":false,"gi_mode":1,"gi_lightmap_scale":0,"visibility_range_begin":0.0,"visibility_range_begin_margin":0.0,"visibility_range_end":0.0,"visibility_range_end_margin":0.0,"visibility_range_fade_mode":0,"mesh":null,"skin":null,"skeleton":NodePath(".."),"surface_material_override/0":null,"script":null)
+
+FlowFoamNoise = null
+DistPressure = null
+Widths = [1.0, 1.0]
+DebugView = 0
+_shapeStepLengthDivs = 1
+_shapeStepWidthDivs = 1
+_shapeSmoothness = 0.5
+_matShaderType = 0
+_matCustomShader = null
+_lodLod0Distance = 50.0
+_widths = [1.0, 1.0]
+_debugView = 0
+_steps = 2
+_st = Object(SurfaceTool,"script":null)
+
+_mdt = Object(MeshDataTool,"script":null)
+
+_debugMaterial = SubResource("ShaderMaterial_7rs7u")
+_firstEnterTree = false
+_filterRenderer = ExtResource("6_ehw3g")
+_material = SubResource("ShaderMaterial_fuxfy")
+_selectedShader = 0
+_uv2Sides = 0
