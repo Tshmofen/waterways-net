@@ -3,6 +3,7 @@ using Godot.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Waterways.Util;
 
 namespace Waterways;
 
@@ -77,65 +78,18 @@ public partial class WaterSystemManager : Node3D
     public override Array<Dictionary> _GetPropertyList()
     {
         return [
-            new Dictionary
-            {
-                { "name", "system_map" },
-                { "type", (int) Variant.Type.Object },
-                { "hint", (int) PropertyHint.ResourceType },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable) },
-                { "hint_string", "Texture2D" }
-            },
-            new Dictionary
-            {
-                { "name", "system_bake_resolution" },
-                { "type", (int) Variant.Type.Int },
-                { "hint", (int) PropertyHint.Enum },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable) },
-                { "hint_string", "128, 256, 512, 1024, 2048"}
-            },
-            new Dictionary
-            {
-                { "name", "system_group_name" },
-                { "type", (int) Variant.Type.String },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable) }
-            },
-            new Dictionary
-            {
-                { "name", "minimum_water_level" },
-                { "type", (int) Variant.Type.Float },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable) }
-            },
-            new Dictionary
-            {
-                { "name", "Auto assign texture & coordinates on generate" },
-                { "type", (int) Variant.Type.Nil },
-                { "usage", (int)(PropertyUsageFlags.Group | PropertyUsageFlags.ScriptVariable) }
-            },
-            new Dictionary
-            {
-                { "name", "wet_group_name" },
-                { "type", (int) Variant.Type.String },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable) }
-            },
-            new Dictionary
-            {
-                { "name", "surface_index" },
-                { "type", (int) Variant.Type.Int },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable) }
-            },
-            new Dictionary
-            {
-                { "name", "material_override" },
-                { "type", (int) Variant.Type.Bool },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable) }
-            },
+            PropertyGeneration.CreateProperty(PropertyName.SystemMap, Variant.Type.Object, PropertyHint.ResourceType, "Texture2D"),
+            PropertyGeneration.CreateProperty(PropertyName.SystemBakeResolution, Variant.Type.Int, PropertyHint.Enum, "128, 256, 512, 1024, 2048"),
+            PropertyGeneration.CreateProperty(PropertyName.SystemGroupName, Variant.Type.String),
+            PropertyGeneration.CreateProperty(PropertyName.MinimumWaterLevel, Variant.Type.Float),
+
+            PropertyGeneration.CreateGroupingProperty("Auto assign texture & coordinates on generate"),
+            PropertyGeneration.CreateProperty(PropertyName.WetGroupName, Variant.Type.String),
+            PropertyGeneration.CreateProperty(PropertyName.SurfaceIndex, Variant.Type.Int),
+            PropertyGeneration.CreateProperty(PropertyName.MaterialOverride, Variant.Type.Bool),
+
             // values that need to be serialized, but should not be exposed
-            new Dictionary
-            {
-                { "name", "_system_aabb" },
-                { "type", (int) Variant.Type.Aabb },
-                { "usage", (int)(PropertyUsageFlags.Storage) }
-            }
+            PropertyGeneration.CreateStorageProperty(PropertyName._systemAabb, Variant.Type.Aabb),
         ];
     }
 
@@ -164,27 +118,24 @@ public partial class WaterSystemManager : Node3D
 
         var renderer = new SystemMapRenderer();
         AddChild(renderer);
-        var resolution = (int)Mathf.Pow(2, SystemBakeResolution + 7);
         var flowMap = await renderer.GrabFlow(rivers, _systemAabb);
         var heightMap = await renderer.GrabHeight(rivers, _systemAabb);
         RemoveChild(renderer);
 
         var filterRenderer = new FilterRenderer();
         AddChild(filterRenderer);
-        SystemMap = await filterRenderer.ApplyCombine(flowMap, flowMap, heightMap) as ImageTexture;
+        SystemMap = await filterRenderer.ApplyCombine(flowMap, flowMap, heightMap);
         RemoveChild(filterRenderer);
 
         // give the map and coordinates to all nodes in the wet_group
         foreach (var node in GetTree().GetNodesInGroup(WetGroupName))
         {
-            var mesh = (MeshInstance3D)node;
-            ShaderMaterial material = null;
-            if (SurfaceIndex != -1)
+            var mesh = (MeshInstance3D) node;
+            var material = (ShaderMaterial) null;
+
+            if (SurfaceIndex != -1 && mesh.GetSurfaceOverrideMaterialCount() > SurfaceIndex)
             {
-                if (mesh.GetSurfaceOverrideMaterialCount() > SurfaceIndex)
-                {
-                    material = mesh.GetSurfaceOverrideMaterial(SurfaceIndex) as ShaderMaterial;
-                }
+                material = mesh.GetSurfaceOverrideMaterial(SurfaceIndex) as ShaderMaterial;
             }
 
             if (MaterialOverride)

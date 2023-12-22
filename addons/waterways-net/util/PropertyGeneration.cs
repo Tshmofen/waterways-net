@@ -12,15 +12,19 @@ public static class PropertyGeneration
     public const string HintString = "hint_string";
     public const string Usage = "usage";
 
-    public static Dictionary CreateProperty(string name, Variant.Type type, PropertyHint hint, string hintString = null)
+    public static Dictionary CreateCustomProperty(PropertyUsageFlags usage, string name, Variant.Type type, PropertyHint? hint = null, string hintString = null)
     {
         var propertyInfo = new Dictionary
         {
             { Name, name },
             { Type, (int) type },
-            { Hint, (int) hint },
-            { Usage, (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
+            { Usage, (int) usage }
         };
+
+        if (hint != null)
+        {
+            propertyInfo.Add(Hint, (int)hint);
+        }
 
         if (hintString != null)
         {
@@ -30,37 +34,21 @@ public static class PropertyGeneration
         return propertyInfo;
     }
 
-    public static Dictionary CreateGroupingProperty(string groupName, string hintString)
+    public static Dictionary CreateProperty(string name, Variant.Type type, PropertyHint? hint = null, string hintString = null)
     {
-        return new Dictionary
-        {
-            { Name, groupName },
-            { Type, (int) Variant.Type.Nil },
-            { HintString, hintString },
-            { Usage, (int)(PropertyUsageFlags.Group | PropertyUsageFlags.ScriptVariable)}
-        };
+        const PropertyUsageFlags usage = PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable;
+        return CreateCustomProperty(usage, name, type, hint, hintString);
+    }
+
+    public static Dictionary CreateGroupingProperty(string groupName, string hintString = null)
+    {
+        const PropertyUsageFlags usage = PropertyUsageFlags.Group | PropertyUsageFlags.ScriptVariable;
+        return CreateCustomProperty(usage, groupName, Variant.Type.Nil, hintString: hintString);
     }
 
     public static Dictionary CreateStorageProperty(string name, Variant.Type type, PropertyHint? hint = null, string hintString = null)
     {
-        var property = new Dictionary
-        {
-            { Name, name },
-            { Type, (int) type },
-            { Usage, (int) PropertyUsageFlags.Storage}
-        };
-
-        if (hint != null)
-        {
-            property.Add(Hint, (int) hint);
-        }
-
-        if (hintString != null)
-        {
-            property.Add(HintString, hintString);
-        }
-
-        return property;
+        return CreateCustomProperty(PropertyUsageFlags.Storage, name, type, hint, hintString);
     }
 
     public static Dictionary CreatePropertyCopy(Dictionary target)

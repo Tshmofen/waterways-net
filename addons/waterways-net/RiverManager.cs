@@ -292,7 +292,6 @@ public partial class RiverManager : Node3D
         resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName._uv2Sides, Variant.Type.Int));
 
         return resultProperties;
-;
     }
 
     // todo maybe should be _ready
