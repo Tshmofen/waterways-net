@@ -1,3 +1,83 @@
-[gd_scene format=3 uid="uid://dlja74wt2jt47"]
+[gd_scene load_steps=6 format=3 uid="uid://dlja74wt2jt47"]
+
+[ext_resource type="Script" path="res://addons/waterways-net/RiverManager.cs" id="1_4psa7"]
+[ext_resource type="Shader" path="res://addons/waterways-net/shaders/river.gdshader" id="2_6c7yt"]
+[ext_resource type="Texture2D" uid="uid://lx1nyoh45ge8" path="res://addons/waterways-net/textures/foam_noise.png" id="3_kjh4d"]
+[ext_resource type="Texture2D" uid="uid://b85tlq8wcklbo" path="res://addons/waterways-net/textures/water1_normal_bump.png" id="4_3diuu"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sfr6x"]
+render_priority = 0
+shader = ExtResource("2_6c7yt")
+shader_parameter/normal_scale = 1.0
+shader_parameter/uv_scale = Vector3(1, 1, 1)
+shader_parameter/roughness = 0.2
+shader_parameter/edge_fade = 0.25
+shader_parameter/albedo_color = Projection(0, 0.15, 0, 0, 0.8, 0.2, 0, 0, 1, 0.5, 0, 0, 0, 0, 0, 0)
+shader_parameter/albedo_depth = 10.0
+shader_parameter/albedo_depth_curve = 0.25
+shader_parameter/transparency_clarity = 10.0
+shader_parameter/transparency_depth_curve = 0.25
+shader_parameter/transparency_refraction = 0.05
+shader_parameter/flow_speed = 1.0
+shader_parameter/flow_base = 0.0
+shader_parameter/flow_steepness = 2.0
+shader_parameter/flow_distance = 1.0
+shader_parameter/flow_pressure = 1.0
+shader_parameter/flow_max = 4.0
+shader_parameter/foam_color = Color(0.9, 0.9, 0.9, 1)
+shader_parameter/foam_amount = 2.0
+shader_parameter/foam_steepness = 2.0
+shader_parameter/foam_smoothness = 0.3
+shader_parameter/i_lod0_distance = 50.0
+shader_parameter/i_valid_flowmap = false
+shader_parameter/i_uv2_sides = 0
+shader_parameter/normal_bump_texture = ExtResource("4_3diuu")
+shader_parameter/i_texture_foam_noise = ExtResource("3_kjh4d")
 
 [node name="Main" type="Node3D"]
+
+[node name="River" type="Node3D" parent="."]
+script = ExtResource("1_4psa7")
+shape_step_length_divs = null
+shape_step_width_divs = null
+shape_smoothness = null
+mat_shader_type = null
+mat_custom_shader = null
+mat_normal_scale = null
+mat_uv_scale = null
+mat_roughness = null
+mat_edge_fade = null
+mat_albedo_color = null
+mat_albedo_depth = null
+mat_albedo_depth_curve = null
+mat_transparency_clarity = null
+mat_transparency_depth_curve = null
+mat_transparency_refraction = null
+mat_flow_speed = null
+mat_flow_base = null
+mat_flow_steepness = null
+mat_flow_distance = null
+mat_flow_pressure = null
+mat_flow_max = null
+mat_foam_color = null
+mat_foam_amount = null
+mat_foam_steepness = null
+mat_foam_smoothness = null
+mat_normal_bump_texture = null
+lod_lod0_distance = null
+baking_resolution = null
+baking_raycast_distance = null
+baking_raycast_layers = null
+baking_dilate = null
+baking_flowmap_blur = null
+baking_foam_cutoff = null
+baking_foam_offset = null
+baking_foam_blur = null
+curve = null
+widths = null
+valid_flowmap = null
+flow_foam_noise = null
+dist_pressure = null
+_material = SubResource("ShaderMaterial_sfr6x")
+_selected_shader = null
+_uv2_sides = null

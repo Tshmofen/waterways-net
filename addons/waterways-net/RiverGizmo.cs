@@ -468,39 +468,39 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         var pIndex = GetCurveIndex(index, pointCount);
         if (IsCenterPoint(index, pointCount))
         {
-            ur.AddDoMethod(river, "SetCurvePointPosition", pIndex, river.Curve.GetPointPosition(pIndex));
-            ur.AddUndoMethod(river, "SetCurvePointPosition", pIndex, restore);
+            ur.AddDoMethod(river, RiverManager.MethodName.SetCurvePointPosition, pIndex, river.Curve.GetPointPosition(pIndex));
+            ur.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointPosition, pIndex, restore);
         }
         if (IsControlPointIn(index, pointCount))
         {
-            ur.AddDoMethod(river, "SetCurvePointIn", pIndex, river.Curve.GetPointIn(pIndex));
-            ur.AddUndoMethod(river, "SetCurvePointIn", pIndex, restore);
-            ur.AddDoMethod(river, "SetCurvePointOut", pIndex, river.Curve.GetPointOut(pIndex));
-            ur.AddUndoMethod(river, "SetCurvePointOut", pIndex, -restore.AsSingle());
+            ur.AddDoMethod(river, RiverManager.MethodName.SetCurvePointIn, pIndex, river.Curve.GetPointIn(pIndex));
+            ur.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointIn, pIndex, restore);
+            ur.AddDoMethod(river, RiverManager.MethodName.SetCurvePointOut, pIndex, river.Curve.GetPointOut(pIndex));
+            ur.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointOut, pIndex, -restore.AsSingle());
         }
         if (IsControlPointOut(index, pointCount))
         {
-            ur.AddDoMethod(river, "SetCurvePointOut", pIndex, river.Curve.GetPointIn(pIndex));
-            ur.AddUndoMethod(river, "SetCurvePointOut", pIndex, restore);
-            ur.AddDoMethod(river, "SetCurvePointIn", pIndex, river.Curve.GetPointOut(pIndex));
-            ur.AddUndoMethod(river, "SetCurvePointIn", pIndex, -restore.AsSingle());
+            ur.AddDoMethod(river, RiverManager.MethodName.SetCurvePointOut, pIndex, river.Curve.GetPointIn(pIndex));
+            ur.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointOut, pIndex, restore);
+            ur.AddDoMethod(river, RiverManager.MethodName.SetCurvePointIn, pIndex, river.Curve.GetPointOut(pIndex));
+            ur.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointIn, pIndex, -restore.AsSingle());
         }
         if (IsWidthPointLeft(index, pointCount) || IsWidthPointRight(index, pointCount))
         {
             var riverWidthsUndo = river.Widths.Duplicate(true);
             riverWidthsUndo[pIndex] = restore.AsSingle();
-            ur.AddDoProperty(river, "widths", river.Widths);
-            ur.AddUndoProperty(river, "widths", riverWidthsUndo);
+            ur.AddDoProperty(river, RiverManager.PropertyName.Widths, river.Widths);
+            ur.AddUndoProperty(river, RiverManager.PropertyName.Widths, riverWidthsUndo);
         }
 
-        ur.AddDoMethod(river, "properties_changed");
-        ur.AddDoMethod(river, "SetMaterials", "i_valid_flowmap", false);
-        ur.AddDoProperty(river, "valid_flowmap", false);
-        ur.AddDoMethod(river, "update_configuration_warnings");
-        ur.AddUndoMethod(river, "properties_changed");
-        ur.AddUndoMethod(river, "SetMaterials", "i_valid_flowmap", river.ValidFlowmap);
-        ur.AddUndoProperty(river, "valid_flowmap", river.ValidFlowmap);
-        ur.AddUndoMethod(river, "update_configuration_warnings");
+        ur.AddDoMethod(river, RiverManager.MethodName.PropertiesChanged);
+        ur.AddDoMethod(river, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", false);
+        ur.AddDoProperty(river, RiverManager.PropertyName.ValidFlowmap, false);
+        ur.AddDoMethod(river,   Node.MethodName.UpdateConfigurationWarnings);
+        ur.AddUndoMethod(river, RiverManager.MethodName.PropertiesChanged);
+        ur.AddUndoMethod(river, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", river.ValidFlowmap);
+        ur.AddUndoProperty(river, RiverManager.PropertyName.ValidFlowmap, river.ValidFlowmap);
+        ur.AddUndoMethod(river, Node.MethodName.UpdateConfigurationWarnings);
         ur.CommitAction();
 
         _Redraw(gizmo);

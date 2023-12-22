@@ -24,7 +24,7 @@ public partial class WaterwaysPlugin : EditorPlugin
     public RiverControls.Constraints Constraint { get; set; } = RiverControls.Constraints.None;
     public bool LocalEditing { get; set; }
 
-    public override void _Ready()
+    public WaterwaysPlugin()
     {
         _riverControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/river_controls.tscn").Instantiate<RiverControls>();
         _waterSystemControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/water_system_controls.tscn").Instantiate<WaterSystemControls>();
@@ -112,7 +112,7 @@ public partial class WaterwaysPlugin : EditorPlugin
             case RiverManager manager:
                 ShowRiverControlPanel();
                 _editedNode = manager;
-                _riverControls.Menu.DebugViewMenuSelected = _editedNode.debug_view;
+                _riverControls.Menu.DebugViewMenuSelected = _editedNode.DebugView;
 
                 if (!_editedNode.IsConnected(RiverManager.SignalName.ProgressNotified, Callable.From<float, string>(RiverProgressNotified)))
                 {
@@ -343,25 +343,25 @@ public partial class WaterwaysPlugin : EditorPlugin
 
                     var ur = GetUndoRedo();
                     ur.CreateAction("Add River point");
-                    ur.AddDoMethod(_editedNode, "AddPoint", bakedClosestPoint, closestSegment);
-                    ur.AddDoMethod(_editedNode, "properties_changed");
-                    ur.AddDoMethod(_editedNode, "SetMaterials", "i_valid_flowmap", false);
-                    ur.AddDoProperty(_editedNode, "valid_flowmap", false);
-                    ur.AddDoMethod(_editedNode, "update_configuration_warnings");
+                    ur.AddDoMethod(_editedNode, RiverManager.MethodName.AddPoint, bakedClosestPoint, closestSegment);
+                    ur.AddDoMethod(_editedNode, RiverManager.MethodName.PropertiesChanged);
+                    ur.AddDoMethod(_editedNode, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", false);
+                    ur.AddDoProperty(_editedNode, RiverManager.PropertyName.ValidFlowmap, false);
+                    ur.AddDoMethod(_editedNode, Node.MethodName.UpdateConfigurationWarnings);
 
                     if (closestSegment == -1)
                     {
-                        ur.AddUndoMethod(_editedNode, "RemovePoint", _editedNode.curve.PointCount);
+                        ur.AddUndoMethod(_editedNode, RiverManager.MethodName.RemovePoint, _editedNode.curve.PointCount);
                     }
                     else
                     {
-                        ur.AddUndoMethod(_editedNode, "RemovePoint", closestSegment + 1);
+                        ur.AddUndoMethod(_editedNode, RiverManager.MethodName.RemovePoint, closestSegment + 1);
                     }
 
-                    ur.AddUndoMethod(_editedNode, "properties_changed");
-                    ur.AddUndoMethod(_editedNode, "SetMaterials", "i_valid_flowmap", _editedNode.valid_flowmap);
-                    ur.AddUndoProperty(_editedNode, "valid_flowmap", _editedNode.valid_flowmap);
-                    ur.AddUndoMethod(_editedNode, "update_configuration_warnings");
+                    ur.AddUndoMethod(_editedNode, RiverManager.MethodName.PropertiesChanged);
+                    ur.AddUndoMethod(_editedNode, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", _editedNode.valid_flowmap);
+                    ur.AddUndoProperty(_editedNode, RiverManager.PropertyName.ValidFlowmap, _editedNode.valid_flowmap);
+                    ur.AddUndoMethod(_editedNode, Node.MethodName.UpdateConfigurationWarnings);
                     ur.CommitAction();
                     break;
                 }
@@ -375,25 +375,25 @@ public partial class WaterwaysPlugin : EditorPlugin
                         var closestIndex = _editedNode.get_closest_point_to(bakedClosestPoint);
                         var ur = GetUndoRedo();
                         ur.CreateAction("Remove River point");
-                        ur.AddDoMethod(_editedNode, "RemovePoint", closestIndex);
-                        ur.AddDoMethod(_editedNode, "properties_changed");
-                        ur.AddDoMethod(_editedNode, "SetMaterials", "i_valid_flowmap", false);
-                        ur.AddDoProperty(_editedNode, "valid_flowmap", false);
-                        ur.AddDoMethod(_editedNode, "update_configuration_warnings");
+                        ur.AddDoMethod(_editedNode, RiverManager.MethodName.RemovePoint, closestIndex);
+                        ur.AddDoMethod(_editedNode, RiverManager.MethodName.PropertiesChanged);
+                        ur.AddDoMethod(_editedNode, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", false);
+                        ur.AddDoProperty(_editedNode, RiverManager.PropertyName.ValidFlowmap, false);
+                        ur.AddDoMethod(_editedNode, Node.MethodName.UpdateConfigurationWarnings);
 
                         if (closestIndex == _editedNode.curve.PointCount - 1)
                         {
-                            ur.AddUndoMethod(_editedNode, "AddPoint", _editedNode.curve.GetPointPosition(closestIndex), -1);
+                            ur.AddUndoMethod(_editedNode, RiverManager.MethodName.AddPoint, _editedNode.curve.GetPointPosition(closestIndex), -1);
                         }
                         else
                         {
-                            ur.AddUndoMethod(_editedNode, "AddPoint", _editedNode.curve.GetPointPosition(closestIndex), closestIndex - 1, _editedNode.curve.GetPointOut(closestIndex), _editedNode.widths[closestIndex]);
+                            ur.AddUndoMethod(_editedNode, RiverManager.MethodName.AddPoint, _editedNode.curve.GetPointPosition(closestIndex), closestIndex - 1, _editedNode.curve.GetPointOut(closestIndex), _editedNode.widths[closestIndex]);
                         }
 
-                        ur.AddUndoMethod(_editedNode, "properties_changed");
-                        ur.AddUndoMethod(_editedNode, "SetMaterials", "i_valid_flowmap", _editedNode.valid_flowmap);
-                        ur.AddUndoProperty(_editedNode, "valid_flowmap", _editedNode.valid_flowmap);
-                        ur.AddUndoMethod(_editedNode, "update_configuration_warnings");
+                        ur.AddUndoMethod(_editedNode, RiverManager.MethodName.PropertiesChanged);
+                        ur.AddUndoMethod(_editedNode, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", _editedNode.valid_flowmap);
+                        ur.AddUndoProperty(_editedNode, RiverManager.PropertyName.ValidFlowmap, _editedNode.valid_flowmap);
+                        ur.AddUndoMethod(_editedNode, Node.MethodName.UpdateConfigurationWarnings);
                         ur.CommitAction();
                     }
 

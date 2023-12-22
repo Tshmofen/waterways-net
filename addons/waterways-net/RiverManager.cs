@@ -864,4 +864,10 @@ public partial class RiverManager : Node3D
         EmitSignal(SignalName.ProgressNotified, 100.0, "finished");
         UpdateConfigurationWarnings();
     }
+
+    // Signal Method
+    public void PropertiesChanged()
+    {
+        EmitSignal(SignalName.RiverChanged);
+    }
 }
