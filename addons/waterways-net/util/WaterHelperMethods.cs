@@ -5,7 +5,7 @@ using Godot;
 using Godot.Collections;
 using static Godot.Image;
 
-namespace Waterways;
+namespace Waterways.Util;
 
 // Copyright © 2022 Kasper Arnklit Frandsen - MIT License
 // See `LICENSE.md` included in the source distribution for details.

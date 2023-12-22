@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 using Godot.Collections;
+using Waterways.Util;
 
 namespace Waterways;
 
@@ -204,62 +205,16 @@ public partial class RiverManager : Node3D
     // Internal Methods
     public override Array<Dictionary> _GetPropertyList()
     {
-        var props = new Array<Dictionary>
+        var resultProperties = new Array<Dictionary>
         {
-            new()
-            {
-                { "name", "Shape" },
-                { "type", (int) Variant.Type.Nil },
-                { "hint_string", "shape_" },
-                { "usage", (int)(PropertyUsageFlags.Group | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "shape_step_length_divs" },
-                { "type", (int) Variant.Type.Int },
-                { "hint", (int) PropertyHint.Range },
-                { "hint_string", "1, 8" },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "shape_step_width_divs" },
-                { "type", (int) Variant.Type.Int },
-                { "hint", (int) PropertyHint.Range },
-                { "hint_string", "1, 8" },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "shape_smoothness" },
-                { "type", (int) Variant.Type.Float },
-                { "hint", (int) PropertyHint.Range },
-                { "hint_string", "0.1, 5.0" },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "Material" },
-                { "type", (int) Variant.Type.Nil },
-                { "hint_string", "mat_" },
-                { "usage", (int)(PropertyUsageFlags.Group | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "mat_shader_type" },
-                { "type", (int) Variant.Type.Int },
-                { "hint", (int) PropertyHint.Enum },
-                { "hint_string", "Water, Lava, Custom" },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "mat_custom_shader" },
-                { "type", (int) Variant.Type.Object },
-                { "hint", (int) PropertyHint.ResourceType },
-                { "hint_string", "Shader" },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
-            }
+            PropertyGeneration.CreateGroupingProperty( "Shape", "shape_"),
+            PropertyGeneration.CreateProperty(PropertyName.ShapeStepLengthDivs, Variant.Type.Int, PropertyHint.Range, "1, 8"),
+            PropertyGeneration.CreateProperty(PropertyName.ShapeStepWidthDivs, Variant.Type.Int, PropertyHint.Range, "1, 8"),
+            PropertyGeneration.CreateProperty(PropertyName.ShapeSmoothness, Variant.Type.Float, PropertyHint.Range, "0.1, 5.0"),
+
+            PropertyGeneration.CreateGroupingProperty( "Material", "mat_"),
+            PropertyGeneration.CreateProperty(PropertyName.MatShaderType, Variant.Type.Int, PropertyHint.Enum, PropertyGeneration.GetEnumHint<ShaderTypes>()),
+            PropertyGeneration.CreateProperty(PropertyName.MatCustomShader, Variant.Type.Object, PropertyHint.ResourceType, "Shader"),
         };
 
         var matCategories = new Godot.Collections.Dictionary<string, string>
@@ -272,34 +227,26 @@ public partial class RiverManager : Node3D
             { nameof(MaterialCategories.Custom), MaterialCategories.Custom}
         };
 
-        var props2 = new Array<Dictionary>();
-
         if (_material.Shader != null)
         {
-            foreach (var p in RenderingServer.GetShaderParameterList(_material.Shader.GetRid()))
+            foreach (var parameter in RenderingServer.GetShaderParameterList(_material.Shader.GetRid()))
             {
-                if (p["name"].AsString().StartsWith("i_"))
+                if (parameter[PropertyGeneration.Name].AsString().StartsWith("i_"))
                 {
                     continue;
                 }
 
-                string hitCategory = null;
-                foreach (var category in matCategories)
+                var hitCategory = (string) null;
+                foreach (var (key, value) in matCategories)
                 {
-                    if (!p["name"].AsString().StartsWith(category.Key))
+                    if (!parameter[PropertyGeneration.Name].AsString().StartsWith(key))
                     {
                         continue;
                     }
 
-                    props2.Add(new Dictionary
-                    {
-                        { "name", "Material/" + category.Value},
-                        { "type", (int)Variant.Type.Nil },
-                        { "hint_string", "mat_" + category.Key },
-                        { "usage", (int)(PropertyUsageFlags.Group | PropertyUsageFlags.ScriptVariable)}
-                    });
-
-                    hitCategory = category.Key;
+                    var property = PropertyGeneration.CreateGroupingProperty($"Material/{value}", $"mat_{key}");
+                    resultProperties.Add(property);
+                    hitCategory = key;
                     break;
                 }
 
@@ -308,164 +255,44 @@ public partial class RiverManager : Node3D
                     matCategories.Remove(hitCategory);
                 }
 
-                var cp = new Dictionary();
-                foreach (var k in p)
+                var newProperty = PropertyGeneration.CreatePropertyCopy(parameter);
+                var paramName = parameter[PropertyGeneration.Name].AsString();
+                newProperty[PropertyGeneration.Name] = $"mat_{paramName}";
+                if (paramName.Contains("curve"))
                 {
-                    cp[k.Key] = p[k.Key];
+                    newProperty[PropertyGeneration.Hint] = (int)PropertyHint.ExpEasing;
+                    newProperty[PropertyGeneration.HintString] = "EASE";
                 }
 
-                cp["name"] = "mat_" + p["name"];
-                if (cp["name"].AsString().Contains("curve"))
-                {
-                    cp["hint"] = (int)PropertyHint.ExpEasing;
-                    cp["hint_string"] = "EASE";
-                }
-
-                props2.Add(cp);
+                resultProperties.Add(newProperty);
             }
         }
 
-        var props3 = new Array<Dictionary>
-        {
-            new()
-            {
-                { "name", "Lod" },
-                { "type", (int) Variant.Type.Nil },
-                { "hint_string", "lod_" },
-                { "usage", (int)(PropertyUsageFlags.Group | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "lod_lod0_distance" },
-                { "type", (int) Variant.Type.Float },
-                { "hint", (int) PropertyHint.Range },
-                { "hint_string", "5.0, 200.0" },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "Baking" },
-                { "type", (int) Variant.Type.Nil },
-                { "hint_string", "baking_" },
-                { "usage", (int)(PropertyUsageFlags.Group | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "baking_resolution" },
-                { "type", (int) Variant.Type.Int },
-                { "hint", (int) PropertyHint.Enum },
-                { "hint_string", "64, 128, 256, 512, 1024" },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "baking_raycast_distance" },
-                { "type", (int) Variant.Type.Float },
-                { "hint", (int) PropertyHint.Range },
-                { "hint_string", "0.0, 100.0" },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "baking_raycast_layers" },
-                { "type", (int) Variant.Type.Int },
-                { "hint", (int) PropertyHint.Layers3DPhysics },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "baking_dilate" },
-                { "type", (int) Variant.Type.Float },
-                { "hint", (int) PropertyHint.Range },
-                { "hint_string", "0.0, 1.0" },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "baking_flowmap_blur" },
-                { "type", (int) Variant.Type.Float },
-                { "hint", (int) PropertyHint.Range },
-                { "hint_string", "0.0, 1.0" },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "baking_foam_cutoff" },
-                { "type", (int) Variant.Type.Float },
-                { "hint", (int) PropertyHint.Range },
-                { "hint_string", "0.0, 1.0" },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "baking_foam_offset" },
-                { "type", (int) Variant.Type.Float },
-                { "hint", (int) PropertyHint.Range },
-                { "hint_string", "0.0, 1.0" },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
-            },
-            new()
-            {
-                { "name", "baking_foam_blur" },
-                { "type", (int) Variant.Type.Float },
-                { "hint", (int) PropertyHint.Range },
-                { "hint_string", "0.0, 1.0" },
-                { "usage", (int)(PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable)}
-            },
-			// Serialize these values without exposing it in the inspector
-            new()
-            {
-                { "name", "curve" },
-                { "type", (int) Variant.Type.Object },
-                { "usage", (int)(PropertyUsageFlags.Storage)}
-            },
-            new()
-            {
-                { "name", "widths" },
-                { "type", (int) Variant.Type.Array },
-                { "usage", (int)(PropertyUsageFlags.Storage)}
-            },
-            new()
-            {
-                { "name", "valid_flowmap" },
-                { "type", (int) Variant.Type.Bool },
-                { "usage", (int)(PropertyUsageFlags.Storage)}
-            },
-            new()
-            {
-                { "name", "flow_foam_noise" },
-                { "type", (int) Variant.Type.Object },
-                { "usage", (int)(PropertyUsageFlags.Storage)}
-            },
-            new()
-            {
-                { "name", "dist_pressure" },
-                { "type", (int) Variant.Type.Object },
-                { "usage", (int)(PropertyUsageFlags.Storage)}
-            },
-            new()
-            {
-                { "name", "_material" },
-                { "type", (int) Variant.Type.Object },
-                { "hint", (int) PropertyHint.ResourceType },
-                { "hint_string", "ShaderMaterial" },
-                { "usage", (int)(PropertyUsageFlags.Storage)}
-            },
-            new()
-            {
-                { "name", "_selected_shader" },
-                { "type", (int) Variant.Type.Int },
-                { "usage", (int)(PropertyUsageFlags.Storage)}
-            },
-            new()
-            {
-                { "name", "_uv2_sides" },
-                { "type", (int) Variant.Type.Int },
-                { "usage", (int)(PropertyUsageFlags.Storage)}
-            }
-        };
+        resultProperties.Add(PropertyGeneration.CreateGroupingProperty("Lod", "lod_"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.LodLod0Distance, Variant.Type.Float, PropertyHint.Range, "5.0, 200.0"));
 
-        return props + props2 + props3;
+        resultProperties.Add(PropertyGeneration.CreateGroupingProperty("Baking", "baking_"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingResolution, Variant.Type.Int, PropertyHint.Enum, "64, 128, 256, 512, 1024"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingRaycastDistance, Variant.Type.Float, PropertyHint.Range, "0.0, 100.0"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingRaycastLayers, Variant.Type.Int, PropertyHint.Layers3DPhysics));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingDilate, Variant.Type.Float, PropertyHint.Range, "0.0, 1.0"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFlowmapBlur, Variant.Type.Float, PropertyHint.Range, "0.0, 1.0"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFoamCutoff, Variant.Type.Float, PropertyHint.Range, "0.0, 1.0"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFoamOffset, Variant.Type.Float, PropertyHint.Range, "0.0, 1.0"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFoamBlur, Variant.Type.Float, PropertyHint.Range, "0.0, 1.0"));
+
+        // Serialize these values without exposing it in the inspector
+        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName.Curve, Variant.Type.Object));
+        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName.Widths, Variant.Type.Array));
+        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName.ValidFlowmap, Variant.Type.Bool));
+        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName.FlowFoamNoise, Variant.Type.Object));
+        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName.DistPressure, Variant.Type.Object));
+        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName._material, Variant.Type.Object, PropertyHint.ResourceType, "ShaderMaterial"));
+        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName._selectedShader, Variant.Type.Int));
+        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName._uv2Sides, Variant.Type.Int));
+
+        return resultProperties;
+;
     }
 
     // todo maybe should be _ready
@@ -643,18 +470,6 @@ public partial class RiverManager : Node3D
         siblingMesh.MaterialOverride = null;
     }
 
-    public List<Vector3> GetCurvePoints()
-    {
-        var points = new List<Vector3>();
-
-        for (var p = 0; p < Curve.PointCount; p++)
-        {
-            points.Add(Curve.GetPointPosition(p));
-        }
-
-        return points;
-    }
-
     public int GetClosestPointTo(Vector3 point)
     {
         var closestDistance = 4096.0f;
@@ -783,7 +598,7 @@ public partial class RiverManager : Node3D
     private void GenerateRiver()
     {
         // TODO: count loss expected?
-        var averageWidth = Widths.Sum() / (Widths.Count / 2);
+        var averageWidth = Widths.Sum() / (Widths.Count / 2f);
         _steps = (int)(Mathf.Max(1.0f, Mathf.Round(Curve.GetBakedLength() / averageWidth)));
 
         var riverWidthValues = WaterHelperMethods.GenerateRiverWidthValues(Curve, _steps, ShapeStepLengthDivs, Widths);
