@@ -96,21 +96,57 @@ public partial class RiverManager : Node3D
     public int ShapeStepLengthDivs
     {
         get => _shapeStepLengthDivs;
-        set => SetStepLengthDivs(value);
+        set
+        {
+            _shapeStepLengthDivs = value;
+            if (_firstEnterTree)
+            {
+                return;
+            }
+
+            ValidFlowmap = false;
+            SetMaterials("i_valid_flowmap", ValidFlowmap);
+            GenerateRiver();
+            EmitSignal("river_changed");
+        }
     }
 
     private int _shapeStepWidthDivs = DefaultParameters.ShapeStepWidthDivs;
     public int ShapeStepWidthDivs
     {
         get => _shapeStepWidthDivs;
-        set => SetStepWidthDivs(value);
+        set
+        {
+            _shapeStepWidthDivs = value;
+            if (_firstEnterTree)
+            {
+                return;
+            }
+
+            ValidFlowmap = false;
+            SetMaterials("i_valid_flowmap", ValidFlowmap);
+            GenerateRiver();
+            EmitSignal("river_changed");
+        }
     }
 
     private float _shapeSmoothness = DefaultParameters.ShapeSmoothness;
     public float ShapeSmoothness
     {
         get => _shapeSmoothness;
-        set => SetSmoothness(value);
+        set
+        {
+            _shapeSmoothness = value;
+            if (_firstEnterTree)
+            {
+                return;
+            }
+
+            ValidFlowmap = false;
+            SetMaterials("i_valid_flowmap", ValidFlowmap);
+            GenerateRiver();
+            EmitSignal("river_changed");
+        }
     }
 
     // Material Properties that not handled in shader
@@ -118,14 +154,59 @@ public partial class RiverManager : Node3D
     public ShaderTypes MatShaderType
     {
         get => _matShaderType;
-        set => SetShaderType(value);
+        set
+        {
+            if (value == _matShaderType)
+            {
+                return;
+            }
+
+            _matShaderType = value;
+
+            if (_matShaderType == ShaderTypes.Custom)
+            {
+                _material.Shader = MatCustomShader;
+            }
+            else
+            {
+                _material.Shader = ResourceLoader.Load(BuiltinShaders.First(s => s.Name == _matShaderType.ToString()).ShaderPath) as Shader;
+                foreach (var (name, path) in BuiltinShaders.First(s => s.Name == _matShaderType.ToString()).TexturePaths)
+                {
+                    _material.SetShaderParameter(name, ResourceLoader.Load(path) as Texture);
+                }
+            }
+
+            NotifyPropertyListChanged();
+        }
     }
 
     private Shader _matCustomShader;
     public Shader MatCustomShader
     {
         get => _matCustomShader;
-        set => SetCustomShader(value);
+        set
+        {
+            if (_matCustomShader == value)
+            {
+                return;
+            }
+
+            _matCustomShader = value;
+
+            if (_matCustomShader != null)
+            {
+                _material.Shader = _matCustomShader;
+
+                // Ability to fork default shader
+                if (Engine.IsEditorHint() && string.IsNullOrEmpty(value.Code))
+                {
+                    var selectedShader = (Shader)ResourceLoader.Load(BuiltinShaders.First(s => s.Name == MatShaderType.ToString()).ShaderPath);
+                    value.Code = selectedShader.Code;
+                }
+            }
+
+            MatShaderType = (value != null ? ShaderTypes.Custom : ShaderTypes.Water);
+        }
     }
 
     // LOD Properties
@@ -134,7 +215,11 @@ public partial class RiverManager : Node3D
     public float LodLod0Distance
     {
         get => _lodLod0Distance;
-        set => SetLod0Distance(value);
+        set
+        {
+            _lodLod0Distance = value;
+            SetMaterials("i_lod0_distance", value);
+        }
     }
 
     // Bake Properties
@@ -493,104 +578,6 @@ public partial class RiverManager : Node3D
     public Variant GetShaderParameter(string param)
     {
         return _material.GetShaderParameter(param);
-    }
-
-    // Parameter Setters
-    public void SetStepLengthDivs(int value)
-    {
-        ShapeStepLengthDivs = value;
-        if (_firstEnterTree)
-        {
-            return;
-        }
-
-        ValidFlowmap = false;
-        SetMaterials("i_valid_flowmap", ValidFlowmap);
-        GenerateRiver();
-        EmitSignal("river_changed");
-    }
-
-    public void SetStepWidthDivs(int value)
-    {
-        ShapeStepWidthDivs = value;
-        if (_firstEnterTree)
-        {
-            return;
-        }
-
-        ValidFlowmap = false;
-        SetMaterials("i_valid_flowmap", ValidFlowmap);
-        GenerateRiver();
-        EmitSignal("river_changed");
-    }
-
-    public void SetSmoothness(float value)
-    {
-        ShapeSmoothness = value;
-        if (_firstEnterTree)
-        {
-            return;
-        }
-
-        ValidFlowmap = false;
-        SetMaterials("i_valid_flowmap", ValidFlowmap);
-        GenerateRiver();
-        EmitSignal("river_changed");
-    }
-
-    public void SetShaderType(ShaderTypes type)
-    {
-        if (type == MatShaderType)
-        {
-            return;
-        }
-
-        MatShaderType = type;
-
-        if (MatShaderType == ShaderTypes.Custom)
-        {
-            _material.Shader = MatCustomShader;
-        }
-        else
-        {
-            _material.Shader = ResourceLoader.Load(BuiltinShaders.First(s => s.Name == MatShaderType.ToString()).ShaderPath) as Shader;
-            foreach (var (name, path) in BuiltinShaders.First(s => s.Name == MatShaderType.ToString()).TexturePaths)
-            {
-                _material.SetShaderParameter(name, ResourceLoader.Load(path) as Texture);
-            }
-        }
-
-        NotifyPropertyListChanged();
-    }
-
-    public void SetCustomShader(Shader shader)
-    {
-        if (MatCustomShader == shader)
-        {
-            return;
-        }
-
-        MatCustomShader = shader;
-
-        if (MatCustomShader != null)
-        {
-            _material.Shader = MatCustomShader;
-
-            // Ability to fork default shader
-            if (Engine.IsEditorHint() && string.IsNullOrEmpty(shader.Code))
-            {
-                var selectedShader = (Shader)ResourceLoader.Load(BuiltinShaders.First(s => s.Name == MatShaderType.ToString()).ShaderPath);
-                shader.Code = selectedShader.Code;
-            }
-        }
-
-        SetShaderType(shader != null ? ShaderTypes.Custom : ShaderTypes.Water);
-    }
-
-    public void SetLod0Distance(float value)
-    {
-        LodLod0Distance = value;
-        SetMaterials("i_lod0_distance", value);
     }
 
     // Private Methods

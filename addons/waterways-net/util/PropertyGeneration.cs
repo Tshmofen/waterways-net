@@ -1,6 +1,5 @@
 ﻿using Godot;
 using Godot.Collections;
-using System;
 
 namespace Waterways.Util;
 
@@ -63,9 +62,9 @@ public static class PropertyGeneration
         return copy;
     }
 
-    public static string GetEnumHint<TEnum>() where TEnum : Enum
+    public static string GetEnumHint<TEnum>() where TEnum : System.Enum
     {
-        var enumValues = Enum.GetNames(typeof(TEnum));
+        var enumValues = System.Enum.GetNames(typeof(TEnum));
         return string.Join(',', enumValues);
     }
 }
