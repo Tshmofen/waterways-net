@@ -1,6 +1,6 @@
 ﻿using Godot;
 
-namespace Waterway;
+namespace Waterways.Gui;
 
 [Tool]
 public partial class ProgressWindow : Window

@@ -5,25 +5,68 @@ namespace Waterways.Gui;
 [Tool]
 public partial class RiverControls : HBoxContainer
 {
-    [Signal] public delegate void ModeEventHandler(string mode);
-    [Signal] public delegate void OptionsEventHandler(string type, int index);
-
     private bool _mouseDown;
-
-    public enum Constraints
-    {
-        None,
-        Colliders,
-        AxisX,
-        AxisY,
-        AxisZ,
-        PlaneYz,
-        PlaneXz,
-        PlaneXy
-    }
 
     public RiverMenu Menu { get; set; }
     public OptionButton ConstraintsOption { get; set; }
+
+    [Signal] public delegate void ModeEventHandler(string mode);
+    [Signal] public delegate void OptionsEventHandler(string type, int index);
+
+    #region Util
+
+    private void DisableConstraintUi(bool disable)
+    {
+        GetNode<BaseButton>("Constraints").Disabled = disable;
+        GetNode<BaseButton>("LocalMode").Disabled = disable;
+    }
+
+    private void UnToggleButtons()
+    {
+        GetNode<BaseButton>("Select").ButtonPressed = false;
+        GetNode<BaseButton>("Add").ButtonPressed = false;
+        GetNode<BaseButton>("Remove").ButtonPressed = false;
+    }
+
+    #endregion
+
+    #region Signal Handlers
+
+    private void OnSelect()
+    {
+        UnToggleButtons();
+        DisableConstraintUi(false);
+        GetNode<BaseButton>("Select").ButtonPressed = true;
+        EmitSignal(SignalName.Mode, "select");
+    }
+
+    private void OnAdd()
+    {
+        UnToggleButtons();
+        DisableConstraintUi(false);
+        GetNode<BaseButton>("Add").ButtonPressed = true;
+        EmitSignal(SignalName.Mode, "add");
+    }
+
+    private void OnRemove()
+    {
+        UnToggleButtons();
+        DisableConstraintUi(true);
+        GetNode<BaseButton>("Remove").ButtonPressed = true;
+        EmitSignal(SignalName.Mode, "remove");
+    }
+
+    private void OnConstraintSelected(int index)
+    {
+        EmitSignal(SignalName.Options, "constraint", index);
+    }
+
+    private void OnLocalModeToggled(bool enabled)
+    {
+        EmitSignal(SignalName.Options, "local_mode", enabled);
+    }
+
+    #endregion
 
     public override void _EnterTree()
     {
@@ -67,25 +110,25 @@ public partial class RiverControls : HBoxContainer
                 switch (eventKey.Keycode)
                 {
                     case Key.S:
-                        requested = (int)Constraints.Colliders;
+                        requested = (int)ConstraintType.Colliders;
                         break;
                     case Key.X when !eventKey.ShiftPressed:
-                        requested = (int)Constraints.AxisX;
+                        requested = (int)ConstraintType.AxisX;
                         break;
                     case Key.Y when !eventKey.ShiftPressed:
-                        requested = (int)Constraints.AxisY;
+                        requested = (int)ConstraintType.AxisY;
                         break;
                     case Key.Z when !eventKey.ShiftPressed:
-                        requested = (int)Constraints.AxisZ;
+                        requested = (int)ConstraintType.AxisZ;
                         break;
                     case Key.X when eventKey.ShiftPressed:
-                        requested = (int)Constraints.PlaneYz;
+                        requested = (int)ConstraintType.PlaneYz;
                         break;
                     case Key.Y when eventKey.ShiftPressed:
-                        requested = (int)Constraints.PlaneXz;
+                        requested = (int)ConstraintType.PlaneXz;
                         break;
                     case Key.Z when eventKey.ShiftPressed:
-                        requested = (int)Constraints.PlaneXy;
+                        requested = (int)ConstraintType.PlaneXy;
                         break;
                     default:
                         return false;
@@ -94,7 +137,7 @@ public partial class RiverControls : HBoxContainer
                 // If the user requested the current selection, we toggle it instead to off
                 if (requested == ConstraintsOption.Selected)
                 {
-                    requested = (int)Constraints.None;
+                    requested = (int)ConstraintType.None;
                 }
 
                 // Update the OptionsButton and call the signal callback as that is
@@ -109,51 +152,5 @@ public partial class RiverControls : HBoxContainer
         }
 
         return false;
-    }
-
-    private void OnSelect()
-    {
-        UnToggleButtons();
-        DisableConstraintUi(false);
-        GetNode<BaseButton>("Select").ButtonPressed = true;
-        EmitSignal(SignalName.Mode, "select");
-    }
-
-    private void OnAdd()
-    {
-        UnToggleButtons();
-        DisableConstraintUi(false);
-        GetNode<BaseButton>("Add").ButtonPressed = true;
-        EmitSignal(SignalName.Mode, "add");
-    }
-
-    private void OnRemove()
-    {
-        UnToggleButtons();
-        DisableConstraintUi(true);
-        GetNode<BaseButton>("Remove").ButtonPressed = true;
-        EmitSignal(SignalName.Mode, "remove");
-    }
-    private void OnConstraintSelected(int index)
-    {
-        EmitSignal(SignalName.Options, "constraint", index);
-    }
-
-    private void OnLocalModeToggled(bool enabled)
-    {
-        EmitSignal(SignalName.Options, "local_mode", enabled);
-    }
-
-    private void DisableConstraintUi(bool disable)
-    {
-        GetNode<BaseButton>("Constraints").Disabled = disable;
-        GetNode<BaseButton>("LocalMode").Disabled = disable;
-    }
-
-    private void UnToggleButtons()
-    {
-        GetNode<BaseButton>("Select").ButtonPressed = false;
-        GetNode<BaseButton>("Add").ButtonPressed = false;
-        GetNode<BaseButton>("Remove").ButtonPressed = false;
     }
 }

@@ -280,7 +280,6 @@ public partial class WaterwaysPlugin : EditorPlugin
                                 var spaceState = _editedNode.GetWorld3D().DirectSpaceState;
                                 var param = new PhysicsRayQueryParameters3D
                                 {
-
                                     From = rayFrom,
                                     To = rayFrom + (rayDir * 4096)
                                 };
@@ -322,7 +321,6 @@ public partial class WaterwaysPlugin : EditorPlugin
                                 }
                                 else if (RiverGizmo.PlaneMapping.ContainsKey(Constraint))
                                 {
-
                                     var normal = RiverGizmo.PlaneMapping[Constraint];
                                     if (LocalEditing)
                                     {

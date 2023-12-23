@@ -7,12 +7,15 @@ public partial class WaterSystemMenu : MenuButton
 {
 	[Signal] public delegate void GenerateSystemMapsEventHandler();
 
-    public enum RiverMenuType
-	{
-		GenerateSystemMaps
-	}
+    private void OnMenuItemSelected(long index)
+    {
+        if (index == (int)RiverMenuType.GenerateSystemMaps)
+        {
+            EmitSignal("GenerateSystemMaps");
+        }
+    }
 
-	public override void _EnterTree()
+    public override void _EnterTree()
 	{
 		GetPopup().Clear();
         GetPopup().IdPressed += OnMenuItemSelected;
@@ -22,13 +25,5 @@ public partial class WaterSystemMenu : MenuButton
 	public override void _ExitTree()
 	{
 		GetPopup().IdPressed -= OnMenuItemSelected;
-    }
-
-	private void OnMenuItemSelected(long index)
-	{
-		if (index == (int)RiverMenuType.GenerateSystemMaps)
-        {
-            EmitSignal("GenerateSystemMaps");
-        }
     }
 }

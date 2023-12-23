@@ -526,7 +526,6 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         DrawHandles(gizmo, river);
     }
 
-
     private void DrawPath(EditorNode3DGizmo gizmo, Curve3D curve)
     {
         var path = new List<Vector3>();

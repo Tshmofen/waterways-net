@@ -9,40 +9,10 @@ public partial class RiverMenu : MenuButton
     [Signal] public delegate void GenerateMeshEventHandler();
     [Signal] public delegate void DebugViewChangedEventHandler(int index);
 
-    public enum RiverMenuType
-    {
-        Generate,
-        GenerateMesh,
-        DebugViewMenu
-    }
-
     public int DebugViewMenuSelected { get; set; }
     public PopupMenu DebugViewMenu { get; set; }
 
-    public override void _EnterTree()
-    {
-        GetPopup().Clear();
-        GetPopup().IdPressed += OnMenuItemSelected;
-        GetPopup().AddItem("Generate Flow & Foam Map");
-        GetPopup().AddItem("Generate MeshInstance3D Sibling");
-
-        DebugViewMenu = new PopupMenu
-        {
-            Name = "DebugViewMenu"
-        };
-        DebugViewMenu.AboutToPopup += OnDebugViewMenuAboutToPopup;
-        DebugViewMenu.IdPressed += OnDebugMenuItemSelected;
-
-        GetPopup().AddChild(DebugViewMenu);
-        GetPopup().AddSubmenuItem("Debug View", DebugViewMenu.Name);
-    }
-
-    public override void _ExitTree()
-    {
-        GetPopup().IdPressed -= OnMenuItemSelected;
-        DebugViewMenu.AboutToPopup -= OnDebugViewMenuAboutToPopup;
-        DebugViewMenu.IdPressed -= OnDebugMenuItemSelected;
-    }
+    #region Signal Handlers
 
     private void OnMenuItemSelected(long index)
     {
@@ -63,8 +33,8 @@ public partial class RiverMenu : MenuButton
 
     private void OnDebugMenuItemSelected(long index)
     {
-        DebugViewMenuSelected = (int) index;
-        EmitSignal( SignalName.DebugViewChanged, (int) index);
+        DebugViewMenuSelected = (int)index;
+        EmitSignal(SignalName.DebugViewChanged, (int)index);
     }
 
     private void OnDebugViewMenuAboutToPopup()
@@ -81,5 +51,33 @@ public partial class RiverMenu : MenuButton
         DebugViewMenu.AddRadioCheckItem("Display Debug Flow Strength");
         DebugViewMenu.AddRadioCheckItem("Display Debug Foam Mix");
         DebugViewMenu.SetItemChecked(DebugViewMenuSelected, true);
+    }
+
+    #endregion
+
+    public override void _EnterTree()
+    {
+        GetPopup().Clear();
+        GetPopup().IdPressed += OnMenuItemSelected;
+        GetPopup().AddItem("Generate Flow & Foam Map");
+        GetPopup().AddItem("Generate MeshInstance3D Sibling");
+
+        DebugViewMenu = new PopupMenu
+        {
+            Name = "DebugViewMenu"
+        };
+
+        DebugViewMenu.AboutToPopup += OnDebugViewMenuAboutToPopup;
+        DebugViewMenu.IdPressed += OnDebugMenuItemSelected;
+
+        GetPopup().AddChild(DebugViewMenu);
+        GetPopup().AddSubmenuItem("Debug View", DebugViewMenu.Name);
+    }
+
+    public override void _ExitTree()
+    {
+        GetPopup().IdPressed -= OnMenuItemSelected;
+        DebugViewMenu.AboutToPopup -= OnDebugViewMenuAboutToPopup;
+        DebugViewMenu.IdPressed -= OnDebugMenuItemSelected;
     }
 }
