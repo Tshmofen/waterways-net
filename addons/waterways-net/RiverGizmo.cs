@@ -6,30 +6,223 @@ namespace Waterways;
 
 public partial class RiverGizmo : EditorNode3DGizmoPlugin
 {
-    public const int HandlesPerPoint = 5;
+    // Ensure that the width handle can't end up inside the center handle
+    // as then it is hard to separate them again.
+    public const float MinDistToCenterHandle = 0.02f;
     public const float AxisConstraintLength = 4096f;
 
-    public static readonly IReadOnlyDictionary<RiverControls.Constraints, Vector3> AxisMapping = new Dictionary<RiverControls.Constraints, Vector3>  {
-        { RiverControls.Constraints.AxisX, Vector3.Right },
-        { RiverControls.Constraints.AxisY, Vector3.Up },
-        { RiverControls.Constraints.AxisZ, Vector3.Back}
+    public static readonly IReadOnlyDictionary<ConstraintType, Vector3> AxisMapping = new Dictionary<ConstraintType, Vector3>  {
+        { ConstraintType.AxisX, Vector3.Right },
+        { ConstraintType.AxisY, Vector3.Up },
+        { ConstraintType.AxisZ, Vector3.Back}
     };
 
-    public static readonly IReadOnlyDictionary<RiverControls.Constraints, Vector3> PlaneMapping = new Dictionary<RiverControls.Constraints, Vector3> {
-        { RiverControls.Constraints.PlaneYz, Vector3.Right },
-        { RiverControls.Constraints.PlaneXz, Vector3.Up },
-        { RiverControls.Constraints.PlaneXy, Vector3.Back}
+    public static readonly IReadOnlyDictionary<ConstraintType, Vector3> PlaneMapping = new Dictionary<ConstraintType, Vector3> {
+        { ConstraintType.PlaneYz, Vector3.Right },
+        { ConstraintType.PlaneXz, Vector3.Up },
+        { ConstraintType.PlaneXy, Vector3.Back}
     };
-
-    public WaterwaysPlugin EditorPlugin;
 
     private Material _pathMat;
     private Material _handleLinesMat;
     private Transform3D? _handleBaseTransform;
 
-    // Ensure that the width handle can't end up inside the center handle
-    // as then it is hard to separate them again.
-    public const float MinDistToCenterHandle = 0.02f;
+    public WaterwaysPlugin EditorPlugin;
+
+    #region Util
+
+    /* 
+    Handles are pushed to separate handle lists, one per material (using gizmo.add_handles).
+	A handle's "index" is given (by Godot) in order it was added to a gizmo. 
+	Given that N = points in the curve:
+	- First we add the center ("actual") curve handles, therefore
+	  the handle's index is the same as the curve point's index.
+	- Then we add the in and out points together. So the first curve point's IN handle
+	  gets an index of N. The OUT handle gets N+1.
+	- Finally the left/right indices come last, and the first curve point's LEFT is N * 3 .
+	  (3 because there are three rows before the left/right indices)
+	
+	Examples for N = 2, 3, 4:
+	curve points 2:0   1      3:0   1   2        4:0   1   2   3
+	------------------------------------------------------------------
+	center         0   1        0   1   2          0   1   2   3
+	in             2   4        3   5   7          4   6   8   10
+	out            3   5        4   6   8          5   7   9   11
+	left           6   8        9   11  13         12  14  16  18
+	right          7   9        10  12  14         13  15  17  19
+	
+	The following utility functions calculate to and from curve/handle indices.
+	*/
+
+    private static bool IsCenterPoint(int index, int riverCurvePointCount)
+    {
+        return index < riverCurvePointCount;
+    }
+
+    private static bool IsControlPointIn(int index, int riverCurvePointCount)
+    {
+        if (index < riverCurvePointCount)
+        {
+            return false;
+        }
+
+        if (index >= riverCurvePointCount * 3)
+        {
+            return false;
+        }
+
+        return (index - riverCurvePointCount) % 2 == 0;
+    }
+
+    private static bool IsControlPointOut(int index, int riverCurvePointCount)
+    {
+        if (index < riverCurvePointCount)
+        {
+            return false;
+        }
+
+        if (index >= riverCurvePointCount * 3)
+        {
+            return false;
+        }
+
+        return (index - riverCurvePointCount) % 2 == 1;
+    }
+
+    private static bool IsWidthPointLeft(int index, int riverCurvePointCount)
+    {
+        if (index < riverCurvePointCount * 3)
+        {
+            return false;
+        }
+
+        return (index - (riverCurvePointCount * 3)) % 2 == 0;
+    }
+
+    private static bool IsWidthPointRight(int index, int riverCurvePointCount)
+    {
+        if (index < riverCurvePointCount * 3)
+        {
+            return false;
+        }
+
+        return (index - (riverCurvePointCount * 3)) % 2 == 1;
+    }
+
+    private int GetCurveIndex(int index, int pointCount)
+    {
+        if (IsCenterPoint(index, pointCount))
+        {
+            return index;
+        }
+
+        if (IsControlPointIn(index, pointCount))
+        {
+            return (index - pointCount) / 2;
+        }
+
+        if (IsControlPointOut(index, pointCount))
+        {
+            return (index - pointCount - 1) / 2;
+        }
+
+        if (IsWidthPointLeft(index, pointCount) || IsWidthPointRight(index, pointCount))
+        {
+            return (index - (pointCount * 3)) / 2;
+        }
+
+        return -1;
+    }
+
+    private static int GetPointIndex(int curveIndex, bool isCenter, bool isCpIn, bool isCpOut, bool isWidthLeft, bool isWidthRight, int pointCount)
+    {
+        if (isCenter)
+        {
+            return curveIndex;
+        }
+
+        if (isCpIn)
+        {
+            return pointCount + (curveIndex * 2);
+        }
+
+        if (isCpOut)
+        {
+            return pointCount + 1 + (curveIndex * 2);
+        }
+
+        if (isWidthLeft)
+        {
+            return (pointCount * 3) + (curveIndex * 2);
+        }
+
+        if (isWidthRight)
+        {
+            return (pointCount * 3) + 1 + (curveIndex * 2);
+        }
+
+        return -1;
+    }
+
+    private void DrawPath(EditorNode3DGizmo gizmo, Curve3D curve)
+    {
+        var path = new List<Vector3>();
+        var bakedPoints = curve.GetBakedPoints();
+
+        for (var i = 0; i < bakedPoints.Length; i++)
+        {
+            path.Add(bakedPoints[i]);
+            path.Add(bakedPoints[(i + 1) % bakedPoints.Length]);
+        }
+
+        gizmo.AddLines([.. path], _pathMat);
+    }
+
+    private void DrawHandles(EditorNode3DGizmo gizmo, RiverManager river)
+    {
+        var lines = new List<Vector3>();
+        var handlesCenter = new List<Vector3>();
+        var handlesControlPoints = new List<Vector3>();
+        var handlesWidth = new List<Vector3>();
+        var pointCount = river.Curve.PointCount;
+
+        for (var i = 0; i < pointCount; i++)
+        {
+            var pointPos = river.Curve.GetPointPosition(i);
+            var pointPosIn = river.Curve.GetPointIn(i) + pointPos;
+            var pointPosOut = river.Curve.GetPointOut(i) + pointPos;
+            var pointWidthPosRight = river.Curve.GetPointPosition(i) + (river.Curve.GetPointOut(i).Cross(Vector3.Up).Normalized() * river.Widths[i]);
+            var pointWidthPosLeft = river.Curve.GetPointPosition(i) + (river.Curve.GetPointOut(i).Cross(Vector3.Down).Normalized() * river.Widths[i]);
+
+            handlesCenter.Add(pointPos);
+            handlesControlPoints.Add(pointPosIn);
+            handlesControlPoints.Add(pointPosOut);
+            handlesWidth.Add(pointWidthPosRight);
+            handlesWidth.Add(pointWidthPosLeft);
+
+            lines.Add(pointPos);
+            lines.Add(pointPosIn);
+            lines.Add(pointPos);
+            lines.Add(pointPosOut);
+            lines.Add(pointPos);
+            lines.Add(pointWidthPosRight);
+            lines.Add(pointPos);
+            lines.Add(pointWidthPosLeft);
+        }
+
+        gizmo.AddLines([.. lines], _handleLinesMat);
+
+        // Add each handle twice, for both material types.
+        // Needs to be grouped by material "type" since that's what influences the handle indices.
+        gizmo.AddHandles([.. handlesCenter], GetMaterial("handles_center", gizmo), []);
+        gizmo.AddHandles([.. handlesControlPoints], GetMaterial("handles_control_points", gizmo), []);
+        gizmo.AddHandles([.. handlesWidth], GetMaterial("handles_width", gizmo), []);
+        gizmo.AddHandles([.. handlesCenter], GetMaterial("handles_center_with_depth", gizmo), []);
+        gizmo.AddHandles([.. handlesControlPoints], GetMaterial("handles_control_points_with_depth", gizmo), []);
+        gizmo.AddHandles([.. handlesWidth], GetMaterial("handles_width_with_depth", gizmo), []);
+    }
+
+    #endregion
 
     public RiverGizmo()
     {
@@ -82,162 +275,20 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         return "Waterways";
     }
 
-    public void Reset()
-    {
-        _handleBaseTransform = null;
-    }
-
-    public string GetName()
-    {
-        return "RiverInput";
-    }
-
     public override bool _HasGizmo(Node3D spatial)
     {
         return spatial is RiverManager;
     }
 
-    // TODO - figure out of this new "secondary" bool should be used
     public override string _GetHandleName(EditorNode3DGizmo gizmo, int index, bool secondary)
     {
+        // TODO - figure out of this new "secondary" bool should be used
         return $"Handle {index}";
     }
 
-    /* 
-    Handles are pushed to separate handle lists, one per material (using gizmo.add_handles).
-	A handle's "index" is given (by Godot) in order it was added to a gizmo. 
-	Given that N = points in the curve:
-	- First we add the center ("actual") curve handles, therefore
-	  the handle's index is the same as the curve point's index.
-	- Then we add the in and out points together. So the first curve point's IN handle
-	  gets an index of N. The OUT handle gets N+1.
-	- Finally the left/right indices come last, and the first curve point's LEFT is N * 3 .
-	  (3 because there are three rows before the left/right indices)
-	
-	Examples for N = 2, 3, 4:
-	curve points 2:0   1      3:0   1   2        4:0   1   2   3
-	------------------------------------------------------------------
-	center         0   1        0   1   2          0   1   2   3
-	in             2   4        3   5   7          4   6   8   10
-	out            3   5        4   6   8          5   7   9   11
-	left           6   8        9   11  13         12  14  16  18
-	right          7   9        10  12  14         13  15  17  19
-	
-	The following utility functions calculate to and from curve/handle indices.
-	*/
-
-    private bool IsCenterPoint(int index, int riverCurvePointCount)
-    {
-        return index < riverCurvePointCount;
-    }
-    private bool IsControlPointIn(int index, int riverCurvePointCount)
-    {
-        if (index < riverCurvePointCount)
-        {
-            return false;
-        }
-
-        if (index >= riverCurvePointCount * 3)
-        {
-            return false;
-        }
-
-        return (index - riverCurvePointCount) % 2 == 0;
-    }
-
-    private bool IsControlPointOut(int index, int riverCurvePointCount)
-    {
-        if (index < riverCurvePointCount)
-        {
-            return false;
-        }
-
-        if (index >= riverCurvePointCount * 3)
-        {
-            return false;
-        }
-
-        return (index - riverCurvePointCount) % 2 == 1;
-    }
-
-    private bool IsWidthPointLeft(int index, int riverCurvePointCount)
-    {
-        if (index < riverCurvePointCount * 3)
-        {
-            return false;
-        }
-
-        return (index - (riverCurvePointCount * 3)) % 2 == 0;
-    }
-
-    private bool IsWidthPointRight(int index, int riverCurvePointCount)
-    {
-        if (index < riverCurvePointCount * 3)
-        {
-            return false;
-        }
-
-        return (index - (riverCurvePointCount * 3)) % 2 == 1;
-    }
-
-    private int GetCurveIndex(int index, int pointCount)
-    {
-        if (IsCenterPoint(index, pointCount))
-        {
-            return index;
-        }
-
-        if (IsControlPointIn(index, pointCount))
-        {
-            return (index - pointCount) / 2;
-        }
-
-        if (IsControlPointOut(index, pointCount))
-        {
-            return (index - pointCount - 1) / 2;
-        }
-
-        if (IsWidthPointLeft(index, pointCount) || IsWidthPointRight(index, pointCount))
-        {
-            return (index - (pointCount * 3)) / 2;
-        }
-
-        return -1;
-    }
-
-    private int GetPointIndex(int curveIndex, bool isCenter, bool isCpIn, bool isCpOut, bool isWidthLeft, bool isWidthRight, int pointCount)
-    {
-        if (isCenter)
-        {
-            return curveIndex;
-        }
-
-        if (isCpIn)
-        {
-            return pointCount + (curveIndex * 2);
-        }
-
-        if (isCpOut)
-        {
-            return pointCount + 1 + (curveIndex * 2);
-        }
-
-        if (isWidthLeft)
-        {
-            return (pointCount * 3) + (curveIndex * 2);
-        }
-
-        if (isWidthRight)
-        {
-            return (pointCount * 3) + 1 + (curveIndex * 2);
-        }
-
-        return -1;
-    }
-
-    // TODO - figure out of this new "secondary" bool should be used
     public override Variant _GetHandleValue(EditorNode3DGizmo gizmo, int index, bool secondary)
     {
+        // TODO - figure out of this new "secondary" bool should be used
         var river = (RiverManager)gizmo.GetNode3D();
         var pointCount = river.Curve.PointCount;
 
@@ -265,9 +316,9 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
     }
 
     // Called when handle is moved
-    // TODO - figure out of this new "secondary" bool should be used
     public override void _SetHandle(EditorNode3DGizmo gizmo, int index, bool secondary, Camera3D camera, Vector2 point)
     {
+        // TODO - figure out of this new "secondary" bool should be used
         var river = (RiverManager)gizmo.GetNode3D();
         var spaceState = river.GetWorld3D().DirectSpaceState;
 
@@ -341,60 +392,63 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
             switch (EditorPlugin.Constraint)
             {
-                case RiverControls.Constraints.Colliders:
-                {
-                    // TODO - make in / out handles snap to a plane based on the normal of
-                    // the raycast hit instead.
-                    var rayParams = new PhysicsRayQueryParameters3D();
-                    rayParams.From = rayFrom;
-                    rayParams.To = rayFrom + (rayDir * 4096);
-                    var result = spaceState.IntersectRay(rayParams);
-                    if (result?.Count > 0)
+                case ConstraintType.Colliders:
                     {
-                        newPos = result["position"].AsVector3();
-                    }
-
-                    break;
-                }
-                case RiverControls.Constraints.None:
-                {
-                    var plane = new Plane(oldPosGlobal, oldPosGlobal + camera.Transform.Basis.X, oldPosGlobal + camera.Transform.Basis.Y);
-                    newPos = plane.IntersectsRay(rayFrom, rayDir);
-                    break;
-                }
-                default:
-                {
-                    if (AxisMapping.ContainsKey(EditorPlugin.Constraint))
-                    {
-                        var axis = AxisMapping[EditorPlugin.Constraint];
-                        if (EditorPlugin.LocalEditing)
+                        // TODO - make in / out handles snap to a plane based on the normal of
+                        // the raycast hit instead.
+                        var rayParams = new PhysicsRayQueryParameters3D
                         {
-                            axis = _handleBaseTransform.Value.Basis * (axis);
+                            From = rayFrom,
+                            To = rayFrom + (rayDir * 4096)
+                        };
+
+                        var result = spaceState.IntersectRay(rayParams);
+                        if (result?.Count > 0)
+                        {
+                            newPos = result["position"].AsVector3();
                         }
 
-                        var axisFrom = oldPosGlobal + (axis * AxisConstraintLength);
-                        var axisTo = oldPosGlobal - (axis * AxisConstraintLength);
-                        var rayTo = rayFrom + (rayDir * AxisConstraintLength);
-                        var result = Geometry3D.GetClosestPointsBetweenSegments(axisFrom, axisTo, rayFrom, rayTo);
-                        newPos = result[0];
+                        break;
                     }
-                    else if (PlaneMapping.ContainsKey(EditorPlugin.Constraint))
+                case ConstraintType.None:
                     {
-                        var normal = PlaneMapping[EditorPlugin.Constraint];
-                        if (EditorPlugin.LocalEditing)
-                        {
-                            normal = _handleBaseTransform.Value.Basis * (normal);
-                        }
-
-                        var projected = oldPosGlobal.Project(normal);
-                        var direction = Mathf.Sign(projected.Dot(normal));
-                        var distance = direction * projected.Length();
-                        var plane = new Plane(normal, distance);
+                        var plane = new Plane(oldPosGlobal, oldPosGlobal + camera.Transform.Basis.X, oldPosGlobal + camera.Transform.Basis.Y);
                         newPos = plane.IntersectsRay(rayFrom, rayDir);
+                        break;
                     }
+                default:
+                    {
+                        if (AxisMapping.ContainsKey(EditorPlugin.Constraint))
+                        {
+                            var axis = AxisMapping[EditorPlugin.Constraint];
+                            if (EditorPlugin.LocalEditing)
+                            {
+                                axis = _handleBaseTransform.Value.Basis * (axis);
+                            }
 
-                    break;
-                }
+                            var axisFrom = oldPosGlobal + (axis * AxisConstraintLength);
+                            var axisTo = oldPosGlobal - (axis * AxisConstraintLength);
+                            var rayTo = rayFrom + (rayDir * AxisConstraintLength);
+                            var result = Geometry3D.GetClosestPointsBetweenSegments(axisFrom, axisTo, rayFrom, rayTo);
+                            newPos = result[0];
+                        }
+                        else if (PlaneMapping.ContainsKey(EditorPlugin.Constraint))
+                        {
+                            var normal = PlaneMapping[EditorPlugin.Constraint];
+                            if (EditorPlugin.LocalEditing)
+                            {
+                                normal = _handleBaseTransform.Value.Basis * (normal);
+                            }
+
+                            var projected = oldPosGlobal.Project(normal);
+                            var direction = Mathf.Sign(projected.Dot(normal));
+                            var distance = direction * projected.Length();
+                            var plane = new Plane(normal, distance);
+                            newPos = plane.IntersectsRay(rayFrom, rayDir);
+                        }
+
+                        break;
+                    }
             }
 
             // Discard if no valid position was found
@@ -456,10 +510,10 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
     }
 
     // Handle Undo / Redo of handle movements
-    // TODO - figure out of this new "secondary" bool should be used
     public override void _CommitHandle(EditorNode3DGizmo gizmo, int index, bool secondary, Variant restore, bool cancel)
     {
-        var river = (RiverManager) gizmo.GetNode3D();
+        // TODO - figure out of this new "secondary" bool should be used
+        var river = (RiverManager)gizmo.GetNode3D();
         var pointCount = river.Curve.PointCount;
 
         var plugin = EditorPlugin.GetUndoRedo();
@@ -496,7 +550,7 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         plugin.AddDoMethod(river, RiverManager.MethodName.PropertiesChanged);
         plugin.AddDoMethod(river, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", false);
         plugin.AddDoProperty(river, RiverManager.PropertyName.ValidFlowmap, false);
-        plugin.AddDoMethod(river,   Node.MethodName.UpdateConfigurationWarnings);
+        plugin.AddDoMethod(river, Node.MethodName.UpdateConfigurationWarnings);
         plugin.AddUndoMethod(river, RiverManager.MethodName.PropertiesChanged);
         plugin.AddUndoMethod(river, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", river.ValidFlowmap);
         plugin.AddUndoProperty(river, RiverManager.PropertyName.ValidFlowmap, river.ValidFlowmap);
@@ -515,9 +569,9 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         _handleLinesMat ??= GetMaterial("handle_lines", gizmo);
 
         gizmo.Clear();
-        var river = (RiverManager) gizmo.GetNode3D();
+        var river = (RiverManager)gizmo.GetNode3D();
 
-        if (!river.IsConnected( RiverManager.SignalName.RiverChanged, Callable.From<EditorNode3DGizmo>(_Redraw)))
+        if (!river.IsConnected(RiverManager.SignalName.RiverChanged, Callable.From<EditorNode3DGizmo>(_Redraw)))
         {
             river.RiverChanged += gizmo._Redraw;
         }
@@ -526,61 +580,8 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         DrawHandles(gizmo, river);
     }
 
-    private void DrawPath(EditorNode3DGizmo gizmo, Curve3D curve)
+    public void Reset()
     {
-        var path = new List<Vector3>();
-        var bakedPoints = curve.GetBakedPoints();
-
-        for (var i = 0; i < bakedPoints.Length; i++)
-        {
-            path.Add(bakedPoints[i]);
-            path.Add(bakedPoints[(i + 1) % bakedPoints.Length]);
-        }
-
-        gizmo.AddLines([.. path], _pathMat);
-    }
-
-    private void DrawHandles(EditorNode3DGizmo gizmo, RiverManager river)
-    {
-        var lines = new List<Vector3>();
-        var handlesCenter = new List<Vector3>();
-        var handlesControlPoints = new List<Vector3>();
-        var handlesWidth = new List<Vector3>();
-        var pointCount = river.Curve.PointCount;
-
-        for (var i = 0; i < pointCount; i++)
-        {
-            var pointPos = river.Curve.GetPointPosition(i);
-            var pointPosIn = river.Curve.GetPointIn(i) + pointPos;
-            var pointPosOut = river.Curve.GetPointOut(i) + pointPos;
-            var pointWidthPosRight = river.Curve.GetPointPosition(i) + (river.Curve.GetPointOut(i).Cross(Vector3.Up).Normalized() * river.Widths[i]);
-            var pointWidthPosLeft = river.Curve.GetPointPosition(i) + (river.Curve.GetPointOut(i).Cross(Vector3.Down).Normalized() * river.Widths[i]);
-
-            handlesCenter.Add(pointPos);
-            handlesControlPoints.Add(pointPosIn);
-            handlesControlPoints.Add(pointPosOut);
-            handlesWidth.Add(pointWidthPosRight);
-            handlesWidth.Add(pointWidthPosLeft);
-
-            lines.Add(pointPos);
-            lines.Add(pointPosIn);
-            lines.Add(pointPos);
-            lines.Add(pointPosOut);
-            lines.Add(pointPos);
-            lines.Add(pointWidthPosRight);
-            lines.Add(pointPos);
-            lines.Add(pointWidthPosLeft);
-        }
-
-        gizmo.AddLines([.. lines], _handleLinesMat);
-
-        // Add each handle twice, for both material types.
-        // Needs to be grouped by material "type" since that's what influences the handle indices.
-        gizmo.AddHandles([.. handlesCenter], GetMaterial("handles_center", gizmo), []);
-        gizmo.AddHandles([.. handlesControlPoints], GetMaterial("handles_control_points", gizmo), []);
-        gizmo.AddHandles([.. handlesWidth], GetMaterial("handles_width", gizmo), []);
-        gizmo.AddHandles([.. handlesCenter], GetMaterial("handles_center_with_depth", gizmo), []);
-        gizmo.AddHandles([.. handlesControlPoints], GetMaterial("handles_control_points_with_depth", gizmo), []);
-        gizmo.AddHandles([.. handlesWidth], GetMaterial("handles_width_with_depth", gizmo), []);
+        _handleBaseTransform = null;
     }
 }

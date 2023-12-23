@@ -44,6 +44,7 @@ public partial class FilterRenderer : SubViewport
         CombinePassShader = ResourceLoader.Load(CombinePassPath) as Shader;
         DotProductPassShader = ResourceLoader.Load(DotProductPassPath) as Shader;
         FlowPressurePassShader = ResourceLoader.Load(FlowPressurePassPath) as Shader;
+
         FilterMat = new ShaderMaterial();
         GetNode<ColorRect>("ColorRect").Material = FilterMat;
     }

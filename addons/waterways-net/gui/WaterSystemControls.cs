@@ -1,7 +1,6 @@
 ﻿using Godot;
-using Waterways.Gui;
 
-namespace Waterway.Gui;
+namespace Waterways.Gui;
 
 [Tool]
 public partial class WaterSystemControls : HBoxContainer

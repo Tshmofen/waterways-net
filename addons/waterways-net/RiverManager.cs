@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 using Godot.Collections;
+using Waterway;
 using Waterways.Util;
 
 namespace Waterways;
@@ -10,40 +11,33 @@ namespace Waterways;
 [Tool]
 public partial class RiverManager : Node3D
 {
-    // river_changed used to update handles when values are changed on script side
-    // progress_notified used to up progress bar when baking maps
-    // albedo_set is needed since the gradient is a custom inspector that needs a signal to update from script side
-    [Signal] public delegate void RiverChangedEventHandler();
-    [Signal] public delegate void ProgressNotifiedEventHandler();
-
-    private class RiverShader
-    {
-        public string Name { get; init; }
-        public string ShaderPath { get; init; }
-        public List<(string name, string path)> TexturePaths { get; init; }
-    }
-
     private const string MaterialParamPrefix = "mat_";
     private const string FilterRendererPath = $"{WaterwaysPlugin.PluginPath}/filter_renderer.tscn";
     private const string FlowOffsetNoiseTexturePath = $"{WaterwaysPlugin.PluginPath}/textures/flow_offset_noise.png";
     private const string FoamNoisePath = $"{WaterwaysPlugin.PluginPath}/textures/foam_noise.png";
 
-    private static class MaterialCategories
+    public static class DefaultValues
     {
-        public const string Albedo = "Albedo";
-        public const string Emission = "Emission";
-        public const string Transparency = "Transparency";
-        public const string Flow = "Flow";
-        public const string Foam = "Foam";
-        public const string Custom = "Custom";
+        public const int ShapeStepLengthDivs = 1;
+        public const int ShapeStepWidthDivs = 1;
+        public const float ShapeSmoothness = 0.5f;
+        public const ShaderType MatShaderType = ShaderType.Water;
+        public const int BakingResolution = 2;
+        public const float BakingRaycastDistance = 10.0f;
+        public const int BakingRaycastLayers = 1;
+        public const float BakingDilate = 0.6f;
+        public const float BakingFlowmapBlur = 0.04f;
+        public const float BakingFoamCutoff = 0.9f;
+        public const float BakingFoamOffset = 0.1f;
+        public const float BakingFoamBlur = 0.02f;
+        public const float LodLod0Distance = 50.0f;
     }
 
-    public enum ShaderTypes
-    {
-        Water,
-        Lava,
-        Custom
-    }
+    // river_changed used to update handles when values are changed on script side
+    // progress_notified used to up progress bar when baking maps
+    // albedo_set is needed since the gradient is a custom inspector that needs a signal to update from script side
+    [Signal] public delegate void RiverChangedEventHandler();
+    [Signal] public delegate void ProgressNotifiedEventHandler();
 
     private static readonly List<RiverShader> BuiltinShaders = [
         new RiverShader
@@ -75,25 +69,10 @@ public partial class RiverManager : Node3D
         ]
     };
 
-    private static class DefaultParameters
-    {
-        public const int ShapeStepLengthDivs = 1;
-        public const int ShapeStepWidthDivs = 1;
-        public const float ShapeSmoothness = 0.5f;
-        public const int MatShaderType = 0;
-        public const int BakingResolution = 2;
-        public const float BakingRaycastDistance = 10.0f;
-        public const int BakingRaycastLayers = 1;
-        public const float BakingDilate = 0.6f;
-        public const float BakingFlowmapBlur = 0.04f;
-        public const float BakingFoamCutoff = 0.9f;
-        public const float BakingFoamOffset = 0.1f;
-        public const float BakingFoamBlur = 0.02f;
-        public const float LodLod0Distance = 50.0f;
-    }
+    #region Vars
 
     // Shape Properties
-    private int _shapeStepLengthDivs = DefaultParameters.ShapeStepLengthDivs;
+    private int _shapeStepLengthDivs = DefaultValues.ShapeStepLengthDivs;
     public int ShapeStepLengthDivs
     {
         get => _shapeStepLengthDivs;
@@ -112,7 +91,7 @@ public partial class RiverManager : Node3D
         }
     }
 
-    private int _shapeStepWidthDivs = DefaultParameters.ShapeStepWidthDivs;
+    private int _shapeStepWidthDivs = DefaultValues.ShapeStepWidthDivs;
     public int ShapeStepWidthDivs
     {
         get => _shapeStepWidthDivs;
@@ -131,7 +110,7 @@ public partial class RiverManager : Node3D
         }
     }
 
-    private float _shapeSmoothness = DefaultParameters.ShapeSmoothness;
+    private float _shapeSmoothness = DefaultValues.ShapeSmoothness;
     public float ShapeSmoothness
     {
         get => _shapeSmoothness;
@@ -151,8 +130,8 @@ public partial class RiverManager : Node3D
     }
 
     // Material Properties that not handled in shader
-    private ShaderTypes _matShaderType = DefaultParameters.MatShaderType;
-    public ShaderTypes MatShaderType
+    private ShaderType _matShaderType = DefaultValues.MatShaderType;
+    public ShaderType MatShaderType
     {
         get => _matShaderType;
         set
@@ -164,7 +143,7 @@ public partial class RiverManager : Node3D
 
             _matShaderType = value;
 
-            if (_matShaderType == ShaderTypes.Custom)
+            if (_matShaderType == ShaderType.Custom)
             {
                 _material.Shader = MatCustomShader;
             }
@@ -206,13 +185,12 @@ public partial class RiverManager : Node3D
                 }
             }
 
-            MatShaderType = (value != null ? ShaderTypes.Custom : ShaderTypes.Water);
+            MatShaderType = (value != null ? ShaderType.Custom : ShaderType.Water);
         }
     }
 
     // LOD Properties
-
-    private float _lodLod0Distance = DefaultParameters.LodLod0Distance;
+    private float _lodLod0Distance = DefaultValues.LodLod0Distance;
     public float LodLod0Distance
     {
         get => _lodLod0Distance;
@@ -224,14 +202,14 @@ public partial class RiverManager : Node3D
     }
 
     // Bake Properties
-    public int BakingResolution { get; set; } = DefaultParameters.BakingResolution;
-    public float BakingRaycastDistance { get; set; } = DefaultParameters.BakingRaycastDistance;
-    public int BakingRaycastLayers { get; set; } = DefaultParameters.BakingRaycastLayers;
-    public float BakingDilate { get; set; } = DefaultParameters.BakingDilate;
-    public float BakingFlowmapBlur { get; set; } = DefaultParameters.BakingFlowmapBlur;
-    public float BakingFoamCutoff { get; set; } = DefaultParameters.BakingFoamCutoff;
-    public float BakingFoamOffset { get; set; } = DefaultParameters.BakingFoamOffset;
-    public float BakingFoamBlur { get; set; } = DefaultParameters.BakingFoamBlur;
+    public int BakingResolution { get; set; } = DefaultValues.BakingResolution;
+    public float BakingRaycastDistance { get; set; } = DefaultValues.BakingRaycastDistance;
+    public int BakingRaycastLayers { get; set; } = DefaultValues.BakingRaycastLayers;
+    public float BakingDilate { get; set; } = DefaultValues.BakingDilate;
+    public float BakingFlowmapBlur { get; set; } = DefaultValues.BakingFlowmapBlur;
+    public float BakingFoamCutoff { get; set; } = DefaultValues.BakingFoamCutoff;
+    public float BakingFoamOffset { get; set; } = DefaultValues.BakingFoamOffset;
+    public float BakingFoamBlur { get; set; } = DefaultValues.BakingFoamBlur;
 
     // Public variables
     public Curve3D Curve { get; set; }
@@ -285,103 +263,98 @@ public partial class RiverManager : Node3D
 
     // Serialised private variables
     private ShaderMaterial _material;
-    private int _selectedShader = (int)ShaderTypes.Water;
+    private int _selectedShader = (int)ShaderType.Water;
     private int _uv2Sides;
 
-    // Internal Methods
-    public override Array<Dictionary> _GetPropertyList()
+    #endregion
+
+    #region Util
+
+    private void GenerateRiver()
     {
-        var resultProperties = new Array<Dictionary>
-        {
-            PropertyGeneration.CreateGroupingProperty( "Shape", "shape_"),
-            PropertyGeneration.CreateProperty(PropertyName.ShapeStepLengthDivs, Variant.Type.Int, PropertyHint.Range, "1,8"),
-            PropertyGeneration.CreateProperty(PropertyName.ShapeStepWidthDivs, Variant.Type.Int, PropertyHint.Range, "1,8"),
-            PropertyGeneration.CreateProperty(PropertyName.ShapeSmoothness, Variant.Type.Float, PropertyHint.Range, "0.1,5.0"),
+        // TODO: count loss expected?
+        var averageWidth = Widths.Sum() / (Widths.Count / 2f);
+        _steps = (int)(Mathf.Max(1.0f, Mathf.Round(Curve.GetBakedLength() / averageWidth)));
 
-            PropertyGeneration.CreateGroupingProperty( "Material", "material_"),
-            PropertyGeneration.CreateProperty(PropertyName.MatShaderType, Variant.Type.Int, PropertyHint.Enum, PropertyGeneration.GetEnumHint<ShaderTypes>()),
-            PropertyGeneration.CreateProperty(PropertyName.MatCustomShader, Variant.Type.Object, PropertyHint.ResourceType, "Shader"),
-        };
-
-        var matCategories = new Godot.Collections.Dictionary<string, string>
-        {
-            { nameof(MaterialCategories.Albedo), MaterialCategories.Albedo},
-            { nameof(MaterialCategories.Emission), MaterialCategories.Emission},
-            { nameof(MaterialCategories.Transparency), MaterialCategories.Transparency},
-            { nameof(MaterialCategories.Flow), MaterialCategories.Flow},
-            { nameof(MaterialCategories.Foam), MaterialCategories.Foam},
-            { nameof(MaterialCategories.Custom), MaterialCategories.Custom}
-        };
-
-        if (_material.Shader != null)
-        {
-            foreach (var parameter in RenderingServer.GetShaderParameterList(_material.Shader.GetRid()))
-            {
-                if (parameter[PropertyGeneration.Name].AsString().StartsWith("i_"))
-                {
-                    continue;
-                }
-
-                var hitCategory = (string) null;
-                foreach (var (key, value) in matCategories)
-                {
-                    if (!parameter[PropertyGeneration.Name].AsString().StartsWith(key))
-                    {
-                        continue;
-                    }
-
-                    var property = PropertyGeneration.CreateGroupingProperty($"Material/{value}", MaterialParamPrefix + key);
-                    resultProperties.Add(property);
-                    hitCategory = key;
-                    break;
-                }
-
-                if (hitCategory != null)
-                {
-                    matCategories.Remove(hitCategory);
-                }
-
-                var newProperty = PropertyGeneration.CreatePropertyCopy(parameter);
-                var paramName = parameter[PropertyGeneration.Name].AsString();
-                newProperty[PropertyGeneration.Name] = MaterialParamPrefix + paramName;
-
-                if (paramName.Contains("curve"))
-                {
-                    newProperty[PropertyGeneration.Hint] = (int)PropertyHint.ExpEasing;
-                    newProperty[PropertyGeneration.HintString] = "EASE";
-                }
-
-                resultProperties.Add(newProperty);
-            }
-        }
-
-        resultProperties.Add(PropertyGeneration.CreateGroupingProperty("Lod", "lod_"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.LodLod0Distance, Variant.Type.Float, PropertyHint.Range, "5.0,200.0"));
-
-        resultProperties.Add(PropertyGeneration.CreateGroupingProperty("Baking", "baking_"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingResolution, Variant.Type.Int, PropertyHint.Enum, "64,128,256,512,1024"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingRaycastDistance, Variant.Type.Float, PropertyHint.Range, "0.0,100.0"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingRaycastLayers, Variant.Type.Int, PropertyHint.Layers3DPhysics));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingDilate, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFlowmapBlur, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFoamCutoff, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFoamOffset, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFoamBlur, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
-
-        // Serialize these values without exposing it in the inspector
-        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName.Curve, Variant.Type.Object));
-        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName.Widths, Variant.Type.Array));
-        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName.ValidFlowmap, Variant.Type.Bool));
-        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName.FlowFoamNoise, Variant.Type.Object));
-        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName.DistPressure, Variant.Type.Object));
-        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName._material, Variant.Type.Object, PropertyHint.ResourceType, "ShaderMaterial"));
-        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName._selectedShader, Variant.Type.Int));
-        resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName._uv2Sides, Variant.Type.Int));
-
-        return resultProperties;
+        var riverWidthValues = WaterHelperMethods.GenerateRiverWidthValues(Curve, _steps, ShapeStepLengthDivs, Widths);
+        MeshInstance.Mesh = WaterHelperMethods.GenerateRiverMesh(Curve, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, ShapeSmoothness, riverWidthValues);
+        MeshInstance.Mesh.SurfaceSetMaterial(0, _material);
     }
 
-    // todo maybe should be _ready
+    private async Task GenerateFlowMap(float flowmapResolution)
+    {
+        // WaterHelperMethods.ResetAllColliders(get_tree().root)
+        var image = Image.Create((int)flowmapResolution, (int)flowmapResolution, true, Image.Format.Rgb8);
+        image.Fill(new Color(0, 0, 0));
+
+        EmitSignal(SignalName.ProgressNotified, 0.0f, "Calculating Collisions (" + flowmapResolution + "x" + flowmapResolution + ")");
+        await ToSignal(GetTree(), "process_frame");
+
+        image = await WaterHelperMethods.GenerateCollisionMap(image, MeshInstance, BakingRaycastDistance, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, this);
+
+        EmitSignal(SignalName.ProgressNotified, 0.95f, "Applying filters (" + flowmapResolution + "x" + flowmapResolution + ")");
+        await ToSignal(GetTree(), "process_frame");
+
+        // Calculate how many columns are in UV2
+        _uv2Sides = WaterHelperMethods.CalculateSide(_steps);
+
+        var margin = (int)(Mathf.Round(flowmapResolution / _uv2Sides));
+        image = WaterHelperMethods.AddMargins(image, (int)flowmapResolution, margin);
+        var collisionWithMargins = ImageTexture.CreateFromImage(image);
+
+        // Create correctly tiling noise for A channel
+        var noiseTexture = (Texture2D)ResourceLoader.Load(FlowOffsetNoiseTexturePath);
+        var noiseWithMarginSize = (_uv2Sides + 2) * (noiseTexture.GetWidth() / (float)(_uv2Sides));
+        var noiseWithTiling = Image.Create((int)noiseWithMarginSize, (int)noiseWithMarginSize, false, Image.Format.Rgb8);
+        var sliceWidth = noiseTexture.GetWidth() / (float)(_uv2Sides);
+
+        for (var x = 0; x < _uv2Sides; x++)
+        {
+            noiseWithTiling.BlendRect(noiseTexture.GetImage(), new Rect2I(0, 0, (int)sliceWidth, noiseTexture.GetHeight()), new Vector2I((int)(sliceWidth + (x * sliceWidth)), (int)(sliceWidth - (noiseTexture.GetWidth() / 2.0f))));
+            noiseWithTiling.BlendRect(noiseTexture.GetImage(), new Rect2I(0, 0, (int)sliceWidth, noiseTexture.GetHeight()), new Vector2I((int)(sliceWidth + (x * sliceWidth)), (int)(sliceWidth + (noiseTexture.GetWidth() / 2.0f))));
+        }
+
+        var tiledNoise = ImageTexture.CreateFromImage(noiseWithTiling);
+
+        // Create renderer
+        var rendererInstance = _filterRenderer.Instantiate<FilterRenderer>();
+
+        AddChild(rendererInstance);
+
+        var flowPressureBlurAmount = 0.04f / _uv2Sides * flowmapResolution;
+        var dilateAmount = BakingDilate / _uv2Sides;
+        var flowmapBlurAmount = BakingFlowmapBlur / _uv2Sides * flowmapResolution;
+        var foamOffsetAmount = BakingFoamOffset / _uv2Sides;
+        var foamBlurAmount = BakingFoamBlur / _uv2Sides * flowmapResolution;
+
+        var flowPressureMap = await rendererInstance.ApplyFlowPressure(collisionWithMargins, flowmapResolution, _uv2Sides + 2.0f);
+        var blurredFlowPressureMap = await rendererInstance.ApplyVerticalBlur(flowPressureMap, flowPressureBlurAmount, flowmapResolution + (margin * 2));
+        var dilatedTexture = await rendererInstance.ApplyDilate(collisionWithMargins, dilateAmount, 0.0f, flowmapResolution + (margin * 2));
+        var normalMap = await rendererInstance.ApplyNormal(dilatedTexture, flowmapResolution + (margin * 2));
+        var flowMap = await rendererInstance.ApplyNormalToFlow(normalMap, flowmapResolution + (margin * 2));
+        var blurredFlowMap = await rendererInstance.ApplyBlur(flowMap, flowmapBlurAmount, flowmapResolution + (margin * 2));
+        var foamMap = await rendererInstance.ApplyFoam(dilatedTexture, foamOffsetAmount, BakingFoamCutoff, flowmapResolution + (margin * 2));
+        var blurredFoamMap = await rendererInstance.ApplyBlur(foamMap, foamBlurAmount, flowmapResolution + (margin * 2));
+        var flowFoamNoiseImg = await rendererInstance.ApplyCombine(blurredFlowMap, blurredFlowMap, blurredFoamMap, tiledNoise);
+        var distPressureImg = await rendererInstance.ApplyCombine(dilatedTexture, blurredFlowPressureMap);
+
+        RemoveChild(rendererInstance); // cleanup
+
+        FlowFoamNoise = flowFoamNoiseImg;
+        DistPressure = distPressureImg;
+
+        SetMaterials("i_flowmap", FlowFoamNoise);
+        SetMaterials("i_distmap", DistPressure);
+        SetMaterials("i_valid_flowmap", true);
+        SetMaterials("i_uv2_sides", _uv2Sides);
+
+        ValidFlowmap = true;
+        EmitSignal(SignalName.ProgressNotified, 100.0, "finished");
+        UpdateConfigurationWarnings();
+    }
+
+    #endregion
+
     public RiverManager()
     {
         _surfaceTool = new SurfaceTool();
@@ -410,6 +383,98 @@ public partial class RiverManager : Node3D
 
         // Have to manually set the color, or it does not default right. Not sure how to work around this
         _material.SetShaderParameter("albedo_color", new Transform3D(new Vector3(0.0f, 0.8f, 1.0f), new Vector3(0.15f, 0.2f, 0.5f), Vector3.Zero, Vector3.Zero));
+    }
+
+    public override Array<Dictionary> _GetPropertyList()
+    {
+        var resultProperties = new Array<Dictionary>
+        {
+            PropertyGenerator.CreateGroupingProperty( "Shape", "shape_"),
+            PropertyGenerator.CreateProperty(PropertyName.ShapeStepLengthDivs, Variant.Type.Int, PropertyHint.Range, "1,8"),
+            PropertyGenerator.CreateProperty(PropertyName.ShapeStepWidthDivs, Variant.Type.Int, PropertyHint.Range, "1,8"),
+            PropertyGenerator.CreateProperty(PropertyName.ShapeSmoothness, Variant.Type.Float, PropertyHint.Range, "0.1,5.0"),
+
+            PropertyGenerator.CreateGroupingProperty( "Material", "material_"),
+            PropertyGenerator.CreateProperty(PropertyName.MatShaderType, Variant.Type.Int, PropertyHint.Enum, PropertyGenerator.GetEnumHint<ShaderType>()),
+            PropertyGenerator.CreateProperty(PropertyName.MatCustomShader, Variant.Type.Object, PropertyHint.ResourceType, "Shader"),
+        };
+
+        var matCategories = new Godot.Collections.Dictionary<string, string>
+        {
+            { nameof(MaterialCategory.Albedo), MaterialCategory.Albedo},
+            { nameof(MaterialCategory.Emission), MaterialCategory.Emission},
+            { nameof(MaterialCategory.Transparency), MaterialCategory.Transparency},
+            { nameof(MaterialCategory.Flow), MaterialCategory.Flow},
+            { nameof(MaterialCategory.Foam), MaterialCategory.Foam},
+            { nameof(MaterialCategory.Custom), MaterialCategory.Custom}
+        };
+
+        if (_material.Shader != null)
+        {
+            foreach (var parameter in RenderingServer.GetShaderParameterList(_material.Shader.GetRid()))
+            {
+                if (parameter[PropertyGenerator.Name].AsString().StartsWith("i_"))
+                {
+                    continue;
+                }
+
+                var hitCategory = (string) null;
+                foreach (var (key, value) in matCategories)
+                {
+                    if (!parameter[PropertyGenerator.Name].AsString().StartsWith(key))
+                    {
+                        continue;
+                    }
+
+                    var property = PropertyGenerator.CreateGroupingProperty($"Material/{value}", MaterialParamPrefix + key);
+                    resultProperties.Add(property);
+                    hitCategory = key;
+                    break;
+                }
+
+                if (hitCategory != null)
+                {
+                    matCategories.Remove(hitCategory);
+                }
+
+                var newProperty = PropertyGenerator.CreatePropertyCopy(parameter);
+                var paramName = parameter[PropertyGenerator.Name].AsString();
+                newProperty[PropertyGenerator.Name] = MaterialParamPrefix + paramName;
+
+                if (paramName.Contains("curve"))
+                {
+                    newProperty[PropertyGenerator.Hint] = (int)PropertyHint.ExpEasing;
+                    newProperty[PropertyGenerator.HintString] = "EASE";
+                }
+
+                resultProperties.Add(newProperty);
+            }
+        }
+
+        resultProperties.Add(PropertyGenerator.CreateGroupingProperty("Lod", "lod_"));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.LodLod0Distance, Variant.Type.Float, PropertyHint.Range, "5.0,200.0"));
+
+        resultProperties.Add(PropertyGenerator.CreateGroupingProperty("Baking", "baking_"));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingResolution, Variant.Type.Int, PropertyHint.Enum, "64,128,256,512,1024"));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingRaycastDistance, Variant.Type.Float, PropertyHint.Range, "0.0,100.0"));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingRaycastLayers, Variant.Type.Int, PropertyHint.Layers3DPhysics));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingDilate, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFlowmapBlur, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamCutoff, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamOffset, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamBlur, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
+
+        // Serialize these values without exposing it in the inspector
+        resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.Curve, Variant.Type.Object));
+        resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.Widths, Variant.Type.Array));
+        resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.ValidFlowmap, Variant.Type.Bool));
+        resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.FlowFoamNoise, Variant.Type.Object));
+        resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.DistPressure, Variant.Type.Object));
+        resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName._material, Variant.Type.Object, PropertyHint.ResourceType, "ShaderMaterial"));
+        resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName._selectedShader, Variant.Type.Int));
+        resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName._uv2Sides, Variant.Type.Int));
+
+        return resultProperties;
     }
 
     public override void _EnterTree()
@@ -496,7 +561,6 @@ public partial class RiverManager : Node3D
         return GlobalTransform * MeshInstance.GetAabb();
     }
 
-    // Public Methods - These should all be good to use as API from other scripts
     public void AddPoint(Vector3 position, int index, Vector3 dir, float width = 0.0f)
     {
         var newWidth = 0f;
@@ -609,93 +673,6 @@ public partial class RiverManager : Node3D
         return _material.GetShaderParameter(param);
     }
 
-    // Private Methods
-    private void GenerateRiver()
-    {
-        // TODO: count loss expected?
-        var averageWidth = Widths.Sum() / (Widths.Count / 2f);
-        _steps = (int)(Mathf.Max(1.0f, Mathf.Round(Curve.GetBakedLength() / averageWidth)));
-
-        var riverWidthValues = WaterHelperMethods.GenerateRiverWidthValues(Curve, _steps, ShapeStepLengthDivs, Widths);
-        MeshInstance.Mesh = WaterHelperMethods.GenerateRiverMesh(Curve, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, ShapeSmoothness, riverWidthValues);
-        MeshInstance.Mesh.SurfaceSetMaterial(0, _material);
-    }
-
-    private async Task GenerateFlowMap(float flowmapResolution)
-    {
-        // WaterHelperMethods.ResetAllColliders(get_tree().root)
-        var image = Image.Create((int)flowmapResolution, (int)flowmapResolution, true, Image.Format.Rgb8);
-        image.Fill(new Color(0, 0, 0));
-
-        EmitSignal(SignalName.ProgressNotified, 0.0f, "Calculating Collisions (" + flowmapResolution + "x" + flowmapResolution + ")");
-        await ToSignal(GetTree(), "process_frame");
-
-        image = await WaterHelperMethods.GenerateCollisionMap(image, MeshInstance, BakingRaycastDistance, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, this);
-
-        EmitSignal(SignalName.ProgressNotified, 0.95f, "Applying filters (" + flowmapResolution + "x" + flowmapResolution + ")");
-        await ToSignal(GetTree(), "process_frame");
-
-        // Calculate how many columns are in UV2
-        _uv2Sides = WaterHelperMethods.CalculateSide(_steps);
-
-        var margin = (int)(Mathf.Round(flowmapResolution / _uv2Sides));
-
-        image = WaterHelperMethods.AddMargins(image, (int)flowmapResolution, margin);
-
-        var collisionWithMargins = ImageTexture.CreateFromImage(image);
-
-        // Create correctly tiling noise for A channel
-        var noiseTexture = (Texture2D) ResourceLoader.Load(FlowOffsetNoiseTexturePath);
-        var noiseWithMarginSize = (_uv2Sides + 2) * (noiseTexture.GetWidth() / (float)(_uv2Sides));
-        var noiseWithTiling = Image.Create((int)noiseWithMarginSize, (int)noiseWithMarginSize, false, Image.Format.Rgb8);
-        var sliceWidth = noiseTexture.GetWidth() / (float)(_uv2Sides);
-
-        for (var x = 0; x < _uv2Sides; x++)
-        {
-            noiseWithTiling.BlendRect(noiseTexture.GetImage(), new Rect2I(0, 0, (int)sliceWidth, noiseTexture.GetHeight()), new Vector2I((int)(sliceWidth + (x * sliceWidth)), (int)(sliceWidth - (noiseTexture.GetWidth() / 2.0f))));
-            noiseWithTiling.BlendRect(noiseTexture.GetImage(), new Rect2I(0, 0, (int)sliceWidth, noiseTexture.GetHeight()), new Vector2I((int)(sliceWidth + (x * sliceWidth)), (int)(sliceWidth + (noiseTexture.GetWidth() / 2.0f))));
-        }
-
-        var tiledNoise = ImageTexture.CreateFromImage(noiseWithTiling);
-
-        // Create renderer
-        var rendererInstance = _filterRenderer.Instantiate<FilterRenderer>();
-
-        AddChild(rendererInstance);
-
-        var flowPressureBlurAmount = 0.04f / _uv2Sides * flowmapResolution;
-        var dilateAmount = BakingDilate / _uv2Sides;
-        var flowmapBlurAmount = BakingFlowmapBlur / _uv2Sides * flowmapResolution;
-        var foamOffsetAmount = BakingFoamOffset / _uv2Sides;
-        var foamBlurAmount = BakingFoamBlur / _uv2Sides * flowmapResolution;
-
-        var flowPressureMap = await rendererInstance.ApplyFlowPressure(collisionWithMargins, flowmapResolution, _uv2Sides + 2.0f);
-        var blurredFlowPressureMap = await rendererInstance.ApplyVerticalBlur(flowPressureMap, flowPressureBlurAmount, flowmapResolution + (margin * 2));
-        var dilatedTexture = await rendererInstance.ApplyDilate(collisionWithMargins, dilateAmount, 0.0f, flowmapResolution + (margin * 2));
-        var normalMap = await rendererInstance.ApplyNormal(dilatedTexture, flowmapResolution + (margin * 2));
-        var flowMap = await rendererInstance.ApplyNormalToFlow(normalMap, flowmapResolution + (margin * 2));
-        var blurredFlowMap = await rendererInstance.ApplyBlur(flowMap, flowmapBlurAmount, flowmapResolution + (margin * 2));
-        var foamMap = await rendererInstance.ApplyFoam(dilatedTexture, foamOffsetAmount, BakingFoamCutoff, flowmapResolution + (margin * 2));
-        var blurredFoamMap = await rendererInstance.ApplyBlur(foamMap, foamBlurAmount, flowmapResolution + (margin * 2));
-        var flowFoamNoiseImg = await rendererInstance.ApplyCombine(blurredFlowMap, blurredFlowMap, blurredFoamMap, tiledNoise);
-        var distPressureImg = await rendererInstance.ApplyCombine(dilatedTexture, blurredFlowPressureMap);
-
-        RemoveChild(rendererInstance); // cleanup
-
-        FlowFoamNoise = flowFoamNoiseImg;
-        DistPressure = distPressureImg;
-
-        SetMaterials("i_flowmap", FlowFoamNoise);
-        SetMaterials("i_distmap", DistPressure);
-        SetMaterials("i_valid_flowmap", true);
-        SetMaterials("i_uv2_sides", _uv2Sides);
-
-        ValidFlowmap = true;
-        EmitSignal(SignalName.ProgressNotified, 100.0, "finished");
-        UpdateConfigurationWarnings();
-    }
-
-    // Signal Method
     public void PropertiesChanged()
     {
         EmitSignal(SignalName.RiverChanged);

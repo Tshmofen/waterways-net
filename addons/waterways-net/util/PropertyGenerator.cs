@@ -3,7 +3,7 @@ using Godot.Collections;
 
 namespace Waterways.Util;
 
-public static class PropertyGeneration
+public static class PropertyGenerator
 {
     public const string Name = "name";
     public const string Type = "type";

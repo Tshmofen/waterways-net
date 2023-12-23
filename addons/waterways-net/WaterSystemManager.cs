@@ -78,18 +78,18 @@ public partial class WaterSystemManager : Node3D
     public override Array<Dictionary> _GetPropertyList()
     {
         return [
-            PropertyGeneration.CreateProperty(PropertyName.SystemMap, Variant.Type.Object, PropertyHint.ResourceType, "Texture2D"),
-            PropertyGeneration.CreateProperty(PropertyName.SystemBakeResolution, Variant.Type.Int, PropertyHint.Enum, "128, 256, 512, 1024, 2048"),
-            PropertyGeneration.CreateProperty(PropertyName.SystemGroupName, Variant.Type.String),
-            PropertyGeneration.CreateProperty(PropertyName.MinimumWaterLevel, Variant.Type.Float),
+            PropertyGenerator.CreateProperty(PropertyName.SystemMap, Variant.Type.Object, PropertyHint.ResourceType, "Texture2D"),
+            PropertyGenerator.CreateProperty(PropertyName.SystemBakeResolution, Variant.Type.Int, PropertyHint.Enum, "128, 256, 512, 1024, 2048"),
+            PropertyGenerator.CreateProperty(PropertyName.SystemGroupName, Variant.Type.String),
+            PropertyGenerator.CreateProperty(PropertyName.MinimumWaterLevel, Variant.Type.Float),
 
-            PropertyGeneration.CreateGroupingProperty("Auto assign texture & coordinates on generate"),
-            PropertyGeneration.CreateProperty(PropertyName.WetGroupName, Variant.Type.String),
-            PropertyGeneration.CreateProperty(PropertyName.SurfaceIndex, Variant.Type.Int),
-            PropertyGeneration.CreateProperty(PropertyName.MaterialOverride, Variant.Type.Bool),
+            PropertyGenerator.CreateGroupingProperty("Auto assign texture & coordinates on generate"),
+            PropertyGenerator.CreateProperty(PropertyName.WetGroupName, Variant.Type.String),
+            PropertyGenerator.CreateProperty(PropertyName.SurfaceIndex, Variant.Type.Int),
+            PropertyGenerator.CreateProperty(PropertyName.MaterialOverride, Variant.Type.Bool),
 
             // values that need to be serialized, but should not be exposed
-            PropertyGeneration.CreateStorageProperty(PropertyName._systemAabb, Variant.Type.Aabb),
+            PropertyGenerator.CreateStorageProperty(PropertyName._systemAabb, Variant.Type.Aabb),
         ];
     }
 
