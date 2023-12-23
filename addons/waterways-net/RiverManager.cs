@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
@@ -15,23 +16,6 @@ public partial class RiverManager : Node3D
     private const string FilterRendererPath = $"{WaterwaysPlugin.PluginPath}/filter_renderer.tscn";
     private const string FlowOffsetNoiseTexturePath = $"{WaterwaysPlugin.PluginPath}/textures/flow_offset_noise.png";
     private const string FoamNoisePath = $"{WaterwaysPlugin.PluginPath}/textures/foam_noise.png";
-
-    public static class DefaultValues
-    {
-        public const int ShapeStepLengthDivs = 1;
-        public const int ShapeStepWidthDivs = 1;
-        public const float ShapeSmoothness = 0.5f;
-        public const ShaderType MatShaderType = ShaderType.Water;
-        public const int BakingResolution = 2;
-        public const float BakingRaycastDistance = 10.0f;
-        public const int BakingRaycastLayers = 1;
-        public const float BakingDilate = 0.6f;
-        public const float BakingFlowmapBlur = 0.04f;
-        public const float BakingFoamCutoff = 0.9f;
-        public const float BakingFoamOffset = 0.1f;
-        public const float BakingFoamBlur = 0.02f;
-        public const float LodLod0Distance = 50.0f;
-    }
 
     // river_changed used to update handles when values are changed on script side
     // progress_notified used to up progress bar when baking maps
@@ -69,7 +53,35 @@ public partial class RiverManager : Node3D
         ]
     };
 
+    private static readonly Godot.Collections.Dictionary<string, string> MaterialCategories = new()
+    {
+        { $"{nameof(MaterialCategory.Albedo).ToLower()}_", MaterialCategory.Albedo},
+        { $"{nameof(MaterialCategory.Emission).ToLower()}_", MaterialCategory.Emission},
+        { $"{nameof(MaterialCategory.Transparency).ToLower()}_", MaterialCategory.Transparency},
+        { $"{nameof(MaterialCategory.Normal).ToLower()}_", MaterialCategory.Normal},
+        { $"{nameof(MaterialCategory.Flow).ToLower()}_", MaterialCategory.Flow},
+        { $"{nameof(MaterialCategory.Foam).ToLower()}_", MaterialCategory.Foam},
+        { $"{nameof(MaterialCategory.Custom).ToLower()}_", MaterialCategory.Custom}
+    };
+
     #region Vars
+
+    public static class DefaultValues
+    {
+        public const int ShapeStepLengthDivs = 1;
+        public const int ShapeStepWidthDivs = 1;
+        public const float ShapeSmoothness = 0.5f;
+        public const ShaderType MatShaderType = ShaderType.Water;
+        public const int BakingResolution = 2;
+        public const float BakingRaycastDistance = 10.0f;
+        public const int BakingRaycastLayers = 1;
+        public const float BakingDilate = 0.6f;
+        public const float BakingFlowmapBlur = 0.04f;
+        public const float BakingFoamCutoff = 0.9f;
+        public const float BakingFoamOffset = 0.1f;
+        public const float BakingFoamBlur = 0.02f;
+        public const float LodLod0Distance = 50.0f;
+    }
 
     private Array<Dictionary> _cachedPropertyList;
 
@@ -361,6 +373,71 @@ public partial class RiverManager : Node3D
         return _cachedPropertyList.FirstOrDefault(p => p[PropertyGenerator.Name].AsStringName() == name);
     }
 
+    private string GetPropertyName(Dictionary property)
+    {
+        return property[PropertyGenerator.Name].AsString();
+    }
+
+    private Dictionary CreateShaderParameter(Dictionary param, Rid shaderRid)
+    {
+        var paramName = GetPropertyName(param);
+        var newProperty = PropertyGenerator.CreatePropertyCopy(param);
+        newProperty[PropertyGenerator.Name] = MaterialParamPrefix + paramName;
+
+        if (paramName.Contains("curve"))
+        {
+            newProperty[PropertyGenerator.Hint] = (int)PropertyHint.ExpEasing;
+            newProperty[PropertyGenerator.HintString] = "EASE";
+        }
+
+        var shaderDefault = RenderingServer.ShaderGetParameterDefault(shaderRid, paramName);
+        if (shaderDefault.VariantType != Variant.Type.Nil)
+        {
+            newProperty[PropertyGenerator.Revert] = shaderDefault;
+        }
+
+        return newProperty;
+    }
+
+    private void AccumulateShaderParameters(Array<Dictionary> resultProperties)
+    {
+        if (_material.Shader == null)
+        {
+            return;
+        }
+
+        var shaderRid = _material.Shader.GetRid();
+        var shaderParameters = RenderingServer
+            .GetShaderParameterList(shaderRid)
+            .Where(p => !GetPropertyName(p).StartsWith("i_"))
+            .ToList();
+
+        foreach (var (key, value) in MaterialCategories)
+        {
+            var group = shaderParameters.Where(p => GetPropertyName(p).StartsWith(key)).ToList();
+
+            if (group.Count == 0)
+            {
+                continue;
+            }
+
+            resultProperties.Add(PropertyGenerator.CreateGroupingProperty($"Material/{value}", MaterialParamPrefix + key));
+
+            foreach (var param in group)
+            {
+                resultProperties.Add(CreateShaderParameter(param, shaderRid));
+                shaderParameters.Remove(param);
+            }
+        }
+
+        // add remaining parameters
+        resultProperties.Add(PropertyGenerator.CreateGroupingProperty("Material", MaterialParamPrefix));
+        foreach (var param in shaderParameters)
+        {
+            resultProperties.Add(CreateShaderParameter(param, shaderRid));
+        }
+    }
+
     #endregion
 
     public RiverManager()
@@ -399,79 +476,21 @@ public partial class RiverManager : Node3D
     {
         var resultProperties = new Array<Dictionary>
         {
-            PropertyGenerator.CreateGroupingProperty( "Shape", "shape_"),
+            PropertyGenerator.CreateGroupingProperty( "Shape", "Shape"),
             PropertyGenerator.CreateProperty(PropertyName.ShapeStepLengthDivs, Variant.Type.Int, PropertyHint.Range, "1,8", DefaultValues.ShapeStepLengthDivs),
             PropertyGenerator.CreateProperty(PropertyName.ShapeStepWidthDivs, Variant.Type.Int, PropertyHint.Range, "1,8", DefaultValues.ShapeStepWidthDivs),
             PropertyGenerator.CreateProperty(PropertyName.ShapeSmoothness, Variant.Type.Float, PropertyHint.Range, "0.1,5.0", DefaultValues.ShapeSmoothness),
-
-            PropertyGenerator.CreateGroupingProperty( "Material", "material_"),
+            PropertyGenerator.CreateGroupingProperty( "Material", "Mat"),
             PropertyGenerator.CreateProperty(PropertyName.MatShaderType, Variant.Type.Int, PropertyHint.Enum, PropertyGenerator.GetEnumHint<ShaderType>(), (int) DefaultValues.MatShaderType),
-            PropertyGenerator.CreateProperty(PropertyName.MatCustomShader, Variant.Type.Object, PropertyHint.ResourceType, "Shader", Variant.From((GodotObject)null)),
+            PropertyGenerator.CreateProperty(PropertyName.MatCustomShader, Variant.Type.Object, PropertyHint.ResourceType, nameof(Shader), Variant.From((GodotObject)null)),
+            PropertyGenerator.CreateGroupingProperty( "Material", MaterialParamPrefix)
         };
 
-        var matCategories = new Godot.Collections.Dictionary<string, string>
-        {
-            { nameof(MaterialCategory.Albedo), MaterialCategory.Albedo},
-            { nameof(MaterialCategory.Emission), MaterialCategory.Emission},
-            { nameof(MaterialCategory.Transparency), MaterialCategory.Transparency},
-            { nameof(MaterialCategory.Flow), MaterialCategory.Flow},
-            { nameof(MaterialCategory.Foam), MaterialCategory.Foam},
-            { nameof(MaterialCategory.Custom), MaterialCategory.Custom}
-        };
+        AccumulateShaderParameters(resultProperties);
 
-        if (_material.Shader != null)
-        {
-            var shaderRid = _material.Shader.GetRid();
-            foreach (var parameter in RenderingServer.GetShaderParameterList(shaderRid))
-            {
-                if (parameter[PropertyGenerator.Name].AsString().StartsWith("i_"))
-                {
-                    continue;
-                }
-
-                var hitCategory = (string) null;
-                foreach (var (key, value) in matCategories)
-                {
-                    if (!parameter[PropertyGenerator.Name].AsString().StartsWith(key))
-                    {
-                        continue;
-                    }
-
-                    var property = PropertyGenerator.CreateGroupingProperty($"Material/{value}", MaterialParamPrefix + key);
-                    resultProperties.Add(property);
-                    hitCategory = key;
-                    break;
-                }
-
-                if (hitCategory != null)
-                {
-                    matCategories.Remove(hitCategory);
-                }
-
-                var newProperty = PropertyGenerator.CreatePropertyCopy(parameter);
-                var paramName = parameter[PropertyGenerator.Name].AsStringName();
-                newProperty[PropertyGenerator.Name] = MaterialParamPrefix + paramName;
-
-                var shaderDefault = RenderingServer.ShaderGetParameterDefault(shaderRid, paramName);
-                if (shaderDefault.VariantType != Variant.Type.Nil)
-                {
-                    newProperty[PropertyGenerator.Revert] = shaderDefault;
-                }
-
-                if (paramName.ToString().Contains("curve"))
-                {
-                    newProperty[PropertyGenerator.Hint] = (int)PropertyHint.ExpEasing;
-                    newProperty[PropertyGenerator.HintString] = "EASE";
-                }
-
-                resultProperties.Add(newProperty);
-            }
-        }
-
-        resultProperties.Add(PropertyGenerator.CreateGroupingProperty("Lod", "lod_"));
+        resultProperties.Add(PropertyGenerator.CreateGroupingProperty("Lod", "Lod"));
         resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.LodLod0Distance, Variant.Type.Float, PropertyHint.Range, "5.0,200.0", DefaultValues.LodLod0Distance));
-
-        resultProperties.Add(PropertyGenerator.CreateGroupingProperty("Baking", "baking_"));
+        resultProperties.Add(PropertyGenerator.CreateGroupingProperty("Baking", "Baking"));
         resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingResolution, Variant.Type.Int, PropertyHint.Enum, "64,128,256,512,1024", DefaultValues.BakingResolution));
         resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingRaycastDistance, Variant.Type.Float, PropertyHint.Range, "0.0,100.0", DefaultValues.BakingRaycastDistance));
         resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingRaycastLayers, Variant.Type.Int, PropertyHint.Layers3DPhysics, revert: DefaultValues.BakingRaycastLayers));
@@ -480,14 +499,12 @@ public partial class RiverManager : Node3D
         resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamCutoff, Variant.Type.Float, PropertyHint.Range, "0.0,1.0", DefaultValues.BakingFoamCutoff));
         resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamOffset, Variant.Type.Float, PropertyHint.Range, "0.0,1.0", DefaultValues.BakingFoamOffset));
         resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamBlur, Variant.Type.Float, PropertyHint.Range, "0.0,1.0", DefaultValues.BakingFoamBlur));
-
-        // Serialize these values without exposing it in the inspector
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.Curve, Variant.Type.Object));
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.Widths, Variant.Type.Array));
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.ValidFlowmap, Variant.Type.Bool));
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.FlowFoamNoise, Variant.Type.Object));
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.DistPressure, Variant.Type.Object));
-        resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName._material, Variant.Type.Object, PropertyHint.ResourceType, "ShaderMaterial"));
+        resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName._material, Variant.Type.Object, PropertyHint.ResourceType,  nameof(ShaderMaterial)));
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName._selectedShader, Variant.Type.Int));
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName._uv2Sides, Variant.Type.Int));
 
