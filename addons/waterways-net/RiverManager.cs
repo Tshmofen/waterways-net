@@ -704,4 +704,16 @@ public partial class RiverManager : Node3D
     {
         EmitSignal(SignalName.RiverChanged);
     }
+
+    public List<Vector3> GetCurvePoints()
+    {
+        var points = new List<Vector3>();
+
+        for (var p = 0; p < Curve.PointCount; p++)
+        {
+            points.Add(Curve.GetPointPosition(p));
+        }
+
+        return points;
+    }
 }
