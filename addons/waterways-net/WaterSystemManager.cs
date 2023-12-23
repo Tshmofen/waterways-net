@@ -123,7 +123,7 @@ public partial class WaterSystemManager : Node3D
 
         var filterRenderer = new FilterRenderer();
         AddChild(filterRenderer);
-        SystemMap = await filterRenderer.ApplyCombine(flowMap, flowMap, heightMap);
+        SystemMap = await filterRenderer.ApplyCombineAsync(flowMap, flowMap, heightMap);
         RemoveChild(filterRenderer);
 
         // give the map and coordinates to all nodes in the wet_group

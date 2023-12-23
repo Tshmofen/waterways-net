@@ -26,8 +26,8 @@ public partial class BuoyantManager : Node3D
 
         if (angle < 0.1)
         {
-            // Don't reaturn a rotation as object is almost upright, since the cross 
-            // product at an angle that small might cause precission errors.
+            // Don't return a rotation as object is almost upright, since the cross 
+            // product at an angle that small might cause precision errors.
             return Vector3.Zero;
         }
 

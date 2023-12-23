@@ -67,7 +67,6 @@ public static class WaterHelperMethods
         return (int)sideFloat;
     }
 
-    // TODO: Might be problems with final values, recheck
     public static List<float> GenerateRiverWidthValues(Curve3D curve, int steps, int stepLengthDivs, Array<float> widths)
     {
         var riverWidthValues = new List<float>();
@@ -290,7 +289,6 @@ public static class WaterHelperMethods
                     return dict is { Count: > 0 };
                 }
 
-                // TODO: REcheck that PARt
                 var upHitFrontFace = resultUp?.ContainsKey("normal") == true && resultUp["normal"].AsVector3().Y < 0;
 
                 if ((CheckResult(resultUp) || CheckResult(resultDown)) && !upHitFrontFace && CheckResult(resultDown))

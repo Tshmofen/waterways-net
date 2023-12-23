@@ -340,16 +340,16 @@ public partial class RiverManager : Node3D
         var foamOffsetAmount = BakingFoamOffset / _uv2Sides;
         var foamBlurAmount = BakingFoamBlur / _uv2Sides * flowmapResolution;
 
-        var flowPressureMap = await rendererInstance.ApplyFlowPressure(collisionWithMargins, flowmapResolution, _uv2Sides + 2.0f);
-        var blurredFlowPressureMap = await rendererInstance.ApplyVerticalBlur(flowPressureMap, flowPressureBlurAmount, flowmapResolution + (margin * 2));
+        var flowPressureMap = await rendererInstance.ApplyFlowPressureAsync(collisionWithMargins, flowmapResolution, _uv2Sides + 2.0f);
+        var blurredFlowPressureMap = await rendererInstance.ApplyVerticalBlurAsync(flowPressureMap, flowPressureBlurAmount, flowmapResolution + (margin * 2));
         var dilatedTexture = await rendererInstance.ApplyDilate(collisionWithMargins, dilateAmount, 0.0f, flowmapResolution + (margin * 2));
-        var normalMap = await rendererInstance.ApplyNormal(dilatedTexture, flowmapResolution + (margin * 2));
-        var flowMap = await rendererInstance.ApplyNormalToFlow(normalMap, flowmapResolution + (margin * 2));
-        var blurredFlowMap = await rendererInstance.ApplyBlur(flowMap, flowmapBlurAmount, flowmapResolution + (margin * 2));
-        var foamMap = await rendererInstance.ApplyFoam(dilatedTexture, foamOffsetAmount, BakingFoamCutoff, flowmapResolution + (margin * 2));
-        var blurredFoamMap = await rendererInstance.ApplyBlur(foamMap, foamBlurAmount, flowmapResolution + (margin * 2));
-        var flowFoamNoiseImg = await rendererInstance.ApplyCombine(blurredFlowMap, blurredFlowMap, blurredFoamMap, tiledNoise);
-        var distPressureImg = await rendererInstance.ApplyCombine(dilatedTexture, blurredFlowPressureMap);
+        var normalMap = await rendererInstance.ApplyNormalAsync(dilatedTexture, flowmapResolution + (margin * 2));
+        var flowMap = await rendererInstance.ApplyNormalToFlowAsync(normalMap, flowmapResolution + (margin * 2));
+        var blurredFlowMap = await rendererInstance.ApplyBlurAsync(flowMap, flowmapBlurAmount, flowmapResolution + (margin * 2));
+        var foamMap = await rendererInstance.ApplyFoamAsync(dilatedTexture, foamOffsetAmount, BakingFoamCutoff, flowmapResolution + (margin * 2));
+        var blurredFoamMap = await rendererInstance.ApplyBlurAsync(foamMap, foamBlurAmount, flowmapResolution + (margin * 2));
+        var flowFoamNoiseImg = await rendererInstance.ApplyCombineAsync(blurredFlowMap, blurredFlowMap, blurredFoamMap, tiledNoise);
+        var distPressureImg = await rendererInstance.ApplyCombineAsync(dilatedTexture, blurredFlowPressureMap);
 
         RemoveChild(rendererInstance); // cleanup
 
