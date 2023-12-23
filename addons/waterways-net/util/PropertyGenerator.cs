@@ -33,6 +33,8 @@ public static class PropertyGenerator
 
         if (revert != null)
         {
+
+            GD.Print($"Added revert: {Revert}: {revert.Value}");
             propertyInfo.Add(Revert, revert.Value);
         }
 
@@ -42,7 +44,7 @@ public static class PropertyGenerator
     public static Dictionary CreateProperty(string name, Variant.Type type, PropertyHint? hint = null, string hintString = null, Variant? revert = null)
     {
         const PropertyUsageFlags usage = PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable;
-        return CreateCustomProperty(usage, name, type, hint, hintString);
+        return CreateCustomProperty(usage, name, type, hint, hintString, revert);
     }
 
     public static Dictionary CreateGroupingProperty(string groupName, string hintString = null)

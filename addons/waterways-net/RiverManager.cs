@@ -71,6 +71,8 @@ public partial class RiverManager : Node3D
 
     #region Vars
 
+    private Array<Dictionary> _cachedPropertyList;
+
     // Shape Properties
     private int _shapeStepLengthDivs = DefaultValues.ShapeStepLengthDivs;
     public int ShapeStepLengthDivs
@@ -353,6 +355,12 @@ public partial class RiverManager : Node3D
         UpdateConfigurationWarnings();
     }
 
+    private Dictionary GetCachedProperty(StringName name)
+    {
+        _cachedPropertyList ??= _GetPropertyList();
+        return _cachedPropertyList.FirstOrDefault(p => p[PropertyGenerator.Name].AsStringName() == name);
+    }
+
     #endregion
 
     public RiverManager()
@@ -383,6 +391,8 @@ public partial class RiverManager : Node3D
 
         // Have to manually set the color, or it does not default right. Not sure how to work around this
         _material.SetShaderParameter("albedo_color", new Transform3D(new Vector3(0.0f, 0.8f, 1.0f), new Vector3(0.15f, 0.2f, 0.5f), Vector3.Zero, Vector3.Zero));
+
+        PropertyListChanged += () => _cachedPropertyList = null;
     }
 
     public override Array<Dictionary> _GetPropertyList()
@@ -474,19 +484,17 @@ public partial class RiverManager : Node3D
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName._selectedShader, Variant.Type.Int));
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName._uv2Sides, Variant.Type.Int));
 
-        return resultProperties;
+        return _cachedPropertyList = resultProperties;
     }
 
     public override bool _PropertyCanRevert(StringName property)
     {
-        var propertyDictionary = _GetPropertyList().First(p => p[PropertyGenerator.Name].AsStringName() == property);
-        return propertyDictionary.ContainsKey(PropertyGenerator.Revert) || base._PropertyCanRevert(property);
+        return GetCachedProperty(property)?.ContainsKey(PropertyGenerator.Revert) == true || base._PropertyCanRevert(property);
     }
 
     public override Variant _PropertyGetRevert(StringName property)
     {
-        var propertyDictionary = _GetPropertyList().First(p => p[PropertyGenerator.Name].AsStringName() == property);
-        return propertyDictionary.TryGetValue(PropertyGenerator.Revert, out var value) ? value : base._PropertyGetRevert(property);
+        return GetCachedProperty(property)?.TryGetValue(PropertyGenerator.Revert, out var value) == true ? value : base._PropertyGetRevert(property);
     }
 
     public override void _EnterTree()
