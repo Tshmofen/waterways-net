@@ -23,6 +23,7 @@ public partial class RiverManager : Node3D
         public List<(string name, string path)> TexturePaths { get; init; }
     }
 
+    private const string MaterialParamPrefix = "mat_";
     private const string FilterRendererPath = $"{WaterwaysPlugin.PluginPath}/filter_renderer.tscn";
     private const string FlowOffsetNoiseTexturePath = $"{WaterwaysPlugin.PluginPath}/textures/flow_offset_noise.png";
     private const string FoamNoisePath = $"{WaterwaysPlugin.PluginPath}/textures/foam_noise.png";
@@ -107,7 +108,7 @@ public partial class RiverManager : Node3D
             ValidFlowmap = false;
             SetMaterials("i_valid_flowmap", ValidFlowmap);
             GenerateRiver();
-            EmitSignal("river_changed");
+            EmitSignal(SignalName.RiverChanged);
         }
     }
 
@@ -126,7 +127,7 @@ public partial class RiverManager : Node3D
             ValidFlowmap = false;
             SetMaterials("i_valid_flowmap", ValidFlowmap);
             GenerateRiver();
-            EmitSignal("river_changed");
+            EmitSignal(SignalName.RiverChanged);
         }
     }
 
@@ -145,7 +146,7 @@ public partial class RiverManager : Node3D
             ValidFlowmap = false;
             SetMaterials("i_valid_flowmap", ValidFlowmap);
             GenerateRiver();
-            EmitSignal("river_changed");
+            EmitSignal(SignalName.RiverChanged);
         }
     }
 
@@ -276,8 +277,8 @@ public partial class RiverManager : Node3D
 
     // Private variables
     private int _steps = 2;
-    private SurfaceTool _st;
-    private MeshDataTool _mdt;
+    private SurfaceTool _surfaceTool;
+    private MeshDataTool _meshDataTool;
     private ShaderMaterial _debugMaterial;
     private bool _firstEnterTree = true;
     private PackedScene _filterRenderer;
@@ -293,11 +294,11 @@ public partial class RiverManager : Node3D
         var resultProperties = new Array<Dictionary>
         {
             PropertyGeneration.CreateGroupingProperty( "Shape", "shape_"),
-            PropertyGeneration.CreateProperty(PropertyName.ShapeStepLengthDivs, Variant.Type.Int, PropertyHint.Range, "1, 8"),
-            PropertyGeneration.CreateProperty(PropertyName.ShapeStepWidthDivs, Variant.Type.Int, PropertyHint.Range, "1, 8"),
-            PropertyGeneration.CreateProperty(PropertyName.ShapeSmoothness, Variant.Type.Float, PropertyHint.Range, "0.1, 5.0"),
+            PropertyGeneration.CreateProperty(PropertyName.ShapeStepLengthDivs, Variant.Type.Int, PropertyHint.Range, "1,8"),
+            PropertyGeneration.CreateProperty(PropertyName.ShapeStepWidthDivs, Variant.Type.Int, PropertyHint.Range, "1,8"),
+            PropertyGeneration.CreateProperty(PropertyName.ShapeSmoothness, Variant.Type.Float, PropertyHint.Range, "0.1,5.0"),
 
-            PropertyGeneration.CreateGroupingProperty( "Material", "mat_"),
+            PropertyGeneration.CreateGroupingProperty( "Material", "material_"),
             PropertyGeneration.CreateProperty(PropertyName.MatShaderType, Variant.Type.Int, PropertyHint.Enum, PropertyGeneration.GetEnumHint<ShaderTypes>()),
             PropertyGeneration.CreateProperty(PropertyName.MatCustomShader, Variant.Type.Object, PropertyHint.ResourceType, "Shader"),
         };
@@ -329,7 +330,7 @@ public partial class RiverManager : Node3D
                         continue;
                     }
 
-                    var property = PropertyGeneration.CreateGroupingProperty($"Material/{value}", $"mat_{key}");
+                    var property = PropertyGeneration.CreateGroupingProperty($"Material/{value}", MaterialParamPrefix + key);
                     resultProperties.Add(property);
                     hitCategory = key;
                     break;
@@ -342,7 +343,8 @@ public partial class RiverManager : Node3D
 
                 var newProperty = PropertyGeneration.CreatePropertyCopy(parameter);
                 var paramName = parameter[PropertyGeneration.Name].AsString();
-                newProperty[PropertyGeneration.Name] = $"mat_{paramName}";
+                newProperty[PropertyGeneration.Name] = MaterialParamPrefix + paramName;
+
                 if (paramName.Contains("curve"))
                 {
                     newProperty[PropertyGeneration.Hint] = (int)PropertyHint.ExpEasing;
@@ -354,17 +356,17 @@ public partial class RiverManager : Node3D
         }
 
         resultProperties.Add(PropertyGeneration.CreateGroupingProperty("Lod", "lod_"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.LodLod0Distance, Variant.Type.Float, PropertyHint.Range, "5.0, 200.0"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.LodLod0Distance, Variant.Type.Float, PropertyHint.Range, "5.0,200.0"));
 
         resultProperties.Add(PropertyGeneration.CreateGroupingProperty("Baking", "baking_"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingResolution, Variant.Type.Int, PropertyHint.Enum, "64, 128, 256, 512, 1024"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingRaycastDistance, Variant.Type.Float, PropertyHint.Range, "0.0, 100.0"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingResolution, Variant.Type.Int, PropertyHint.Enum, "64,128,256,512,1024"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingRaycastDistance, Variant.Type.Float, PropertyHint.Range, "0.0,100.0"));
         resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingRaycastLayers, Variant.Type.Int, PropertyHint.Layers3DPhysics));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingDilate, Variant.Type.Float, PropertyHint.Range, "0.0, 1.0"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFlowmapBlur, Variant.Type.Float, PropertyHint.Range, "0.0, 1.0"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFoamCutoff, Variant.Type.Float, PropertyHint.Range, "0.0, 1.0"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFoamOffset, Variant.Type.Float, PropertyHint.Range, "0.0, 1.0"));
-        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFoamBlur, Variant.Type.Float, PropertyHint.Range, "0.0, 1.0"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingDilate, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFlowmapBlur, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFoamCutoff, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFoamOffset, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
+        resultProperties.Add(PropertyGeneration.CreateProperty(PropertyName.BakingFoamBlur, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
 
         // Serialize these values without exposing it in the inspector
         resultProperties.Add(PropertyGeneration.CreateStorageProperty(PropertyName.Curve, Variant.Type.Object));
@@ -382,8 +384,8 @@ public partial class RiverManager : Node3D
     // todo maybe should be _ready
     public RiverManager()
     {
-        _st = new SurfaceTool();
-        _mdt = new MeshDataTool();
+        _surfaceTool = new SurfaceTool();
+        _meshDataTool = new MeshDataTool();
         _filterRenderer = ResourceLoader.Load(FilterRendererPath) as PackedScene;
 
         _debugMaterial = new ShaderMaterial
@@ -462,6 +464,33 @@ public partial class RiverManager : Node3D
         return ["No flowmap is set. Select River -> Generate Flow & Foam Map to generate and assign one."];
     }
 
+    public override bool _Set(StringName property, Variant value)
+    {
+        var propertyStr = property.ToString();
+
+        if (!propertyStr.StartsWith(MaterialParamPrefix))
+        {
+            return false;
+        }
+
+        var paramName = propertyStr.Replace(MaterialParamPrefix, string.Empty);
+        _material.SetShaderParameter(paramName, value);
+        return true;
+    }
+
+    public override Variant _Get(StringName property)
+    {
+        var propertyStr = property.ToString();
+
+        if (!propertyStr.StartsWith(MaterialParamPrefix))
+        {
+            return Variant.From<GodotObject>(null);
+        }
+
+        var paramName = propertyStr.Replace(MaterialParamPrefix, string.Empty);
+        return _material.GetShaderParameter(paramName);
+    }
+
     public Aabb GetTransformedAabb()
     {
         return GlobalTransform * MeshInstance.GetAabb();
@@ -489,7 +518,7 @@ public partial class RiverManager : Node3D
         }
 
         Widths.Insert(index + 1, newWidth); // We set the width to the average of the two surrounding widths
-        EmitSignal("river_changed");
+        EmitSignal(SignalName.RiverChanged);
         GenerateRiver();
     }
 
@@ -503,7 +532,7 @@ public partial class RiverManager : Node3D
 
         Curve.RemovePoint(index);
         Widths.RemoveAt(index);
-        EmitSignal("river_changed");
+        EmitSignal(SignalName.RiverChanged);
         GenerateRiver();
     }
 

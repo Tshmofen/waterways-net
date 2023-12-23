@@ -7,7 +7,7 @@ public static class PropertyGeneration
 {
     public const string Name = "name";
     public const string Type = "type";
-    public const string Hint = "hintString";
+    public const string Hint = "hint";
     public const string HintString = "hint_string";
     public const string Usage = "usage";
 
