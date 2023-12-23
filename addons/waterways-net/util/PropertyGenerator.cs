@@ -33,8 +33,6 @@ public static class PropertyGenerator
 
         if (revert != null)
         {
-
-            GD.Print($"Added revert: {Revert}: {revert.Value}");
             propertyInfo.Add(Revert, revert.Value);
         }
 

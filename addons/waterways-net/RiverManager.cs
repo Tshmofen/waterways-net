@@ -421,7 +421,8 @@ public partial class RiverManager : Node3D
 
         if (_material.Shader != null)
         {
-            foreach (var parameter in RenderingServer.GetShaderParameterList(_material.Shader.GetRid()))
+            var shaderRid = _material.Shader.GetRid();
+            foreach (var parameter in RenderingServer.GetShaderParameterList(shaderRid))
             {
                 if (parameter[PropertyGenerator.Name].AsString().StartsWith("i_"))
                 {
@@ -448,10 +449,16 @@ public partial class RiverManager : Node3D
                 }
 
                 var newProperty = PropertyGenerator.CreatePropertyCopy(parameter);
-                var paramName = parameter[PropertyGenerator.Name].AsString();
+                var paramName = parameter[PropertyGenerator.Name].AsStringName();
                 newProperty[PropertyGenerator.Name] = MaterialParamPrefix + paramName;
 
-                if (paramName.Contains("curve"))
+                var shaderDefault = RenderingServer.ShaderGetParameterDefault(shaderRid, paramName);
+                if (shaderDefault.VariantType != Variant.Type.Nil)
+                {
+                    newProperty[PropertyGenerator.Revert] = shaderDefault;
+                }
+
+                if (paramName.ToString().Contains("curve"))
                 {
                     newProperty[PropertyGenerator.Hint] = (int)PropertyHint.ExpEasing;
                     newProperty[PropertyGenerator.HintString] = "EASE";
