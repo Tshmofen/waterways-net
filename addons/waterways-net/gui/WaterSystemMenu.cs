@@ -11,7 +11,7 @@ public partial class WaterSystemMenu : MenuButton
     {
         if (index == (int)RiverMenuType.GenerateSystemMaps)
         {
-            EmitSignal("GenerateSystemMaps");
+            EmitSignal(SignalName.GenerateSystemMaps);
         }
     }
 

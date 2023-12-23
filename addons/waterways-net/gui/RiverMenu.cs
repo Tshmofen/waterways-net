@@ -19,11 +19,11 @@ public partial class RiverMenu : MenuButton
         switch ((RiverMenuType)index)
         {
             case RiverMenuType.Generate:
-                EmitSignal("generate_flowmap");
+                EmitSignal(SignalName.GenerateFlowmap);
                 break;
 
             case RiverMenuType.GenerateMesh:
-                EmitSignal("generate_mesh");
+                EmitSignal(SignalName.GenerateMesh);
                 break;
 
             case RiverMenuType.DebugViewMenu:

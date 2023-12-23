@@ -301,12 +301,13 @@ public partial class RiverManager : Node3D
         var image = Image.Create((int)flowmapResolution, (int)flowmapResolution, true, Image.Format.Rgb8);
         image.Fill(new Color(0, 0, 0));
 
-        EmitSignal(SignalName.ProgressNotified, 0.0f, "Calculating Collisions (" + flowmapResolution + "x" + flowmapResolution + ")");
+        EmitSignal(SignalName.ProgressNotified, 0.0f,
+            $"Calculating Collisions ({flowmapResolution}x{flowmapResolution})");
         await ToSignal(GetTree(), "process_frame");
 
         image = await WaterHelperMethods.GenerateCollisionMap(image, MeshInstance, BakingRaycastDistance, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, this);
 
-        EmitSignal(SignalName.ProgressNotified, 0.95f, "Applying filters (" + flowmapResolution + "x" + flowmapResolution + ")");
+        EmitSignal(SignalName.ProgressNotified, 0.95f, $"Applying filters ({flowmapResolution}x{flowmapResolution})");
         await ToSignal(GetTree(), "process_frame");
 
         // Calculate how many columns are in UV2
