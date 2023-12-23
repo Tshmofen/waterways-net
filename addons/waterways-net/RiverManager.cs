@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
@@ -23,7 +22,7 @@ public partial class RiverManager : Node3D
     [Signal] public delegate void RiverChangedEventHandler();
     [Signal] public delegate void ProgressNotifiedEventHandler();
 
-    private static readonly List<RiverShader> BuiltinShaders = [
+    private static readonly List<RiverShader> BuiltInShaders = [
         new RiverShader
         {
             Name = "Water",
@@ -163,8 +162,8 @@ public partial class RiverManager : Node3D
             }
             else
             {
-                _material.Shader = ResourceLoader.Load(BuiltinShaders.First(s => s.Name == _matShaderType.ToString()).ShaderPath) as Shader;
-                foreach (var (name, path) in BuiltinShaders.First(s => s.Name == _matShaderType.ToString()).TexturePaths)
+                _material.Shader = ResourceLoader.Load(BuiltInShaders.First(s => s.Name == _matShaderType.ToString()).ShaderPath) as Shader;
+                foreach (var (name, path) in BuiltInShaders.First(s => s.Name == _matShaderType.ToString()).TexturePaths)
                 {
                     _material.SetShaderParameter(name, ResourceLoader.Load(path) as Texture);
                 }
@@ -194,7 +193,7 @@ public partial class RiverManager : Node3D
                 // Ability to fork default shader
                 if (Engine.IsEditorHint() && string.IsNullOrEmpty(value.Code))
                 {
-                    var selectedShader = (Shader)ResourceLoader.Load(BuiltinShaders.First(s => s.Name == MatShaderType.ToString()).ShaderPath);
+                    var selectedShader = (Shader)ResourceLoader.Load(BuiltInShaders.First(s => s.Name == MatShaderType.ToString()).ShaderPath);
                     value.Code = selectedShader.Code;
                 }
             }
@@ -301,14 +300,13 @@ public partial class RiverManager : Node3D
         var image = Image.Create((int)flowmapResolution, (int)flowmapResolution, true, Image.Format.Rgb8);
         image.Fill(new Color(0, 0, 0));
 
-        EmitSignal(SignalName.ProgressNotified, 0.0f,
-            $"Calculating Collisions ({flowmapResolution}x{flowmapResolution})");
-        await ToSignal(GetTree(), "process_frame");
+        EmitSignal(SignalName.ProgressNotified, 0.0f, $"Calculating Collisions ({flowmapResolution}x{flowmapResolution})");
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
         image = await WaterHelperMethods.GenerateCollisionMap(image, MeshInstance, BakingRaycastDistance, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, this);
 
         EmitSignal(SignalName.ProgressNotified, 0.95f, $"Applying filters ({flowmapResolution}x{flowmapResolution})");
-        await ToSignal(GetTree(), "process_frame");
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
         // Calculate how many columns are in UV2
         _uv2Sides = WaterHelperMethods.CalculateSide(_steps);
@@ -374,12 +372,12 @@ public partial class RiverManager : Node3D
         return _cachedPropertyList.FirstOrDefault(p => p[PropertyGenerator.Name].AsStringName() == name);
     }
 
-    private string GetPropertyName(Dictionary property)
+    private static string GetPropertyName(Dictionary property)
     {
         return property[PropertyGenerator.Name].AsString();
     }
 
-    private Dictionary CreateShaderParameter(Dictionary param, Rid shaderRid)
+    private static Dictionary CreateShaderParameter(Dictionary param, Rid shaderRid)
     {
         var paramName = GetPropertyName(param);
         var newProperty = PropertyGenerator.CreatePropertyCopy(param);
@@ -459,10 +457,10 @@ public partial class RiverManager : Node3D
 
         _material = new ShaderMaterial
         {
-            Shader = ResourceLoader.Load(BuiltinShaders.First(s => s.Name == MatShaderType.ToString()).ShaderPath) as Shader
+            Shader = ResourceLoader.Load(BuiltInShaders.First(s => s.Name == MatShaderType.ToString()).ShaderPath) as Shader
         };
 
-        foreach (var (name, path) in BuiltinShaders.First(s => s.Name == MatShaderType.ToString()).TexturePaths)
+        foreach (var (name, path) in BuiltInShaders.First(s => s.Name == MatShaderType.ToString()).TexturePaths)
         {
             _material.SetShaderParameter(name, ResourceLoader.Load(path) as Texture2D);
         }
@@ -568,7 +566,7 @@ public partial class RiverManager : Node3D
     {
         if (ValidFlowmap)
         {
-            return [""];
+            return [string.Empty];
         }
 
         return ["No flowmap is set. Select River -> Generate Flow & Foam Map to generate and assign one."];
@@ -648,8 +646,7 @@ public partial class RiverManager : Node3D
     public void BakeTexture()
     {
         GenerateRiver();
-        // Need to await?
-        GenerateFlowMap(Mathf.Pow(2, 6 + BakingResolution));
+        _ = GenerateFlowMap(Mathf.Pow(2, 6 + BakingResolution));
     }
 
     public void SetCurvePointPosition(int index, Vector3 position)
@@ -684,7 +681,6 @@ public partial class RiverManager : Node3D
             return;
         }
 
-        // TODO: was using true (1) ?
         var siblingMesh = (MeshInstance3D)MeshInstance.Duplicate((int)DuplicateFlags.Signals);
         GetParent().AddChild(siblingMesh);
         siblingMesh.Owner = GetTree().EditedSceneRoot;

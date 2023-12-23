@@ -10,7 +10,7 @@ public partial class RiverControls : HBoxContainer
     public RiverMenu Menu { get; set; }
     public OptionButton ConstraintsOption { get; set; }
 
-    [Signal] public delegate void ModeEventHandler(string mode);
+    [Signal] public delegate void ModeEventHandler(RiverMode mode);
     [Signal] public delegate void OptionsEventHandler(string type, int index);
 
     #region Util
@@ -37,7 +37,7 @@ public partial class RiverControls : HBoxContainer
         UnToggleButtons();
         DisableConstraintUi(false);
         GetNode<BaseButton>("Select").ButtonPressed = true;
-        EmitSignal(SignalName.Mode, "select");
+        EmitSignal(SignalName.Mode, (int) RiverMode.Select);
     }
 
     private void OnAdd()
@@ -45,7 +45,7 @@ public partial class RiverControls : HBoxContainer
         UnToggleButtons();
         DisableConstraintUi(false);
         GetNode<BaseButton>("Add").ButtonPressed = true;
-        EmitSignal(SignalName.Mode, "add");
+        EmitSignal(SignalName.Mode, (int) RiverMode.Add);
     }
 
     private void OnRemove()
@@ -53,7 +53,7 @@ public partial class RiverControls : HBoxContainer
         UnToggleButtons();
         DisableConstraintUi(true);
         GetNode<BaseButton>("Remove").ButtonPressed = true;
-        EmitSignal(SignalName.Mode, "remove");
+        EmitSignal(SignalName.Mode, (int) RiverMode.Remove);
     }
 
     private void OnConstraintSelected(int index)
@@ -80,15 +80,13 @@ public partial class RiverControls : HBoxContainer
         {
             // This uses the forwarded spatial input in order to not react to events
             // while the spatial editor is not in focus
-            // This is to avoid that the contraints are toggled while navigating 
+            // This is to avoid that the constraints are toggled while navigating 
             // the scene with WASD holding the right mouse button
             case InputEventMouseButton:
-            {
                 _mouseDown = @event.IsPressed();
                 break;
-            }
+
             case InputEventKey eventKey when eventKey.IsPressed() && !ConstraintsOption.Disabled:
-            {
                 // Early exit if any of the modifiers (except shift) is pressed to not
                 // override default shortcuts like Ctrl + Z
                 if (eventKey.AltPressed || eventKey.CtrlPressed || eventKey.MetaPressed || _mouseDown)
@@ -148,7 +146,6 @@ public partial class RiverControls : HBoxContainer
                 // Set the input as handled to prevent default actions from the keys
                 GetViewport().SetInputAsHandled();
                 return true;
-            }
         }
 
         return false;

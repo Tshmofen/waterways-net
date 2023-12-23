@@ -31,6 +31,34 @@ public partial class FilterRenderer : SubViewport
     public Shader FlowPressurePassShader { get; set; }
     public ShaderMaterial FilterMat { get; set; }
 
+    #region Util
+
+    private async Task<ImageTexture> RenderImageTextureAsync()
+    {
+        RenderTargetUpdateMode = UpdateMode.Once;
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+
+        var image = GetTexture().GetImage();
+        return ImageTexture.CreateFromImage(image);
+    }
+
+    private ShaderMaterial PrepareRenderingPlane(Shader shader, Texture2D texture)
+    {
+        FilterMat.Shader = shader;
+
+        var size = texture.GetSize();
+        Size = new Vector2I((int)size.X, (int)size.Y);
+
+        var rect = GetNode<ColorRect>("ColorRect");
+        rect.Position = new Vector2(0, 0);
+        rect.Size = Size;
+
+        return (ShaderMaterial) rect.Material;
+    }
+
+    #endregion
+
     public override void _EnterTree()
     {
         DilatePass1Shader = ResourceLoader.Load(DilatePass1Path) as Shader;
@@ -49,215 +77,97 @@ public partial class FilterRenderer : SubViewport
         GetNode<ColorRect>("ColorRect").Material = FilterMat;
     }
 
-    public async Task<ImageTexture> ApplyCombine(Texture2D rTexture, Texture2D gTexture, Texture2D bTexture = null, Texture2D aTexture = null)
+    public Task<ImageTexture> ApplyCombineAsync(Texture2D rTexture, Texture2D gTexture, Texture2D bTexture = null, Texture2D aTexture = null)
     {
-        FilterMat.Shader = CombinePassShader;
-        var size = rTexture.GetSize();
-        Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("ColorRect");
-        rect.Position = new Vector2(0, 0);
-        rect.Size = Size;
-
-        var shaderMaterial = (ShaderMaterial)rect.Material;
+        var shaderMaterial = PrepareRenderingPlane(CombinePassShader, rTexture);
         shaderMaterial.SetShaderParameter("r_texture", rTexture);
         shaderMaterial.SetShaderParameter("g_texture", gTexture);
         shaderMaterial.SetShaderParameter("b_texture", bTexture);
         shaderMaterial.SetShaderParameter("a_texture", aTexture);
-        RenderTargetUpdateMode = UpdateMode.Once;
-
-        await ToSignal(GetTree(), "process_frame");
-        await ToSignal(GetTree(), "process_frame");
-        var image = GetTexture().GetImage();
-        return ImageTexture.CreateFromImage(image);
+        return RenderImageTextureAsync();
     }
 
-    public async Task<ImageTexture> ApplyFlowPressure(Texture2D inputTexture, float resolution, float rows)
+    public Task<ImageTexture> ApplyFlowPressureAsync(Texture2D inputTexture, float resolution, float rows)
     {
-        FilterMat.Shader = FlowPressurePassShader;
-        var size = inputTexture.GetSize();
-        Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("ColorRect");
-
-        rect.Position = new Vector2(0, 0);
-        rect.Size = Size;
-        var shaderMaterial = (ShaderMaterial)rect.Material;
+        var shaderMaterial = PrepareRenderingPlane(FlowPressurePassShader, inputTexture);
         shaderMaterial.SetShaderParameter("input_texture", inputTexture);
         shaderMaterial.SetShaderParameter("size", resolution);
         shaderMaterial.SetShaderParameter("rows", rows);
-
-        RenderTargetUpdateMode = UpdateMode.Once;
-        await ToSignal(GetTree(), "process_frame");
-        await ToSignal(GetTree(), "process_frame");
-        // await RenderingServer.frame_post_draw - TODO, replace with these?
-
-        var image = GetTexture().GetImage();
-        return ImageTexture.CreateFromImage(image);
+        return RenderImageTextureAsync();
     }
 
-    public async Task<ImageTexture> ApplyFoam(Texture2D inputTexture, float distance, float cutoff, float resolution)
+    public Task<ImageTexture> ApplyFoamAsync(Texture2D inputTexture, float distance, float cutoff, float resolution)
     {
-        FilterMat.Shader = FoamPassShader;
-        var size = inputTexture.GetSize();
-        Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("ColorRect");
-
-        rect.Position = new Vector2(0, 0);
-        rect.Size = Size;
-        var shaderMaterial = (ShaderMaterial)rect.Material;
+        var shaderMaterial = PrepareRenderingPlane(FoamPassShader, inputTexture);
         shaderMaterial.SetShaderParameter("input_texture", inputTexture);
         shaderMaterial.SetShaderParameter("size", resolution);
         shaderMaterial.SetShaderParameter("offset", distance);
         shaderMaterial.SetShaderParameter("cutoff", cutoff);
-
-        RenderTargetUpdateMode = UpdateMode.Once;
-        await ToSignal(GetTree(), "process_frame");
-        await ToSignal(GetTree(), "process_frame");
-        var image = GetTexture().GetImage();
-        return ImageTexture.CreateFromImage(image);
+        return RenderImageTextureAsync();
     }
 
-    public async Task<ImageTexture> ApplyBlur(Texture2D inputTexture, float blur, float resolution)
+    public async Task<ImageTexture> ApplyBlurAsync(Texture2D inputTexture, float blur, float resolution)
     {
-        FilterMat.Shader = BlurPass1Shader;
-        var size = inputTexture.GetSize();
-        Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("ColorRect");
-
-        rect.Position = new Vector2(0, 0);
-        rect.Size = Size;
-        var shaderMaterial = (ShaderMaterial)rect.Material;
+        var shaderMaterial = PrepareRenderingPlane(BlurPass1Shader, inputTexture);
         shaderMaterial.SetShaderParameter("input_texture", inputTexture);
         shaderMaterial.SetShaderParameter("size", resolution);
         shaderMaterial.SetShaderParameter("blur", blur);
+        var pass1Result = await RenderImageTextureAsync();
 
-        RenderTargetUpdateMode = UpdateMode.Once;
-        await ToSignal(GetTree(), "process_frame");
-        await ToSignal(GetTree(), "process_frame");
-        var image = GetTexture().GetImage();
-        var pass1Result = ImageTexture.CreateFromImage(image);
-
-        // Pass 2
-        FilterMat.Shader = BlurPass2Shader;
+        shaderMaterial = PrepareRenderingPlane(BlurPass2Shader, pass1Result);
         shaderMaterial.SetShaderParameter("input_texture", pass1Result);
         shaderMaterial.SetShaderParameter("size", resolution);
         shaderMaterial.SetShaderParameter("blur", blur);
-
-        RenderTargetUpdateMode = UpdateMode.Once;
-        await ToSignal(GetTree(), "process_frame");
-        await ToSignal(GetTree(), "process_frame");
-        var image2 = GetTexture().GetImage();
-        return ImageTexture.CreateFromImage(image2);
+        return await RenderImageTextureAsync();
     }
 
-    public async Task<ImageTexture> ApplyVerticalBlur(Texture2D inputTexture, float blur, float resolution)
+    public Task<ImageTexture> ApplyVerticalBlurAsync(Texture2D inputTexture, float blur, float resolution)
     {
-        FilterMat.Shader = BlurPass2Shader;
-        var size = inputTexture.GetSize();
-        Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("ColorRect");
-
-        rect.Position = new Vector2(0, 0);
-        rect.Size = Size;
-        var shaderMaterial = (ShaderMaterial)rect.Material;
+        var shaderMaterial = PrepareRenderingPlane(BlurPass2Shader, inputTexture);
         shaderMaterial.SetShaderParameter("input_texture", inputTexture);
         shaderMaterial.SetShaderParameter("size", resolution);
         shaderMaterial.SetShaderParameter("blur", blur);
-
-        RenderTargetUpdateMode = UpdateMode.Once;
-        await ToSignal(GetTree(), "process_frame");
-        await ToSignal(GetTree(), "process_frame");
-        var image2 = GetTexture().GetImage();
-        return ImageTexture.CreateFromImage(image2);
+        return RenderImageTextureAsync();
     }
 
-    public async Task<ImageTexture> ApplyNormalToFlow(Texture2D inputTexture, float resolution)
+    public Task<ImageTexture> ApplyNormalToFlowAsync(Texture2D inputTexture, float resolution)
     {
-        FilterMat.Shader = NormalToFlowPassShader;
-        var size = inputTexture.GetSize();
-        Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("ColorRect");
-
-        rect.Position = new Vector2(0, 0);
-        rect.Size = Size;
-        var shaderMaterial = (ShaderMaterial)rect.Material;
-
+        var shaderMaterial = PrepareRenderingPlane(NormalToFlowPassShader, inputTexture);
         shaderMaterial.SetShaderParameter("input_texture", inputTexture);
         shaderMaterial.SetShaderParameter("size", resolution);
-
-        RenderTargetUpdateMode = UpdateMode.Once;
-        await ToSignal(GetTree(), "process_frame");
-        await ToSignal(GetTree(), "process_frame");
-        var image2 = GetTexture().GetImage();
-        return ImageTexture.CreateFromImage(image2);
+        return RenderImageTextureAsync();
     }
 
-    public async Task<ImageTexture> ApplyNormal(Texture2D inputTexture, float resolution)
+    public Task<ImageTexture> ApplyNormalAsync(Texture2D inputTexture, float resolution)
     {
-        FilterMat.Shader = NormalMapPassShader;
-        var size = inputTexture.GetSize();
-        Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("ColorRect");
-
-        rect.Position = new Vector2(0, 0);
-        rect.Size = Size;
-        var shaderMaterial = (ShaderMaterial)rect.Material;
-
+        var shaderMaterial = PrepareRenderingPlane(NormalMapPassShader, inputTexture);
         shaderMaterial.SetShaderParameter("input_texture", inputTexture);
         shaderMaterial.SetShaderParameter("size", resolution);
-
-        RenderTargetUpdateMode = UpdateMode.Once;
-        await ToSignal(GetTree(), "process_frame");
-        await ToSignal(GetTree(), "process_frame");
-        var image2 = GetTexture().GetImage();
-        return ImageTexture.CreateFromImage(image2);
+        return RenderImageTextureAsync();
     }
 
     public async Task<ImageTexture> ApplyDilate(Texture2D inputTexture, float dilation, float fill, float resolution, Texture2D fillTexture = null)
     {
-        FilterMat.Shader = DilatePass1Shader;
-        var size = inputTexture.GetSize();
-        Size = new Vector2I((int)size.X, (int)size.Y);
-        var rect = GetNode<ColorRect>("ColorRect");
-
-        rect.Position = new Vector2(0, 0);
-        rect.Size = Size;
-        var shaderMaterial = (ShaderMaterial)rect.Material;
-
+        var shaderMaterial = PrepareRenderingPlane(DilatePass1Shader, inputTexture);
         shaderMaterial.SetShaderParameter("input_texture", inputTexture);
         shaderMaterial.SetShaderParameter("size", resolution);
         shaderMaterial.SetShaderParameter("dilation", dilation);
+        var pass1Result = await RenderImageTextureAsync();
 
-        RenderTargetUpdateMode = UpdateMode.Once;
-        await ToSignal(GetTree(), "process_frame");
-        await ToSignal(GetTree(), "process_frame");
-        var image = GetTexture().GetImage();
-        var pass1Result = ImageTexture.CreateFromImage(image);
-
-        // Pass 2
-        FilterMat.Shader = DilatePass2Shader;
+        shaderMaterial = PrepareRenderingPlane(DilatePass2Shader, pass1Result);
         shaderMaterial.SetShaderParameter("input_texture", pass1Result);
         shaderMaterial.SetShaderParameter("size", resolution);
         shaderMaterial.SetShaderParameter("dilation", dilation);
+        var pass2Result = await RenderImageTextureAsync();
 
-        RenderTargetUpdateMode = UpdateMode.Once;
-        await ToSignal(GetTree(), "process_frame");
-        await ToSignal(GetTree(), "process_frame");
-        var image2 = GetTexture().GetImage();
-        var pass2Result = ImageTexture.CreateFromImage(image2);
-
-        // Pass 3
-        FilterMat.Shader = DilatePass3Shader;
+        shaderMaterial = PrepareRenderingPlane(DilatePass3Shader, pass2Result);
         shaderMaterial.SetShaderParameter("distance_texture", pass2Result);
         if (fillTexture != null)
+        {
             shaderMaterial.SetShaderParameter("color_texture", fillTexture);
+        }
         shaderMaterial.SetShaderParameter("size", resolution);
         shaderMaterial.SetShaderParameter("fill", fill);
-
-        RenderTargetUpdateMode = UpdateMode.Once;
-        await ToSignal(GetTree(), "process_frame");
-        await ToSignal(GetTree(), "process_frame");
-
-        var image3 = GetTexture().GetImage();
-        return ImageTexture.CreateFromImage(image3);
+        return await RenderImageTextureAsync();
     }
 }

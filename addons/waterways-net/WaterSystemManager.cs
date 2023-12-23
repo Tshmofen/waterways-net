@@ -26,6 +26,10 @@ public partial class WaterSystemManager : Node3D
         }
     }
 
+    private Aabb _systemAabb;
+    private Image _systemImg;
+    private bool _firstEnterTree = true;
+
     public int SystemBakeResolution { get; set; } = 2;
     public string SystemGroupName { get; set; } = "waterways_system";
     public float MinimumWaterLevel { get; set; }
@@ -35,9 +39,6 @@ public partial class WaterSystemManager : Node3D
     public int SurfaceIndex { get; set; } = -1;
     public bool MaterialOverride { get; set; }
 
-    private Aabb _systemAabb;
-    private Image _systemImg;
-    private bool _firstEnterTree = true;
 
     public override void _EnterTree()
     {
@@ -45,6 +46,7 @@ public partial class WaterSystemManager : Node3D
         {
             _firstEnterTree = false;
         }
+
         AddToGroup(SystemGroupName);
     }
 
@@ -72,7 +74,7 @@ public partial class WaterSystemManager : Node3D
             return ["No System Map is set. Select WaterSystem -> Generate System Map to generate and assign one."];
         }
 
-        return [""];
+        return [string.Empty];
     }
 
     public override Array<Dictionary> _GetPropertyList()
@@ -82,14 +84,11 @@ public partial class WaterSystemManager : Node3D
             PropertyGenerator.CreateProperty(PropertyName.SystemBakeResolution, Variant.Type.Int, PropertyHint.Enum, "128, 256, 512, 1024, 2048"),
             PropertyGenerator.CreateProperty(PropertyName.SystemGroupName, Variant.Type.String),
             PropertyGenerator.CreateProperty(PropertyName.MinimumWaterLevel, Variant.Type.Float),
-
             PropertyGenerator.CreateGroupingProperty("Auto assign texture & coordinates on generate"),
             PropertyGenerator.CreateProperty(PropertyName.WetGroupName, Variant.Type.String),
             PropertyGenerator.CreateProperty(PropertyName.SurfaceIndex, Variant.Type.Int),
             PropertyGenerator.CreateProperty(PropertyName.MaterialOverride, Variant.Type.Bool),
-
-            // values that need to be serialized, but should not be exposed
-            PropertyGenerator.CreateStorageProperty(PropertyName._systemAabb, Variant.Type.Aabb),
+            PropertyGenerator.CreateStorageProperty(PropertyName._systemAabb, Variant.Type.Aabb)
         ];
     }
 
@@ -143,15 +142,17 @@ public partial class WaterSystemManager : Node3D
                 material = mesh.MaterialOverride as ShaderMaterial;
             }
 
-            if (material != null)
+            if (material == null)
             {
-                material.SetShaderParameter("water_systemmap", SystemMap);
-                material.SetShaderParameter("water_systemmap_coords", GetSystemMapCoordinates());
+                continue;
             }
+
+            material.SetShaderParameter("water_systemmap", SystemMap);
+            material.SetShaderParameter("water_systemmap_coords", GetSystemMapCoordinates());
         }
     }
 
-    // Returns the vetical distance to the water, positive values above water level,
+    // Returns the vertical distance to the water, positive values above water level,
     // negative numbers below the water
     public float GetWaterAltitude(Vector3 queryPos)
     {
@@ -209,7 +210,7 @@ public partial class WaterSystemManager : Node3D
             return Vector3.Zero;
         }
 
-        return (new Vector3(col.R, 0.5f, col.G) * 2.0f) - new Vector3(1.0f, 1.0f, 1.0f);
+        return new Vector3(col.R, 0.5f, col.G) * 2.0f - new Vector3(1.0f, 1.0f, 1.0f);
     }
 
     public Transform3D GetSystemMapCoordinates()

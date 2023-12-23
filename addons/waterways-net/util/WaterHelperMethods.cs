@@ -220,7 +220,7 @@ public static class WaterHelperMethods
         var percentage = 0.0f;
 
         river.EmitSignal(RiverManager.SignalName.ProgressNotified, percentage, $"Calculating Collisions ({image.GetWidth()}x{image.GetWidth()})");
-        await river.ToSignal(river.GetTree(), "process_frame");
+        await river.ToSignal(river.GetTree(), SceneTree.SignalName.ProcessFrame);
 
         for (var x = 0; x < image.GetWidth(); x++)
         {
@@ -230,7 +230,7 @@ public static class WaterHelperMethods
             {
                 percentage += 0.1f;
                 river.EmitSignal(RiverManager.SignalName.ProgressNotified, percentage, $"Calculating Collisions ({image.GetWidth()}x{image.GetWidth()})");
-                await river.ToSignal(river.GetTree(), "process_frame");
+                await river.ToSignal(river.GetTree(), SceneTree.SignalName.ProcessFrame);
             }
 
             for (var y = 0; y < image.GetHeight(); y++)

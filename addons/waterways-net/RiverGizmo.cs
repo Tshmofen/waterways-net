@@ -109,7 +109,7 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         return (index - (riverCurvePointCount * 3)) % 2 == 1;
     }
 
-    private int GetCurveIndex(int index, int pointCount)
+    private static int GetCurveIndex(int index, int pointCount)
     {
         if (IsCenterPoint(index, pointCount))
         {
@@ -245,11 +245,11 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         var handlesWidthMatWd = GetMaterial("handles_width_with_depth");
 
         handlesCenterMat.AlbedoColor = new Color(1.0f, 1.0f, 0.0f, 0.25f);
-        handlesCenterMatWd.AlbedoColor = new Color(1.0f, 1.0f, 0.0f, 1.0f);
+        handlesCenterMatWd.AlbedoColor = new Color(1.0f, 1.0f, 0.0f);
         handlesControlPointsMat.AlbedoColor = new Color(1.0f, 0.5f, 0.0f, 0.25f);
-        handlesControlPointsMatWd.AlbedoColor = new Color(1.0f, 0.5f, 0.0f, 1.0f);
+        handlesControlPointsMatWd.AlbedoColor = new Color(1.0f, 0.5f, 0.0f);
         handlesWidthMat.AlbedoColor = new Color(0.0f, 1.0f, 1.0f, 0.25f);
-        handlesWidthMatWd.AlbedoColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
+        handlesWidthMatWd.AlbedoColor = new Color(0.0f, 1.0f, 1.0f);
 
         handlesCenterMat.NoDepthTest = true;
         handlesCenterMatWd.NoDepthTest = false;
@@ -282,13 +282,11 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
     public override string _GetHandleName(EditorNode3DGizmo gizmo, int index, bool secondary)
     {
-        // TODO - figure out of this new "secondary" bool should be used
         return $"Handle {index}";
     }
 
     public override Variant _GetHandleValue(EditorNode3DGizmo gizmo, int index, bool secondary)
     {
-        // TODO - figure out of this new "secondary" bool should be used
         var river = (RiverManager)gizmo.GetNode3D();
         var pointCount = river.Curve.PointCount;
 
@@ -318,7 +316,6 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
     // Called when handle is moved
     public override void _SetHandle(EditorNode3DGizmo gizmo, int index, bool secondary, Camera3D camera, Vector2 point)
     {
-        // TODO - figure out of this new "secondary" bool should be used
         var river = (RiverManager)gizmo.GetNode3D();
         var spaceState = river.GetWorld3D().DirectSpaceState;
 
@@ -374,15 +371,11 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
         if (_handleBaseTransform == null)
         {
-            // This is the first set_handle() call since the last reset so we
-            // use the current handle position as our _handle_base_transform
+            // This is the first set_handle() call since the last reset, so we use the current handle position as our _handle_base_transform
             var z = river.Curve.GetPointOut(pIndex).Normalized();
             var x = z.Cross(Vector3.Down).Normalized();
             var y = z.Cross(x).Normalized();
-            _handleBaseTransform = new Transform3D(
-                new Basis(x, y, z) * globalTransform.Basis,
-                oldPosGlobal
-            );
+            _handleBaseTransform = new Transform3D(new Basis(x, y, z) * globalTransform.Basis, oldPosGlobal);
         }
 
         // Point, in and out handles
@@ -509,10 +502,8 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         _Redraw(gizmo);
     }
 
-    // Handle Undo / Redo of handle movements
     public override void _CommitHandle(EditorNode3DGizmo gizmo, int index, bool secondary, Variant restore, bool cancel)
     {
-        // TODO - figure out of this new "secondary" bool should be used
         var river = (RiverManager)gizmo.GetNode3D();
         var pointCount = river.Curve.PointCount;
 

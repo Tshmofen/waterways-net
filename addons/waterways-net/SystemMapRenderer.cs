@@ -41,8 +41,7 @@ public partial class SystemMapRenderer : SubViewport
                 _camera.Position = aabb.Position + new Vector3(aabb.Size.X / 2.0f, aabb.Size.Y + 1.0f, aabb.Size.X / 2.0f);
                 break;
             case Vector3.Axis.Y:
-                // TODO
-                // This shouldn't happen, we might need some code to handle if it does
+                // TODO: This shouldn't happen, we might need some code to handle if it does
                 break;
             case Vector3.Axis.Z:
                 _camera.Position = aabb.Position + new Vector3(aabb.Size.Z / 2.0f, aabb.Size.Y + 1.0f, aabb.Size.Z / 2.0f);
@@ -55,8 +54,8 @@ public partial class SystemMapRenderer : SubViewport
         RenderTargetClearMode = ClearMode.Always;
         RenderTargetUpdateMode = UpdateMode.Once;
 
-        await ToSignal(GetTree(), "process_frame");
-        await ToSignal(GetTree(), "process_frame");
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
         var height = GetTexture().GetImage();
         var heightResult = ImageTexture.CreateFromImage(height);
@@ -116,8 +115,8 @@ public partial class SystemMapRenderer : SubViewport
         RenderTargetClearMode = ClearMode.Always;
         RenderTargetUpdateMode = UpdateMode.Once;
 
-        await ToSignal(GetTree(), "process_frame");
-        await ToSignal(GetTree(), "process_frame");
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
         var flow = GetTexture().GetImage();
         var flowResult = ImageTexture.CreateFromImage(flow);
