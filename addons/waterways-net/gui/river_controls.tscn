@@ -1,9 +1,9 @@
 [gd_scene load_steps=6 format=3 uid="uid://b4nx8h5jfldwt"]
 
 [ext_resource type="Texture2D" uid="uid://dl2fd2kpkqfcs" path="res://addons/waterways-net/icons/select.svg" id="3_c7fmo"]
-[ext_resource type="Script" path="res://addons/waterways-net/gui/RiverControls.cs" id="4"]
+[ext_resource type="Script" path="res://addons/waterways-net/Gui/RiverControls.cs" id="4"]
 [ext_resource type="Texture2D" uid="uid://dnjok0de3mopo" path="res://addons/waterways-net/icons/create.svg" id="4_cumdu"]
-[ext_resource type="Script" path="res://addons/waterways-net/gui/RiverMenu.cs" id="5"]
+[ext_resource type="Script" path="res://addons/waterways-net/Gui/RiverMenu.cs" id="5"]
 [ext_resource type="Texture2D" uid="uid://cot00dv010gt2" path="res://addons/waterways-net/icons/delete.svg" id="5_a4vrl"]
 
 [node name="HBoxContainer" type="HBoxContainer"]

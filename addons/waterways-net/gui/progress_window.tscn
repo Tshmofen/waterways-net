@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://bkr2n0e2drrc4"]
 
-[ext_resource type="Script" path="res://addons/waterways-net/gui/ProgressWindow.cs" id="1_xgojc"]
+[ext_resource type="Script" path="res://addons/waterways-net/Gui/ProgressWindow.cs" id="1_xgojc"]
 
 [node name="Popup" type="PopupPanel"]
 title = "Test"

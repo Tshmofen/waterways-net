@@ -10,8 +10,9 @@ public static class PropertyGenerator
     public const string Hint = "hint";
     public const string HintString = "hint_string";
     public const string Usage = "usage";
+    public const string Revert = "revert";
 
-    public static Dictionary CreateCustomProperty(PropertyUsageFlags usage, string name, Variant.Type type, PropertyHint? hint = null, string hintString = null)
+    public static Dictionary CreateCustomProperty(PropertyUsageFlags usage, string name, Variant.Type type, PropertyHint? hint = null, string hintString = null, Variant? revert = null)
     {
         var propertyInfo = new Dictionary
         {
@@ -30,10 +31,15 @@ public static class PropertyGenerator
             propertyInfo.Add(HintString, hintString);
         }
 
+        if (revert != null)
+        {
+            propertyInfo.Add(Revert, revert.Value);
+        }
+
         return propertyInfo;
     }
 
-    public static Dictionary CreateProperty(string name, Variant.Type type, PropertyHint? hint = null, string hintString = null)
+    public static Dictionary CreateProperty(string name, Variant.Type type, PropertyHint? hint = null, string hintString = null, Variant? revert = null)
     {
         const PropertyUsageFlags usage = PropertyUsageFlags.Default | PropertyUsageFlags.ScriptVariable;
         return CreateCustomProperty(usage, name, type, hint, hintString);

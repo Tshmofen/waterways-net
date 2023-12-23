@@ -7,9 +7,6 @@ using static Godot.Image;
 
 namespace Waterways.Util;
 
-// Copyright © 2022 Kasper Arnklit Frandsen - MIT License
-// See `LICENSE.md` included in the source distribution for details.
-
 public static class WaterHelperMethods
 {
     public static Vector3 CartToBary(Vector3 p, Vector3 a, Vector3 b, Vector3 c)

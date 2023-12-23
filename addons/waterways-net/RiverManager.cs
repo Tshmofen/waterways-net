@@ -390,13 +390,13 @@ public partial class RiverManager : Node3D
         var resultProperties = new Array<Dictionary>
         {
             PropertyGenerator.CreateGroupingProperty( "Shape", "shape_"),
-            PropertyGenerator.CreateProperty(PropertyName.ShapeStepLengthDivs, Variant.Type.Int, PropertyHint.Range, "1,8"),
-            PropertyGenerator.CreateProperty(PropertyName.ShapeStepWidthDivs, Variant.Type.Int, PropertyHint.Range, "1,8"),
-            PropertyGenerator.CreateProperty(PropertyName.ShapeSmoothness, Variant.Type.Float, PropertyHint.Range, "0.1,5.0"),
+            PropertyGenerator.CreateProperty(PropertyName.ShapeStepLengthDivs, Variant.Type.Int, PropertyHint.Range, "1,8", DefaultValues.ShapeStepLengthDivs),
+            PropertyGenerator.CreateProperty(PropertyName.ShapeStepWidthDivs, Variant.Type.Int, PropertyHint.Range, "1,8", DefaultValues.ShapeStepWidthDivs),
+            PropertyGenerator.CreateProperty(PropertyName.ShapeSmoothness, Variant.Type.Float, PropertyHint.Range, "0.1,5.0", DefaultValues.ShapeSmoothness),
 
             PropertyGenerator.CreateGroupingProperty( "Material", "material_"),
-            PropertyGenerator.CreateProperty(PropertyName.MatShaderType, Variant.Type.Int, PropertyHint.Enum, PropertyGenerator.GetEnumHint<ShaderType>()),
-            PropertyGenerator.CreateProperty(PropertyName.MatCustomShader, Variant.Type.Object, PropertyHint.ResourceType, "Shader"),
+            PropertyGenerator.CreateProperty(PropertyName.MatShaderType, Variant.Type.Int, PropertyHint.Enum, PropertyGenerator.GetEnumHint<ShaderType>(), (int) DefaultValues.MatShaderType),
+            PropertyGenerator.CreateProperty(PropertyName.MatCustomShader, Variant.Type.Object, PropertyHint.ResourceType, "Shader", Variant.From((GodotObject)null)),
         };
 
         var matCategories = new Godot.Collections.Dictionary<string, string>
@@ -452,17 +452,17 @@ public partial class RiverManager : Node3D
         }
 
         resultProperties.Add(PropertyGenerator.CreateGroupingProperty("Lod", "lod_"));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.LodLod0Distance, Variant.Type.Float, PropertyHint.Range, "5.0,200.0"));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.LodLod0Distance, Variant.Type.Float, PropertyHint.Range, "5.0,200.0", DefaultValues.LodLod0Distance));
 
         resultProperties.Add(PropertyGenerator.CreateGroupingProperty("Baking", "baking_"));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingResolution, Variant.Type.Int, PropertyHint.Enum, "64,128,256,512,1024"));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingRaycastDistance, Variant.Type.Float, PropertyHint.Range, "0.0,100.0"));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingRaycastLayers, Variant.Type.Int, PropertyHint.Layers3DPhysics));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingDilate, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFlowmapBlur, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamCutoff, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamOffset, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamBlur, Variant.Type.Float, PropertyHint.Range, "0.0,1.0"));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingResolution, Variant.Type.Int, PropertyHint.Enum, "64,128,256,512,1024", DefaultValues.BakingResolution));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingRaycastDistance, Variant.Type.Float, PropertyHint.Range, "0.0,100.0", DefaultValues.BakingRaycastDistance));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingRaycastLayers, Variant.Type.Int, PropertyHint.Layers3DPhysics, revert: DefaultValues.BakingRaycastLayers));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingDilate, Variant.Type.Float, PropertyHint.Range, "0.0,1.0", DefaultValues.BakingDilate));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFlowmapBlur, Variant.Type.Float, PropertyHint.Range, "0.0,1.0", DefaultValues.BakingFlowmapBlur));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamCutoff, Variant.Type.Float, PropertyHint.Range, "0.0,1.0", DefaultValues.BakingFoamCutoff));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamOffset, Variant.Type.Float, PropertyHint.Range, "0.0,1.0", DefaultValues.BakingFoamOffset));
+        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamBlur, Variant.Type.Float, PropertyHint.Range, "0.0,1.0", DefaultValues.BakingFoamBlur));
 
         // Serialize these values without exposing it in the inspector
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.Curve, Variant.Type.Object));
@@ -475,6 +475,18 @@ public partial class RiverManager : Node3D
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName._uv2Sides, Variant.Type.Int));
 
         return resultProperties;
+    }
+
+    public override bool _PropertyCanRevert(StringName property)
+    {
+        var propertyDictionary = _GetPropertyList().First(p => p[PropertyGenerator.Name].AsStringName() == property);
+        return propertyDictionary.ContainsKey(PropertyGenerator.Revert) || base._PropertyCanRevert(property);
+    }
+
+    public override Variant _PropertyGetRevert(StringName property)
+    {
+        var propertyDictionary = _GetPropertyList().First(p => p[PropertyGenerator.Name].AsStringName() == property);
+        return propertyDictionary.TryGetValue(PropertyGenerator.Revert, out var value) ? value : base._PropertyGetRevert(property);
     }
 
     public override void _EnterTree()
