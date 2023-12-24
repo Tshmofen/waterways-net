@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://li3uy844h64w"]
 
-[ext_resource type="Script" path="res://addons/waterways-net/Gui/WaterSystemControls.cs" id="1"]
-[ext_resource type="Script" path="res://addons/waterways-net/Gui/WaterSystemMenu.cs" id="2"]
+[ext_resource type="Script" path="res://addons/waterways-net/gui/WaterSystemControls.cs" id="1"]
+[ext_resource type="Script" path="res://addons/waterways-net/gui/WaterSystemMenu.cs" id="2"]
 
 [node name="WaterSystemControls" type="HBoxContainer"]
 offset_right = 128.0
