@@ -74,7 +74,7 @@ public partial class WaterSystemManager : Node3D
             return ["No System Map is set. Select WaterSystem -> Generate System Map to generate and assign one."];
         }
 
-        return [string.Empty];
+        return [];
     }
 
     public override Array<Dictionary> _GetPropertyList()

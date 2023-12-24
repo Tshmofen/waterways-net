@@ -566,7 +566,7 @@ public partial class RiverManager : Node3D
     {
         if (ValidFlowmap)
         {
-            return [string.Empty];
+            return [];
         }
 
         return ["No flowmap is set. Select River -> Generate Flow & Foam Map to generate and assign one."];

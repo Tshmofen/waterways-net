@@ -71,7 +71,7 @@ public partial class BuoyantManager : Node3D
             return ["Buoyant node must be a direct child of a RigidDynamicBody3D to function."];
         }
 
-        return [string.Empty];
+        return [];
     }
 
 	public override void _PhysicsProcess(double delta)
