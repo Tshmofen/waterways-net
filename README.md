@@ -1,8 +1,8 @@
 # Waterways .NET (Godot 4.0+)
 
-It is a port to `Godot 4.0+`/`.NET` of a tool to generate river meshes with flow and foam maps based on bezier curves.  
-Visit the original page for all the info about setting it up and instructions on how to use it: [https://github.com/Arnklit/Waterways](https://github.com/Arnklit/Waterways).  
-I didn't change any functionality and everything should be working the same (though, might be altered later to support my own needs, I will update info if it happens).  
+It is a port to `Godot 4.0+`/`.NET` of a tool to generate river meshes with flow and foam maps based on bezier curves. Visit the original page for all the info about setting it up and instructions on how to use it: [https://github.com/Arnklit/Waterways](https://github.com/Arnklit/Waterways).  
+
+###### I didn't change any functionality and everything should be working the same (though, might be altered later to support my own needs, I will update info if it happens).  
 
 Some Context
 ---
