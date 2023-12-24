@@ -9,8 +9,8 @@ public partial class WaterwaysPlugin : EditorPlugin
 {
     public const string PluginPath = "res://addons/waterways-net";
 
-    private WaterSystemControls _waterSystemControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/Gui/water_system_controls.tscn").Instantiate<WaterSystemControls>();
-    private RiverControls _riverControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/Gui/river_controls.tscn").Instantiate<RiverControls>();
+    private WaterSystemControls _waterSystemControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/water_system_controls.tscn").Instantiate<WaterSystemControls>();
+    private RiverControls _riverControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/river_controls.tscn").Instantiate<RiverControls>();
     private EditorSelection _editorSelection;
     private ProgressWindow _progressWindow;
     private RiverMode _mode = RiverMode.Select;
@@ -404,7 +404,7 @@ public partial class WaterwaysPlugin : EditorPlugin
         _riverControls.Mode += OnModeChange;
         _riverControls.Options += OnOptionChange;
 
-        _progressWindow = ResourceLoader.Load<PackedScene>($"{PluginPath}/Gui/progress_window.tscn").Instantiate<ProgressWindow>();
+        _progressWindow = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/progress_window.tscn").Instantiate<ProgressWindow>();
         _riverControls.AddChild(_progressWindow);
 
         _editorSelection = EditorInterface.Singleton.GetSelection();
