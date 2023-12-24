@@ -11,13 +11,15 @@ config_version=5
 [application]
 
 config/name="Waterways-net"
-run/main_scene="res://net-test/main.tscn"
+run/main_scene="res://test-net-assets/TestScene.tscn"
 config/features=PackedStringArray("4.2", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
 [debug]
 
 gdscript/warnings/exclude_addons=false
+gdscript/warnings/inference_on_variant=1
+gdscript/warnings/native_method_override=1
 
 [dotnet]
 
