@@ -10,8 +10,8 @@ config_version=5
 
 [application]
 
-config/name="Waterways-net"
-run/main_scene="res://test-net-assets/TestScene.tscn"
+config/name="waterways_net"
+run/main_scene="res://test_net_assets/TestScene.tscn"
 config/features=PackedStringArray("4.2", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -23,8 +23,8 @@ gdscript/warnings/native_method_override=1
 
 [dotnet]
 
-project/assembly_name="Waterways-net"
+project/assembly_name="waterways_net"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/control_camera3d/plugin.cfg", "res://addons/waterways-net/plugin.cfg", "res://addons/zylann.hterrain/plugin.cfg")
+enabled=PackedStringArray("res://addons/waterways_net/plugin.cfg", "res://addons/zylann.hterrain/plugin.cfg")

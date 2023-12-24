@@ -11,7 +11,7 @@
 /icon.png export-ignore
 /icon.png.import export-ignore
 /project.godot export-ignore
-/waterways-net.csproj export-ignore
-/waterways-net.sln export-ignore
-/waterways-net.sln.DotSettings export-ignore
+/waterways_net.csproj export-ignore
+/waterways_net.sln export-ignore
+/waterways_net.sln.DotSettings export-ignore
 test_net_assets/ export-ignore
