@@ -39,7 +39,6 @@ public partial class WaterSystemManager : Node3D
     public int SurfaceIndex { get; set; } = -1;
     public bool MaterialOverride { get; set; }
 
-
     public override void _EnterTree()
     {
         if (Engine.IsEditorHint() && _firstEnterTree)

@@ -62,11 +62,7 @@ public partial class RiverMenu : MenuButton
         GetPopup().AddItem("Generate Flow & Foam Map");
         GetPopup().AddItem("Generate MeshInstance3D Sibling");
 
-        DebugViewMenu = new PopupMenu
-        {
-            Name = "DebugViewMenu"
-        };
-
+        DebugViewMenu = new PopupMenu { Name = "DebugViewMenu"};
         DebugViewMenu.AboutToPopup += OnDebugViewMenuAboutToPopup;
         DebugViewMenu.IdPressed += OnDebugMenuItemSelected;
 
