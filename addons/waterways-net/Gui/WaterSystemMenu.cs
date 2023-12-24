@@ -7,13 +7,9 @@ public partial class WaterSystemMenu : MenuButton
 {
 	[Signal] public delegate void GenerateSystemMapsEventHandler();
 
-    private void OnMenuItemSelected(long index)
+    private void OnMenuItemSelected(long _)
     {
-        GD.Print(index);
-        if (index == (int)RiverMenuType.GenerateSystemMaps)
-        {
-            EmitSignal(SignalName.GenerateSystemMaps);
-        }
+        EmitSignal(SignalName.GenerateSystemMaps);
     }
 
     public override void _EnterTree()

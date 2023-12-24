@@ -115,13 +115,13 @@ public partial class WaterSystemManager : Node3D
             _systemAabb = _systemAabb.Merge(riverAabb);
         }
 
-        var renderer = new SystemMapRenderer();
+        var renderer = ResourceLoader.Load<PackedScene>($"{WaterwaysPlugin.PluginPath}/system_map_renderer.tscn").Instantiate<SystemMapRenderer>();
         AddChild(renderer);
         var flowMap = await renderer.GrabFlow(rivers, _systemAabb);
         var heightMap = await renderer.GrabHeight(rivers, _systemAabb);
         RemoveChild(renderer);
 
-        var filterRenderer = new FilterRenderer();
+        var filterRenderer = ResourceLoader.Load<PackedScene>($"{WaterwaysPlugin.PluginPath}/filter_renderer.tscn").Instantiate<FilterRenderer>();
         AddChild(filterRenderer);
         SystemMap = await filterRenderer.ApplyCombineAsync(flowMap, flowMap, heightMap);
         RemoveChild(filterRenderer);
