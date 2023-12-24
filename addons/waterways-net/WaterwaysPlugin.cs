@@ -202,7 +202,7 @@ public partial class WaterwaysPlugin : EditorPlugin
         for (var point = 0; point < curvePoints.Count; point++)
         {
             var p1 = curvePoints[point];
-            var p2 = curvePoints[point + 1];
+            var p2 = curvePoints[(point + 1) % curvePoints.Count];
             var result = Geometry3D.GetClosestPointsBetweenSegments(p1, p2, g1, g2);
             var dist = result[0].DistanceTo(result[1]);
 
@@ -224,7 +224,7 @@ public partial class WaterwaysPlugin : EditorPlugin
         for (var bakedPoint = 0; bakedPoint < bakedCurvePoints.Length; bakedPoint++)
         {
             var p1 = bakedCurvePoints[bakedPoint];
-            var p2 = bakedCurvePoints[bakedPoint + 1];
+            var p2 = bakedCurvePoints[(bakedPoint + 1) % bakedCurvePoints.Length];
             var result = Geometry3D.GetClosestPointsBetweenSegments(p1, p2, g1, g2);
             var dist = result[0].DistanceTo(result[1]);
 
@@ -269,7 +269,7 @@ public partial class WaterwaysPlugin : EditorPlugin
 
         if (closestIndex == _editedRiverManager.Curve.PointCount - 1)
         {
-            ur.AddUndoMethod(_editedRiverManager, RiverManager.MethodName.AddPoint, _editedRiverManager.Curve.GetPointPosition(closestIndex), -1);
+            ur.AddUndoMethod(_editedRiverManager, RiverManager.MethodName.AddPoint, _editedRiverManager.Curve.GetPointPosition(closestIndex), -1, Vector3.Zero, 0f);
         }
         else
         {
@@ -365,7 +365,7 @@ public partial class WaterwaysPlugin : EditorPlugin
 
         var ur = GetUndoRedo();
         ur.CreateAction("Add River point");
-        ur.AddDoMethod(_editedRiverManager, RiverManager.MethodName.AddPoint, bakedClosestPoint, closestSegment);
+        ur.AddDoMethod(_editedRiverManager, RiverManager.MethodName.AddPoint, bakedClosestPoint, closestSegment, Vector3.Zero, 0f);
         ur.AddDoMethod(_editedRiverManager, RiverManager.MethodName.PropertiesChanged);
         ur.AddDoMethod(_editedRiverManager, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", false);
         ur.AddDoProperty(_editedRiverManager, RiverManager.PropertyName.ValidFlowmap, false);

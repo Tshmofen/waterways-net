@@ -604,10 +604,8 @@ public partial class RiverManager : Node3D
         return GlobalTransform * MeshInstance.GetAabb();
     }
 
-    public void AddPoint(Vector3 position, int index, Vector3 dir, float width = 0.0f)
+    public void AddPoint(Vector3 position, int index, Vector3 dir, float width)
     {
-        var newWidth = 0f;
-
         if (index == -1)
         {
             var lastIndex = Curve.PointCount - 1;
@@ -621,10 +619,10 @@ public partial class RiverManager : Node3D
             var dist = Curve.GetPointPosition(index).DistanceTo(Curve.GetPointPosition(index + 1));
             var newDir = (dir != Vector3.Zero) ? dir : (Curve.GetPointPosition(index + 1) - Curve.GetPointPosition(index)).Normalized() * 0.25f * dist;
             Curve.AddPoint(position, -newDir, newDir, index + 1);
-            newWidth = width != 0.0f ? width : (Widths[index] + Widths[index + 1]) / 2.0f;
+            var newWidth = width != 0.0f ? width : (Widths[index] + Widths[index + 1]) / 2.0f;
+            Widths.Insert(index + 1, newWidth); // We set the width to the average of the two surrounding widths
         }
 
-        Widths.Insert(index + 1, newWidth); // We set the width to the average of the two surrounding widths
         EmitSignal(SignalName.RiverChanged);
         GenerateRiver();
     }
