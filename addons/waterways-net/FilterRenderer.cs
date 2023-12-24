@@ -146,7 +146,7 @@ public partial class FilterRenderer : SubViewport
         return RenderImageTextureAsync();
     }
 
-    public async Task<ImageTexture> ApplyDilate(Texture2D inputTexture, float dilation, float fill, float resolution, Texture2D fillTexture = null)
+    public async Task<ImageTexture> ApplyDilateAsync(Texture2D inputTexture, float dilation, float fill, float resolution, Texture2D fillTexture = null)
     {
         var shaderMaterial = PrepareRenderingPlane(DilatePass1Shader, inputTexture);
         shaderMaterial.SetShaderParameter("input_texture", inputTexture);
