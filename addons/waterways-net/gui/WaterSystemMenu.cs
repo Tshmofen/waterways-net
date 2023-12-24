@@ -9,6 +9,7 @@ public partial class WaterSystemMenu : MenuButton
 
     private void OnMenuItemSelected(long index)
     {
+        GD.Print(index);
         if (index == (int)RiverMenuType.GenerateSystemMaps)
         {
             EmitSignal(SignalName.GenerateSystemMaps);

@@ -7,6 +7,7 @@ using Waterways.Util;
 
 namespace Waterways;
 
+[Tool]
 public partial class WaterSystemManager : Node3D
 {
     private ImageTexture _systemMap;
