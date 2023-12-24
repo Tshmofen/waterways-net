@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://nw61drbjop33"
-path.s3tc="res://.godot/imported/riverbed_nor_rough.png-5872c42129574b222238e35ec3ded436.s3tc.ctex"
+path.s3tc="res://.godot/imported/riverbed_nor_rough.png-b821f3298587f5fa814e444b8eaf347c.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://test_assets/terrain_textures/riverbed_nor_rough.png"
-dest_files=["res://.godot/imported/riverbed_nor_rough.png-5872c42129574b222238e35ec3ded436.s3tc.ctex"]
+source_file="res://test-net-assets/terrain_textures/riverbed_nor_rough.png"
+dest_files=["res://.godot/imported/riverbed_nor_rough.png-b821f3298587f5fa814e444b8eaf347c.s3tc.ctex"]
 
 [params]
 

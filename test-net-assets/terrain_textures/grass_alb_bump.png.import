@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://k8lt88ugpbm8"
-path.s3tc="res://.godot/imported/grass_alb_bump.png-5c0bc6462f83a1584e64ef6d2455d098.s3tc.ctex"
+path.s3tc="res://.godot/imported/grass_alb_bump.png-421b525b6965aca0eb8fd37636ab3870.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://test_assets/terrain_textures/grass_alb_bump.png"
-dest_files=["res://.godot/imported/grass_alb_bump.png-5c0bc6462f83a1584e64ef6d2455d098.s3tc.ctex"]
+source_file="res://test-net-assets/terrain_textures/grass_alb_bump.png"
+dest_files=["res://.godot/imported/grass_alb_bump.png-421b525b6965aca0eb8fd37636ab3870.s3tc.ctex"]
 
 [params]
 

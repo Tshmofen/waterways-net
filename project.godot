@@ -25,4 +25,4 @@ project/assembly_name="Waterways-net"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/waterways-net/plugin.cfg")
+enabled=PackedStringArray("res://addons/control_camera3d/plugin.cfg", "res://addons/waterways-net/plugin.cfg", "res://addons/zylann.hterrain/plugin.cfg")

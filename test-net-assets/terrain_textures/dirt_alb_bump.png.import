@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://13thf406otb8"
-path.s3tc="res://.godot/imported/dirt_alb_bump.png-9dde6b840ae8e9acdb7ae18330bfd2b0.s3tc.ctex"
+path.s3tc="res://.godot/imported/dirt_alb_bump.png-0dfa79af1bfd246cdb65f6cf0f781ea7.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://test_assets/terrain_textures/dirt_alb_bump.png"
-dest_files=["res://.godot/imported/dirt_alb_bump.png-9dde6b840ae8e9acdb7ae18330bfd2b0.s3tc.ctex"]
+source_file="res://test-net-assets/terrain_textures/dirt_alb_bump.png"
+dest_files=["res://.godot/imported/dirt_alb_bump.png-0dfa79af1bfd246cdb65f6cf0f781ea7.s3tc.ctex"]
 
 [params]
 

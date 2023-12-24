@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://k4brb2w6y37u"
-path.s3tc="res://.godot/imported/dirt_nor_rough.png-f48f050db6a2d6dc5e16e679cb4a8128.s3tc.ctex"
+path.s3tc="res://.godot/imported/dirt_nor_rough.png-42b2731f17ef5a3be67abd0099e634fa.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://test_assets/terrain_textures/dirt_nor_rough.png"
-dest_files=["res://.godot/imported/dirt_nor_rough.png-f48f050db6a2d6dc5e16e679cb4a8128.s3tc.ctex"]
+source_file="res://test-net-assets/terrain_textures/dirt_nor_rough.png"
+dest_files=["res://.godot/imported/dirt_nor_rough.png-42b2731f17ef5a3be67abd0099e634fa.s3tc.ctex"]
 
 [params]
 

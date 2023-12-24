@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d2ul8cjrj362o"
-path.s3tc="res://.godot/imported/grass_nor_rough.png-ec188c8721998e8f28fddf74a0dde98c.s3tc.ctex"
+path.s3tc="res://.godot/imported/grass_nor_rough.png-76a591a2f23843871980afce0efd3347.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://test_assets/terrain_textures/grass_nor_rough.png"
-dest_files=["res://.godot/imported/grass_nor_rough.png-ec188c8721998e8f28fddf74a0dde98c.s3tc.ctex"]
+source_file="res://test-net-assets/terrain_textures/grass_nor_rough.png"
+dest_files=["res://.godot/imported/grass_nor_rough.png-76a591a2f23843871980afce0efd3347.s3tc.ctex"]
 
 [params]
 
