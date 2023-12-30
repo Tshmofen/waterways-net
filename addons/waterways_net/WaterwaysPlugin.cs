@@ -9,8 +9,8 @@ public partial class WaterwaysPlugin : EditorPlugin
 {
     public const string PluginPath = "res://addons/waterways_net";
 
-    private WaterSystemControls _waterSystemControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/water_system_controls.tscn").Instantiate<WaterSystemControls>();
-    private RiverControls _riverControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/river_controls.tscn").Instantiate<RiverControls>();
+    private WaterSystemControls _waterSystemControls;
+    private RiverControls _riverControls;
     private EditorSelection _editorSelection;
     private ProgressWindow _progressWindow;
     private RiverMode _mode = RiverMode.Select;
@@ -396,6 +396,9 @@ public partial class WaterwaysPlugin : EditorPlugin
         AddCustomType("River", "Node3D", ResourceLoader.Load<Script>($"{PluginPath}/RiverManager.cs"), ResourceLoader.Load<Texture2D>($"{PluginPath}/icons/river.svg"));
         AddCustomType("WaterSystem", "Node3D", ResourceLoader.Load<Script>($"{PluginPath}/WaterSystemManager.cs"), ResourceLoader.Load<Texture2D>($"{PluginPath}/icons/system.svg"));
         AddCustomType("Buoyant", "Node3D", ResourceLoader.Load<Script>($"{PluginPath}/BuoyantManager.cs"), ResourceLoader.Load<Texture2D>($"{PluginPath}/icons/buoyant.svg"));
+
+        _waterSystemControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/water_system_controls.tscn").Instantiate<WaterSystemControls>();
+        _riverControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/river_controls.tscn").Instantiate<RiverControls>();
 
         AddNode3DGizmoPlugin(RiverGizmo);
         AddInspectorPlugin(GradientInspector);
