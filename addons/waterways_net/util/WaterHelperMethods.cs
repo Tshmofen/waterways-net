@@ -284,14 +284,13 @@ public static class WaterHelperMethods
                 var rayParamsDown = PhysicsRayQueryParameters3D.Create(realPosUp, realPos, raycastLayers);
                 var resultDown = spaceState.IntersectRay(rayParamsDown);
 
-                static bool CheckResult(Dictionary dict)
+                static bool IsCastSuccess(Dictionary dict)
                 {
                     return dict is { Count: > 0 };
                 }
 
-                var upHitFrontFace = resultUp.ContainsKey("normal") && resultUp["normal"].AsVector3().Y < 0;
-
-                if ((CheckResult(resultUp) || CheckResult(resultDown)) && !upHitFrontFace && CheckResult(resultDown))
+                var upHitFrontFace = resultUp.TryGetValue("normal", out var normal) && normal.AsVector3().Y < 0;
+                if ((IsCastSuccess(resultUp) && !upHitFrontFace) || IsCastSuccess(resultDown))
                 {
                     image.SetPixel(x, y, new Color(1.0f, 1.0f, 1.0f));
                 }
