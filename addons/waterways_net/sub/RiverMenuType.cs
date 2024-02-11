@@ -2,8 +2,6 @@
 
 public enum RiverMenuType
 {
-    Generate,
     GenerateMesh,
-    DebugViewMenu,
-    GenerateSystemMaps
+    DebugViewMenu
 }

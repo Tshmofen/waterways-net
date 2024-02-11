@@ -411,9 +411,8 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
                     }
                 default:
                     {
-                        if (AxisMapping.ContainsKey(EditorPlugin.Constraint))
+                        if (AxisMapping.TryGetValue(EditorPlugin.Constraint, out var axis))
                         {
-                            var axis = AxisMapping[EditorPlugin.Constraint];
                             if (EditorPlugin.LocalEditing)
                             {
                                 axis = _handleBaseTransform.Value.Basis * (axis);
@@ -425,9 +424,8 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
                             var result = Geometry3D.GetClosestPointsBetweenSegments(axisFrom, axisTo, rayFrom, rayTo);
                             newPos = result[0];
                         }
-                        else if (PlaneMapping.ContainsKey(EditorPlugin.Constraint))
+                        else if (PlaneMapping.TryGetValue(EditorPlugin.Constraint, out var normal))
                         {
-                            var normal = PlaneMapping[EditorPlugin.Constraint];
                             if (EditorPlugin.LocalEditing)
                             {
                                 normal = _handleBaseTransform.Value.Basis * (normal);
@@ -514,42 +512,36 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
         if (IsCenterPoint(index, pointCount))
         {
-            plugin.AddDoMethod(river, RiverManager.MethodName.SetCurvePointPosition, pIndex, river.Curve.GetPointPosition(pIndex));
-            plugin.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointPosition, pIndex, restoreF);
+            plugin.AddDoMethod(river, nameof(RiverManager.SetCurvePointPosition), pIndex, river.Curve.GetPointPosition(pIndex));
+            plugin.AddUndoMethod(river, nameof(RiverManager.SetCurvePointPosition), pIndex, restoreF);
         }
 
         if (IsControlPointIn(index, pointCount))
         {
-            plugin.AddDoMethod(river, RiverManager.MethodName.SetCurvePointIn, pIndex, river.Curve.GetPointIn(pIndex));
-            plugin.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointIn, pIndex, restoreF);
-            plugin.AddDoMethod(river, RiverManager.MethodName.SetCurvePointOut, pIndex, river.Curve.GetPointOut(pIndex));
-            plugin.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointOut, pIndex, -restoreF);
+            plugin.AddDoMethod(river, nameof(RiverManager.SetCurvePointIn), pIndex, river.Curve.GetPointIn(pIndex));
+            plugin.AddUndoMethod(river, nameof(RiverManager.SetCurvePointIn), pIndex, restoreF);
+            plugin.AddDoMethod(river, nameof(RiverManager.SetCurvePointOut), pIndex, river.Curve.GetPointOut(pIndex));
+            plugin.AddUndoMethod(river, nameof(RiverManager.SetCurvePointOut), pIndex, -restoreF);
         }
 
         if (IsControlPointOut(index, pointCount))
         {
-            plugin.AddDoMethod(river, RiverManager.MethodName.SetCurvePointOut, pIndex, river.Curve.GetPointOut(pIndex));
-            plugin.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointOut, pIndex, restoreF);
-            plugin.AddDoMethod(river, RiverManager.MethodName.SetCurvePointIn, pIndex, river.Curve.GetPointIn(pIndex));
-            plugin.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointIn, pIndex, -restoreF);
+            plugin.AddDoMethod(river, nameof(RiverManager.SetCurvePointOut), pIndex, river.Curve.GetPointOut(pIndex));
+            plugin.AddUndoMethod(river, nameof(RiverManager.SetCurvePointOut), pIndex, restoreF);
+            plugin.AddDoMethod(river, nameof(RiverManager.SetCurvePointIn), pIndex, river.Curve.GetPointIn(pIndex));
+            plugin.AddUndoMethod(river, nameof(RiverManager.SetCurvePointIn), pIndex, -restoreF);
         }
 
         if (IsWidthPointLeft(index, pointCount) || IsWidthPointRight(index, pointCount))
         {
             var riverWidthsUndo = river.Widths.Duplicate(true);
             riverWidthsUndo[pIndex] = restoreF;
-            plugin.AddDoProperty(river, RiverManager.PropertyName.Widths, river.Widths);
-            plugin.AddUndoProperty(river, RiverManager.PropertyName.Widths, riverWidthsUndo);
+            plugin.AddDoProperty(river, nameof(RiverManager.Widths), river.Widths);
+            plugin.AddUndoProperty(river, nameof(RiverManager.Widths), riverWidthsUndo);
         }
 
-        plugin.AddDoMethod(river, RiverManager.MethodName.PropertiesChanged);
-        plugin.AddDoMethod(river, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", false);
-        plugin.AddDoProperty(river, RiverManager.PropertyName.ValidFlowmap, false);
-        plugin.AddDoMethod(river, Node.MethodName.UpdateConfigurationWarnings);
-        plugin.AddUndoMethod(river, RiverManager.MethodName.PropertiesChanged);
-        plugin.AddUndoMethod(river, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", river.ValidFlowmap);
-        plugin.AddUndoProperty(river, RiverManager.PropertyName.ValidFlowmap, river.ValidFlowmap);
-        plugin.AddUndoMethod(river, Node.MethodName.UpdateConfigurationWarnings);
+        plugin.AddDoMethod(river, nameof(RiverManager.PropertiesChanged));
+        plugin.AddUndoMethod(river, nameof(RiverManager.PropertiesChanged));
         plugin.CommitAction();
 
         _Redraw(gizmo);

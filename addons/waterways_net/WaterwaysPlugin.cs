@@ -9,13 +9,10 @@ public partial class WaterwaysPlugin : EditorPlugin
 {
     public const string PluginPath = "res://addons/waterways_net";
 
-    private WaterSystemControls _waterSystemControls;
     private RiverControls _riverControls;
     private EditorSelection _editorSelection;
-    private ProgressWindow _progressWindow;
     private RiverMode _mode = RiverMode.Select;
     private RiverManager _editedRiverManager;
-    private WaterSystemManager _editedSystemManager;
 
     public RiverGizmo RiverGizmo { get; set; } = new();
     public InspectorPlugin GradientInspector { get; set; } = new();
@@ -24,24 +21,14 @@ public partial class WaterwaysPlugin : EditorPlugin
 
     #region Signal Handlers
 
-    private void OnGenerateFlowMapPressed()
-    {
-        _editedRiverManager.BakeTexture();
-    }
-
     private void OnGenerateMeshPressed()
     {
-        _editedRiverManager.SpawnMesh();
+        _editedRiverManager.CreateMeshDuplicate();
     }
 
     private void OnDebugViewChanged(int index)
     {
         _editedRiverManager.DebugView = index;
-    }
-
-    private void OnGenerateSystemMapsPressed()
-    {
-        _ = _editedSystemManager.GenerateSystemMaps();
     }
 
     private void OnSelectionChange()
@@ -60,25 +47,11 @@ public partial class WaterwaysPlugin : EditorPlugin
                 ShowRiverControlPanel();
                 _editedRiverManager = manager;
                 _riverControls.Menu.DebugViewMenuSelected = _editedRiverManager.DebugView;
-
-                if (!_editedRiverManager.IsConnected(RiverManager.SignalName.ProgressNotified, Callable.From<float, string>(OnRiverProgressNotified)))
-                {
-                    _editedRiverManager.Connect(RiverManager.SignalName.ProgressNotified, Callable.From<float, string>(OnRiverProgressNotified));
-                }
-
-                HideWaterSystemControlPanel();
-                break;
-
-            case WaterSystemManager:
-                ShowWaterSystemControlPanel();
-                _editedSystemManager = selected[0] as WaterSystemManager;
-                HideRiverControlPanel();
                 break;
 
             default:
                 _editedRiverManager = null;
                 HideRiverControlPanel();
-                HideWaterSystemControlPanel();
                 break;
         }
     }
@@ -86,13 +59,11 @@ public partial class WaterwaysPlugin : EditorPlugin
     private void OnSceneChanged(Node _)
     {
         HideRiverControlPanel();
-        HideWaterSystemControlPanel();
     }
 
     private void OnSceneClosed(string _)
     {
         HideRiverControlPanel();
-        HideWaterSystemControlPanel();
     }
 
     private void OnModeChange(RiverMode mode)
@@ -118,23 +89,6 @@ public partial class WaterwaysPlugin : EditorPlugin
         }
     }
 
-    private void OnRiverProgressNotified(float progress, string message)
-    {
-        if (message == "finished")
-        {
-            _progressWindow.Hide();
-        }
-        else
-        {
-            if (!_progressWindow.Visible)
-            {
-                _progressWindow.PopupCentered();
-            }
-
-            _progressWindow.ShowProgress(message, progress);
-        }
-    }
-
     #endregion
 
     #region Util
@@ -147,7 +101,6 @@ public partial class WaterwaysPlugin : EditorPlugin
         }
 
         AddControlToContainer(CustomControlContainer.SpatialEditorMenu, _riverControls);
-        _riverControls.Menu.GenerateFlowmap += OnGenerateFlowMapPressed;
         _riverControls.Menu.GenerateMesh += OnGenerateMeshPressed;
         _riverControls.Menu.DebugViewChanged += OnDebugViewChanged;
     }
@@ -161,31 +114,8 @@ public partial class WaterwaysPlugin : EditorPlugin
 
         RemoveControlFromContainer(CustomControlContainer.SpatialEditorMenu, _riverControls);
 
-        _riverControls.Menu.GenerateFlowmap -= OnGenerateFlowMapPressed;
         _riverControls.Menu.GenerateMesh -= OnGenerateMeshPressed;
         _riverControls.Menu.DebugViewChanged -= OnDebugViewChanged;
-    }
-
-    private void ShowWaterSystemControlPanel()
-    {
-        if (_waterSystemControls.GetParent() != null)
-        {
-            return;
-        }
-
-        AddControlToContainer(CustomControlContainer.SpatialEditorMenu, _waterSystemControls);
-        _waterSystemControls.Menu.GenerateSystemMaps += OnGenerateSystemMapsPressed;
-    }
-
-    private void HideWaterSystemControlPanel()
-    {
-        if (_waterSystemControls.GetParent() == null)
-        {
-            return;
-        }
-
-        RemoveControlFromContainer(CustomControlContainer.SpatialEditorMenu, _waterSystemControls);
-        _waterSystemControls.Menu.GenerateSystemMaps -= OnGenerateSystemMapsPressed;
     }
 
     private int GetClosestSegment(Transform3D globalTransform, Vector3 rayFrom, Vector3 rayDir, out Vector3 bakedClosestPoint)
@@ -261,25 +191,19 @@ public partial class WaterwaysPlugin : EditorPlugin
 
         var ur = GetUndoRedo();
         ur.CreateAction("Remove River point");
-        ur.AddDoMethod(_editedRiverManager, RiverManager.MethodName.RemovePoint, closestIndex);
-        ur.AddDoMethod(_editedRiverManager, RiverManager.MethodName.PropertiesChanged);
-        ur.AddDoMethod(_editedRiverManager, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", false);
-        ur.AddDoProperty(_editedRiverManager, RiverManager.PropertyName.ValidFlowmap, false);
-        ur.AddDoMethod(_editedRiverManager, Node.MethodName.UpdateConfigurationWarnings);
+        ur.AddDoMethod(_editedRiverManager, nameof(RiverManager.RemovePoint), closestIndex);
+        ur.AddDoMethod(_editedRiverManager, nameof(RiverManager.PropertiesChanged));
 
         if (closestIndex == _editedRiverManager.Curve.PointCount - 1)
         {
-            ur.AddUndoMethod(_editedRiverManager, RiverManager.MethodName.AddPoint, _editedRiverManager.Curve.GetPointPosition(closestIndex), -1, Vector3.Zero, 0f);
+            ur.AddUndoMethod(_editedRiverManager, nameof(RiverManager.AddPoint), _editedRiverManager.Curve.GetPointPosition(closestIndex), -1, Vector3.Zero, 0f);
         }
         else
         {
-            ur.AddUndoMethod(_editedRiverManager, RiverManager.MethodName.AddPoint, _editedRiverManager.Curve.GetPointPosition(closestIndex), closestIndex - 1, _editedRiverManager.Curve.GetPointOut(closestIndex), _editedRiverManager.Widths[closestIndex]);
+            ur.AddUndoMethod(_editedRiverManager, nameof(RiverManager.AddPoint), _editedRiverManager.Curve.GetPointPosition(closestIndex), closestIndex - 1, _editedRiverManager.Curve.GetPointOut(closestIndex), _editedRiverManager.Widths[closestIndex]);
         }
 
-        ur.AddUndoMethod(_editedRiverManager, RiverManager.MethodName.PropertiesChanged);
-        ur.AddUndoMethod(_editedRiverManager, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", _editedRiverManager.ValidFlowmap);
-        ur.AddUndoProperty(_editedRiverManager, RiverManager.PropertyName.ValidFlowmap, _editedRiverManager.ValidFlowmap);
-        ur.AddUndoMethod(_editedRiverManager, Node.MethodName.UpdateConfigurationWarnings);
+        ur.AddUndoMethod(_editedRiverManager, nameof(RiverManager.PropertiesChanged));
         ur.CommitAction();
     }
 
@@ -329,9 +253,8 @@ public partial class WaterwaysPlugin : EditorPlugin
                     break;
 
                 default:
-                    if (RiverGizmo.AxisMapping.ContainsKey(Constraint))
+                    if (RiverGizmo.AxisMapping.TryGetValue(Constraint, out var axis))
                     {
-                        var axis = RiverGizmo.AxisMapping[Constraint];
                         if (LocalEditing)
                         {
                             axis = handleBaseTransform.Basis * (axis);
@@ -343,9 +266,8 @@ public partial class WaterwaysPlugin : EditorPlugin
                         var result = Geometry3D.GetClosestPointsBetweenSegments(axisFrom, axisTo, rayFrom, rayTo);
                         newPos = result[0];
                     }
-                    else if (RiverGizmo.PlaneMapping.ContainsKey(Constraint))
+                    else if (RiverGizmo.PlaneMapping.TryGetValue(Constraint, out var normal))
                     {
-                        var normal = RiverGizmo.PlaneMapping[Constraint];
                         if (LocalEditing)
                         {
                             normal = handleBaseTransform.Basis * (normal);
@@ -365,25 +287,19 @@ public partial class WaterwaysPlugin : EditorPlugin
 
         var ur = GetUndoRedo();
         ur.CreateAction("Add River point");
-        ur.AddDoMethod(_editedRiverManager, RiverManager.MethodName.AddPoint, bakedClosestPoint, closestSegment, Vector3.Zero, 0f);
-        ur.AddDoMethod(_editedRiverManager, RiverManager.MethodName.PropertiesChanged);
-        ur.AddDoMethod(_editedRiverManager, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", false);
-        ur.AddDoProperty(_editedRiverManager, RiverManager.PropertyName.ValidFlowmap, false);
-        ur.AddDoMethod(_editedRiverManager, Node.MethodName.UpdateConfigurationWarnings);
+        ur.AddDoMethod(_editedRiverManager, nameof(RiverManager.AddPoint), bakedClosestPoint, closestSegment, Vector3.Zero, 0f);
+        ur.AddDoMethod(_editedRiverManager, nameof(RiverManager.PropertiesChanged));
 
         if (closestSegment == -1)
         {
-            ur.AddUndoMethod(_editedRiverManager, RiverManager.MethodName.RemovePoint, _editedRiverManager.Curve.PointCount);
+            ur.AddUndoMethod(_editedRiverManager, nameof(RiverManager.RemovePoint), _editedRiverManager.Curve.PointCount);
         }
         else
         {
-            ur.AddUndoMethod(_editedRiverManager, RiverManager.MethodName.RemovePoint, closestSegment + 1);
+            ur.AddUndoMethod(_editedRiverManager, nameof(RiverManager.RemovePoint), closestSegment + 1);
         }
 
-        ur.AddUndoMethod(_editedRiverManager, RiverManager.MethodName.PropertiesChanged);
-        ur.AddUndoMethod(_editedRiverManager, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", _editedRiverManager.ValidFlowmap);
-        ur.AddUndoProperty(_editedRiverManager, RiverManager.PropertyName.ValidFlowmap, _editedRiverManager.ValidFlowmap);
-        ur.AddUndoMethod(_editedRiverManager, Node.MethodName.UpdateConfigurationWarnings);
+        ur.AddUndoMethod(_editedRiverManager, nameof(RiverManager.PropertiesChanged));
         ur.CommitAction();
 
         return true;
@@ -394,11 +310,8 @@ public partial class WaterwaysPlugin : EditorPlugin
     public override void _EnterTree()
     {
         AddCustomType("River", "Node3D", ResourceLoader.Load<Script>($"{PluginPath}/RiverManager.cs"), ResourceLoader.Load<Texture2D>($"{PluginPath}/icons/river.svg"));
-        AddCustomType("WaterSystem", "Node3D", ResourceLoader.Load<Script>($"{PluginPath}/WaterSystemManager.cs"), ResourceLoader.Load<Texture2D>($"{PluginPath}/icons/system.svg"));
-        AddCustomType("Buoyant", "Node3D", ResourceLoader.Load<Script>($"{PluginPath}/BuoyantManager.cs"), ResourceLoader.Load<Texture2D>($"{PluginPath}/icons/buoyant.svg"));
-
-        _waterSystemControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/water_system_controls.tscn").Instantiate<WaterSystemControls>();
         _riverControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/river_controls.tscn").Instantiate<RiverControls>();
+        GD.Print(_riverControls);
 
         AddNode3DGizmoPlugin(RiverGizmo);
         AddInspectorPlugin(GradientInspector);
@@ -406,9 +319,6 @@ public partial class WaterwaysPlugin : EditorPlugin
         RiverGizmo.EditorPlugin = this;
         _riverControls.Mode += OnModeChange;
         _riverControls.Options += OnOptionChange;
-
-        _progressWindow = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/progress_window.tscn").Instantiate<ProgressWindow>();
-        _riverControls.AddChild(_progressWindow);
 
         _editorSelection = EditorInterface.Singleton.GetSelection();
         _editorSelection.SelectionChanged += OnSelectionChange;
@@ -420,8 +330,6 @@ public partial class WaterwaysPlugin : EditorPlugin
     public override void _ExitTree()
     {
         RemoveCustomType("River");
-        RemoveCustomType("Water System");
-        RemoveCustomType("Buoyant");
         RemoveNode3DGizmoPlugin(RiverGizmo);
         RemoveInspectorPlugin(GradientInspector);
 
@@ -433,12 +341,11 @@ public partial class WaterwaysPlugin : EditorPlugin
         SceneClosed -= OnSceneClosed;
 
         HideRiverControlPanel();
-        HideWaterSystemControlPanel();
     }
 
     public override bool _Handles(GodotObject @object)
     {
-        return @object is RiverManager or WaterSystemManager;
+        return @object is RiverManager;
     }
 
     public override int _Forward3DGuiInput(Camera3D camera, InputEvent @event)

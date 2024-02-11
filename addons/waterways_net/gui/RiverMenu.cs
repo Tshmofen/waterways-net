@@ -5,7 +5,6 @@ namespace Waterways.Gui;
 [Tool]
 public partial class RiverMenu : MenuButton
 {
-    [Signal] public delegate void GenerateFlowmapEventHandler();
     [Signal] public delegate void GenerateMeshEventHandler();
     [Signal] public delegate void DebugViewChangedEventHandler(int index);
 
@@ -18,10 +17,6 @@ public partial class RiverMenu : MenuButton
     {
         switch ((RiverMenuType)index)
         {
-            case RiverMenuType.Generate:
-                EmitSignal(SignalName.GenerateFlowmap);
-                break;
-
             case RiverMenuType.GenerateMesh:
                 EmitSignal(SignalName.GenerateMesh);
                 break;
@@ -41,7 +36,6 @@ public partial class RiverMenu : MenuButton
     {
         DebugViewMenu.Clear();
         DebugViewMenu.AddRadioCheckItem("Display Normal");
-        DebugViewMenu.AddRadioCheckItem("Display Debug Flow Map (RG)");
         DebugViewMenu.AddRadioCheckItem("Display Debug Foam Map (B)");
         DebugViewMenu.AddRadioCheckItem("Display Debug Noise Map (A)");
         DebugViewMenu.AddRadioCheckItem("Display Debug Distance Field Map (R)");
@@ -59,7 +53,6 @@ public partial class RiverMenu : MenuButton
     {
         GetPopup().Clear();
         GetPopup().IdPressed += OnMenuItemSelected;
-        GetPopup().AddItem("Generate Flow & Foam Map");
         GetPopup().AddItem("Generate MeshInstance3D Sibling");
 
         DebugViewMenu = new PopupMenu { Name = "DebugViewMenu"};

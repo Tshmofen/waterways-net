@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Godot;
 using Godot.Collections;
 using Waterway;
@@ -11,16 +10,12 @@ namespace Waterways;
 [Tool]
 public partial class RiverManager : Node3D
 {
+    #region Vars
+
     private const string MaterialParamPrefix = "mat_";
-    private const string FilterRendererPath = $"{WaterwaysPlugin.PluginPath}/filter_renderer.tscn";
-    private const string FlowOffsetNoiseTexturePath = $"{WaterwaysPlugin.PluginPath}/textures/flow_offset_noise.png";
     private const string FoamNoisePath = $"{WaterwaysPlugin.PluginPath}/textures/foam_noise.png";
 
-    // river_changed used to update handles when values are changed on script side
-    // progress_notified used to up progress bar when baking maps
-    // albedo_set is needed since the gradient is a custom inspector that needs a signal to update from script side
     [Signal] public delegate void RiverChangedEventHandler();
-    [Signal] public delegate void ProgressNotifiedEventHandler();
 
     private static readonly List<RiverShader> BuiltInShaders = [
         new RiverShader
@@ -63,7 +58,6 @@ public partial class RiverManager : Node3D
         { $"{nameof(MaterialCategory.Custom).ToLower()}_", MaterialCategory.Custom}
     };
 
-    #region Vars
 
     public static class DefaultValues
     {
@@ -71,14 +65,6 @@ public partial class RiverManager : Node3D
         public const int ShapeStepWidthDivs = 1;
         public const float ShapeSmoothness = 0.5f;
         public const ShaderType MatShaderType = ShaderType.Water;
-        public const int BakingResolution = 2;
-        public const float BakingRaycastDistance = 10.0f;
-        public const uint BakingRaycastLayers = 1;
-        public const float BakingDilate = 0.6f;
-        public const float BakingFlowmapBlur = 0.04f;
-        public const float BakingFoamCutoff = 0.9f;
-        public const float BakingFoamOffset = 0.1f;
-        public const float BakingFoamBlur = 0.02f;
         public const float LodLod0Distance = 50.0f;
     }
 
@@ -97,8 +83,6 @@ public partial class RiverManager : Node3D
                 return;
             }
 
-            ValidFlowmap = false;
-            SetMaterials("i_valid_flowmap", ValidFlowmap);
             GenerateRiver();
             EmitSignal(SignalName.RiverChanged);
         }
@@ -116,8 +100,6 @@ public partial class RiverManager : Node3D
                 return;
             }
 
-            ValidFlowmap = false;
-            SetMaterials("i_valid_flowmap", ValidFlowmap);
             GenerateRiver();
             EmitSignal(SignalName.RiverChanged);
         }
@@ -135,8 +117,6 @@ public partial class RiverManager : Node3D
                 return;
             }
 
-            ValidFlowmap = false;
-            SetMaterials("i_valid_flowmap", ValidFlowmap);
             GenerateRiver();
             EmitSignal(SignalName.RiverChanged);
         }
@@ -210,23 +190,12 @@ public partial class RiverManager : Node3D
         set
         {
             _lodLod0Distance = value;
-            SetMaterials("i_lod0_distance", value);
+            SetShaderParameter("i_lod0_distance", value);
         }
     }
 
-    // Bake Properties
-    public int BakingResolution { get; set; } = DefaultValues.BakingResolution;
-    public float BakingRaycastDistance { get; set; } = DefaultValues.BakingRaycastDistance;
-    public uint BakingRaycastLayers { get; set; } = DefaultValues.BakingRaycastLayers;
-    public float BakingDilate { get; set; } = DefaultValues.BakingDilate;
-    public float BakingFlowmapBlur { get; set; } = DefaultValues.BakingFlowmapBlur;
-    public float BakingFoamCutoff { get; set; } = DefaultValues.BakingFoamCutoff;
-    public float BakingFoamOffset { get; set; } = DefaultValues.BakingFoamOffset;
-    public float BakingFoamBlur { get; set; } = DefaultValues.BakingFoamBlur;
-
     // Public variables
     public Curve3D Curve { get; set; }
-    public bool ValidFlowmap { get; set; }
     public MeshInstance3D MeshInstance { get; set; }
     public Texture2D FlowFoamNoise { get; set; }
     public Texture2D DistPressure { get; set; }
@@ -272,7 +241,6 @@ public partial class RiverManager : Node3D
     private MeshDataTool _meshDataTool;
     private ShaderMaterial _debugMaterial;
     private bool _firstEnterTree = true;
-    private PackedScene _filterRenderer;
 
     // Serialised private variables
     private ShaderMaterial _material;
@@ -285,7 +253,6 @@ public partial class RiverManager : Node3D
 
     private void GenerateRiver()
     {
-        // TODO: count loss expected?
         var averageWidth = Widths.Sum() / (Widths.Count / 2f);
         _steps = (int)(Mathf.Max(1.0f, Mathf.Round(Curve.GetBakedLength() / averageWidth)));
 
@@ -294,77 +261,9 @@ public partial class RiverManager : Node3D
         MeshInstance.Mesh.SurfaceSetMaterial(0, _material);
     }
 
-    private async Task GenerateFlowMap(float flowmapResolution)
-    {
-        // WaterHelperMethods.ResetAllColliders(get_tree().root)
-        var image = Image.Create((int)flowmapResolution, (int)flowmapResolution, true, Image.Format.Rgb8);
-        image.Fill(new Color(0, 0, 0));
+    #endregion
 
-        EmitSignal(SignalName.ProgressNotified, 0.0f, $"Calculating Collisions ({flowmapResolution}x{flowmapResolution})");
-        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-
-        image = await WaterHelperMethods.GenerateCollisionMap(image, MeshInstance, BakingRaycastDistance, BakingRaycastLayers, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, this);
-
-        EmitSignal(SignalName.ProgressNotified, 0.95f, $"Applying filters ({flowmapResolution}x{flowmapResolution})");
-        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-
-        // Calculate how many columns are in UV2
-        _uv2Sides = WaterHelperMethods.CalculateSide(_steps);
-
-        var margin = (int)(Mathf.Round(flowmapResolution / _uv2Sides));
-        image = WaterHelperMethods.AddMargins(image, (int)flowmapResolution, margin);
-        var collisionWithMargins = ImageTexture.CreateFromImage(image);
-
-        // Create correctly tiling noise for A channel
-        var noiseTexture = (Texture2D)ResourceLoader.Load(FlowOffsetNoiseTexturePath);
-        var noiseWithMarginSize = (_uv2Sides + 2) * (noiseTexture.GetWidth() / (float)(_uv2Sides));
-        var noiseWithTiling = Image.Create((int)noiseWithMarginSize, (int)noiseWithMarginSize, false, Image.Format.Rgb8);
-        var sliceWidth = noiseTexture.GetWidth() / (float)(_uv2Sides);
-
-        for (var x = 0; x < _uv2Sides; x++)
-        {
-            noiseWithTiling.BlendRect(noiseTexture.GetImage(), new Rect2I(0, 0, (int)sliceWidth, noiseTexture.GetHeight()), new Vector2I((int)(sliceWidth + (x * sliceWidth)), (int)(sliceWidth - (noiseTexture.GetWidth() / 2.0f))));
-            noiseWithTiling.BlendRect(noiseTexture.GetImage(), new Rect2I(0, 0, (int)sliceWidth, noiseTexture.GetHeight()), new Vector2I((int)(sliceWidth + (x * sliceWidth)), (int)(sliceWidth + (noiseTexture.GetWidth() / 2.0f))));
-        }
-
-        var tiledNoise = ImageTexture.CreateFromImage(noiseWithTiling);
-
-        // Create renderer
-        var rendererInstance = _filterRenderer.Instantiate<FilterRenderer>();
-
-        AddChild(rendererInstance);
-
-        var flowPressureBlurAmount = 0.04f / _uv2Sides * flowmapResolution;
-        var dilateAmount = BakingDilate / _uv2Sides;
-        var flowmapBlurAmount = BakingFlowmapBlur / _uv2Sides * flowmapResolution;
-        var foamOffsetAmount = BakingFoamOffset / _uv2Sides;
-        var foamBlurAmount = BakingFoamBlur / _uv2Sides * flowmapResolution;
-
-        var flowPressureMap = await rendererInstance.ApplyFlowPressureAsync(collisionWithMargins, flowmapResolution, _uv2Sides + 2.0f);
-        var blurredFlowPressureMap = await rendererInstance.ApplyVerticalBlurAsync(flowPressureMap, flowPressureBlurAmount, flowmapResolution + (margin * 2));
-        var dilatedTexture = await rendererInstance.ApplyDilateAsync(collisionWithMargins, dilateAmount, 0.0f, flowmapResolution + (margin * 2));
-        var normalMap = await rendererInstance.ApplyNormalAsync(dilatedTexture, flowmapResolution + (margin * 2));
-        var flowMap = await rendererInstance.ApplyNormalToFlowAsync(normalMap, flowmapResolution + (margin * 2));
-        var blurredFlowMap = await rendererInstance.ApplyBlurAsync(flowMap, flowmapBlurAmount, flowmapResolution + (margin * 2));
-        var foamMap = await rendererInstance.ApplyFoamAsync(dilatedTexture, foamOffsetAmount, BakingFoamCutoff, flowmapResolution + (margin * 2));
-        var blurredFoamMap = await rendererInstance.ApplyBlurAsync(foamMap, foamBlurAmount, flowmapResolution + (margin * 2));
-        var flowFoamNoiseImg = await rendererInstance.ApplyCombineAsync(blurredFlowMap, blurredFlowMap, blurredFoamMap, tiledNoise);
-        var distPressureImg = await rendererInstance.ApplyCombineAsync(dilatedTexture, blurredFlowPressureMap);
-
-        RemoveChild(rendererInstance); // cleanup
-
-        FlowFoamNoise = flowFoamNoiseImg;
-        DistPressure = distPressureImg;
-
-        SetMaterials("i_flowmap", FlowFoamNoise);
-        SetMaterials("i_distmap", DistPressure);
-        SetMaterials("i_valid_flowmap", true);
-        SetMaterials("i_uv2_sides", _uv2Sides);
-
-        ValidFlowmap = true;
-        EmitSignal(SignalName.ProgressNotified, 100.0, "finished");
-        UpdateConfigurationWarnings();
-    }
+    #region Properties Management
 
     private Dictionary GetCachedProperty(StringName name)
     {
@@ -398,11 +297,13 @@ public partial class RiverManager : Node3D
         return newProperty;
     }
 
-    private void AccumulateShaderParameters(Array<Dictionary> resultProperties)
+    private List<Dictionary> AccumulateShaderParameters()
     {
+        var parameters = new List<Dictionary>();
+
         if (_material.Shader == null)
         {
-            return;
+            return parameters;
         }
 
         var shaderRid = _material.Shader.GetRid();
@@ -420,55 +321,19 @@ public partial class RiverManager : Node3D
                 continue;
             }
 
-            resultProperties.Add(PropertyGenerator.CreateGroupingProperty($"Material/{value}", MaterialParamPrefix + key));
+            parameters.Add(PropertyGenerator.CreateGroupingProperty($"Material/{value}", MaterialParamPrefix + key));
 
             foreach (var param in group)
             {
-                resultProperties.Add(CreateShaderParameter(param, shaderRid));
+                parameters.Add(CreateShaderParameter(param, shaderRid));
                 shaderParameters.Remove(param);
             }
         }
 
-        // add remaining parameters
-        resultProperties.Add(PropertyGenerator.CreateGroupingProperty("Material", MaterialParamPrefix));
-        foreach (var param in shaderParameters)
-        {
-            resultProperties.Add(CreateShaderParameter(param, shaderRid));
-        }
-    }
+        parameters.Add(PropertyGenerator.CreateGroupingProperty("Material", MaterialParamPrefix));
+        parameters.AddRange(shaderParameters.Select(param => CreateShaderParameter(param, shaderRid)));
 
-    #endregion
-
-    public RiverManager()
-    {
-        _surfaceTool = new SurfaceTool();
-        _meshDataTool = new MeshDataTool();
-        _filterRenderer = ResourceLoader.Load(FilterRendererPath) as PackedScene;
-
-        _debugMaterial = new ShaderMaterial
-        {
-            Shader = ResourceLoader.Load(DebugShader.ShaderPath) as Shader
-        };
-
-        foreach (var (name, path) in DebugShader.TexturePaths)
-        {
-            _debugMaterial.SetShaderParameter(name, ResourceLoader.Load(path) as Texture2D);
-        }
-
-        _material = new ShaderMaterial
-        {
-            Shader = ResourceLoader.Load(BuiltInShaders.First(s => s.Name == MatShaderType.ToString()).ShaderPath) as Shader
-        };
-
-        foreach (var (name, path) in BuiltInShaders.First(s => s.Name == MatShaderType.ToString()).TexturePaths)
-        {
-            _material.SetShaderParameter(name, ResourceLoader.Load(path) as Texture2D);
-        }
-
-        // Have to manually set the color, or it does not default right. Not sure how to work around this
-        _material.SetShaderParameter("albedo_color", new Transform3D(new Vector3(0.0f, 0.8f, 1.0f), new Vector3(0.15f, 0.2f, 0.5f), Vector3.Zero, Vector3.Zero));
-
-        PropertyListChanged += () => _cachedPropertyList = null;
+        return parameters;
     }
 
     public override Array<Dictionary> _GetPropertyList()
@@ -485,25 +350,14 @@ public partial class RiverManager : Node3D
             PropertyGenerator.CreateGroupingProperty( "Material", MaterialParamPrefix)
         };
 
-        AccumulateShaderParameters(resultProperties);
-
+        resultProperties.AddRange(AccumulateShaderParameters());
         resultProperties.Add(PropertyGenerator.CreateGroupingProperty("Lod", "Lod"));
         resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.LodLod0Distance, Variant.Type.Float, PropertyHint.Range, "5.0,200.0", DefaultValues.LodLod0Distance));
-        resultProperties.Add(PropertyGenerator.CreateGroupingProperty("Baking", "Baking"));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingResolution, Variant.Type.Int, PropertyHint.Enum, "64,128,256,512,1024", DefaultValues.BakingResolution));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingRaycastDistance, Variant.Type.Float, PropertyHint.Range, "0.0,100.0", DefaultValues.BakingRaycastDistance));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingRaycastLayers, Variant.Type.Int, PropertyHint.Layers3DPhysics, revert: DefaultValues.BakingRaycastLayers));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingDilate, Variant.Type.Float, PropertyHint.Range, "0.0,1.0", DefaultValues.BakingDilate));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFlowmapBlur, Variant.Type.Float, PropertyHint.Range, "0.0,1.0", DefaultValues.BakingFlowmapBlur));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamCutoff, Variant.Type.Float, PropertyHint.Range, "0.0,1.0", DefaultValues.BakingFoamCutoff));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamOffset, Variant.Type.Float, PropertyHint.Range, "0.0,1.0", DefaultValues.BakingFoamOffset));
-        resultProperties.Add(PropertyGenerator.CreateProperty(PropertyName.BakingFoamBlur, Variant.Type.Float, PropertyHint.Range, "0.0,1.0", DefaultValues.BakingFoamBlur));
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.Curve, Variant.Type.Object));
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.Widths, Variant.Type.Array));
-        resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.ValidFlowmap, Variant.Type.Bool));
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.FlowFoamNoise, Variant.Type.Object));
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName.DistPressure, Variant.Type.Object));
-        resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName._material, Variant.Type.Object, PropertyHint.ResourceType,  nameof(ShaderMaterial)));
+        resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName._material, Variant.Type.Object, PropertyHint.ResourceType, nameof(ShaderMaterial)));
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName._selectedShader, Variant.Type.Int));
         resultProperties.Add(PropertyGenerator.CreateStorageProperty(PropertyName._uv2Sides, Variant.Type.Int));
 
@@ -518,58 +372,6 @@ public partial class RiverManager : Node3D
     public override Variant _PropertyGetRevert(StringName property)
     {
         return GetCachedProperty(property)?.TryGetValue(PropertyGenerator.Revert, out var value) == true ? value : base._PropertyGetRevert(property);
-    }
-
-    public override void _EnterTree()
-    {
-        if (Engine.IsEditorHint() && _firstEnterTree)
-        {
-            _firstEnterTree = false;
-        }
-
-        if (Curve == null)
-        {
-            Curve = new Curve3D
-            {
-                BakeInterval = 0.05f
-            };
-            Curve.AddPoint(new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 0.0f, -0.25f), new Vector3(0.0f, 0.0f, 0.25f));
-            Curve.AddPoint(new Vector3(0.0f, 0.0f, 1.0f), new Vector3(0.0f, 0.0f, -0.25f), new Vector3(0.0f, 0.0f, 0.25f));
-        }
-
-        if (GetChildCount() <= 0)
-        {
-            // This is what happens on creating a new river
-            var newMeshInstance = new MeshInstance3D
-            {
-                Name = "RiverMeshInstance"
-            };
-
-            AddChild(newMeshInstance);
-            MeshInstance = (MeshInstance3D)GetChild(0);
-            GenerateRiver();
-        }
-        else
-        {
-            MeshInstance = (MeshInstance3D)GetChild(0);
-            _material = MeshInstance.Mesh.SurfaceGetMaterial(0) as ShaderMaterial;
-        }
-
-        SetMaterials("i_valid_flowmap", ValidFlowmap);
-        SetMaterials("i_uv2_sides", _uv2Sides);
-        SetMaterials("i_distmap", DistPressure);
-        SetMaterials("i_flowmap", FlowFoamNoise);
-        SetMaterials("i_texture_foam_noise", ResourceLoader.Load(FoamNoisePath) as Texture2D);
-    }
-
-    public override string[] _GetConfigurationWarnings()
-    {
-        if (ValidFlowmap)
-        {
-            return [];
-        }
-
-        return ["No flowmap is set. Select River -> Generate Flow & Foam Map to generate and assign one."];
     }
 
     public override bool _Set(StringName property, Variant value)
@@ -599,9 +401,166 @@ public partial class RiverManager : Node3D
         return _material.GetShaderParameter(paramName);
     }
 
+    public Variant GetShaderParameter(string param)
+    {
+        return _material.GetShaderParameter(param);
+    }
+
+    public void SetShaderParameter(string param, Variant value)
+    {
+        _material.SetShaderParameter(param, value);
+        _debugMaterial.SetShaderParameter(param, value);
+    }
+
+    public void PropertiesChanged()
+    {
+        EmitSignal(SignalName.RiverChanged);
+    }
+
+    #endregion
+
+    public RiverManager()
+    {
+        _surfaceTool = new SurfaceTool();
+        _meshDataTool = new MeshDataTool();
+
+        _debugMaterial = new ShaderMaterial
+        {
+            Shader = ResourceLoader.Load(DebugShader.ShaderPath) as Shader
+        };
+
+        foreach (var (name, path) in DebugShader.TexturePaths)
+        {
+            _debugMaterial.SetShaderParameter(name, ResourceLoader.Load(path) as Texture2D);
+        }
+
+        _material = new ShaderMaterial
+        {
+            Shader = ResourceLoader.Load(BuiltInShaders.First(s => s.Name == MatShaderType.ToString()).ShaderPath) as Shader
+        };
+
+        foreach (var (name, path) in BuiltInShaders.First(s => s.Name == MatShaderType.ToString()).TexturePaths)
+        {
+            _material.SetShaderParameter(name, ResourceLoader.Load(path) as Texture2D);
+        }
+
+        // Have to manually set the color, or it does not default right. Not sure how to work around this
+        _material.SetShaderParameter("albedo_color", new Transform3D(new Vector3(0.0f, 0.8f, 1.0f), new Vector3(0.15f, 0.2f, 0.5f), Vector3.Zero, Vector3.Zero));
+
+        PropertyListChanged += () => _cachedPropertyList = null;
+    }
+
+    public override void _EnterTree()
+    {
+        if (Engine.IsEditorHint() && _firstEnterTree)
+        {
+            _firstEnterTree = false;
+        }
+
+        if (Curve == null)
+        {
+            Curve = new Curve3D
+            {
+                BakeInterval = 0.05f
+            };
+
+            Curve.AddPoint(new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 0.0f, -0.25f), new Vector3(0.0f, 0.0f, 0.25f));
+            Curve.AddPoint(new Vector3(0.0f, 0.0f, 1.0f), new Vector3(0.0f, 0.0f, -0.25f), new Vector3(0.0f, 0.0f, 0.25f));
+        }
+
+        if (GetChildCount() <= 0)
+        {
+            var newMeshInstance = new MeshInstance3D
+            {
+                Name = "RiverMeshInstance"
+            };
+
+            AddChild(newMeshInstance);
+            MeshInstance = newMeshInstance;
+            GenerateRiver();
+        }
+        else
+        {
+            MeshInstance = (MeshInstance3D) GetChild(0);
+            _material = MeshInstance.Mesh.SurfaceGetMaterial(0) as ShaderMaterial;
+        }
+
+        SetShaderParameter("i_uv2_sides", _uv2Sides);
+        SetShaderParameter("i_distmap", DistPressure);
+        SetShaderParameter("i_texture_foam_noise", ResourceLoader.Load(FoamNoisePath) as Texture2D);
+    }
+
+    public void CreateMeshDuplicate()
+    {
+        if (Owner == null)
+        {
+            GD.PushWarning("Cannot create MeshInstance3D sibling when River is root.");
+            return;
+        }
+
+        var siblingMesh = (MeshInstance3D)MeshInstance.Duplicate((int)DuplicateFlags.Signals);
+        GetParent().AddChild(siblingMesh);
+        siblingMesh.Owner = GetTree().EditedSceneRoot;
+        siblingMesh.Position = Position;
+        siblingMesh.MaterialOverride = null;
+    }
+
+    #region Points Management
+
+    public List<Vector3> GetCurvePoints()
+    {
+        var points = new List<Vector3>();
+
+        for (var p = 0; p < Curve.PointCount; p++)
+        {
+            points.Add(Curve.GetPointPosition(p));
+        }
+
+        return points;
+    }
+
+    public int GetClosestPointTo(Vector3 point)
+    {
+        var closestDistance = 4096.0f;
+        var closestIndex = -1;
+
+        for (var p = 0; p < Curve.PointCount; p++)
+        {
+            var dist = point.DistanceTo(Curve.GetPointPosition(p));
+
+            if (dist >= closestDistance)
+            {
+                continue;
+            }
+
+            closestDistance = dist;
+            closestIndex = p;
+        }
+
+        return closestIndex;
+    }
+
     public Aabb GetTransformedAabb()
     {
         return GlobalTransform * MeshInstance.GetAabb();
+    }
+
+    public void SetCurvePointPosition(int index, Vector3 position)
+    {
+        Curve.SetPointPosition(index, position);
+        GenerateRiver();
+    }
+
+    public void SetCurvePointIn(int index, Vector3 position)
+    {
+        Curve.SetPointIn(index, position);
+        GenerateRiver();
+    }
+
+    public void SetCurvePointOut(int index, Vector3 position)
+    {
+        Curve.SetPointOut(index, position);
+        GenerateRiver();
     }
 
     public void AddPoint(Vector3 position, int index, Vector3 dir, float width)
@@ -641,91 +600,5 @@ public partial class RiverManager : Node3D
         GenerateRiver();
     }
 
-    public void BakeTexture()
-    {
-        GenerateRiver();
-        _ = GenerateFlowMap(Mathf.Pow(2, 6 + BakingResolution));
-    }
-
-    public void SetCurvePointPosition(int index, Vector3 position)
-    {
-        Curve.SetPointPosition(index, position);
-        GenerateRiver();
-    }
-
-    public void SetCurvePointIn(int index, Vector3 position)
-    {
-        Curve.SetPointIn(index, position);
-        GenerateRiver();
-    }
-
-    public void SetCurvePointOut(int index, Vector3 position)
-    {
-        Curve.SetPointOut(index, position);
-        GenerateRiver();
-    }
-
-    public void SetMaterials(string param, Variant value)
-    {
-        _material.SetShaderParameter(param, value);
-        _debugMaterial.SetShaderParameter(param, value);
-    }
-
-    public void SpawnMesh()
-    {
-        if (Owner == null)
-        {
-            GD.PushWarning("Cannot create MeshInstance3D sibling when River is root.");
-            return;
-        }
-
-        var siblingMesh = (MeshInstance3D)MeshInstance.Duplicate((int)DuplicateFlags.Signals);
-        GetParent().AddChild(siblingMesh);
-        siblingMesh.Owner = GetTree().EditedSceneRoot;
-        siblingMesh.Position = Position;
-        siblingMesh.MaterialOverride = null;
-    }
-
-    public int GetClosestPointTo(Vector3 point)
-    {
-        var closestDistance = 4096.0f;
-        var closestIndex = -1;
-
-        for (var p = 0; p < Curve.PointCount; p++)
-        {
-            var dist = point.DistanceTo(Curve.GetPointPosition(p));
-
-            if (dist >= closestDistance)
-            {
-                continue;
-            }
-
-            closestDistance = dist;
-            closestIndex = p;
-        }
-
-        return closestIndex;
-    }
-
-    public Variant GetShaderParameter(string param)
-    {
-        return _material.GetShaderParameter(param);
-    }
-
-    public void PropertiesChanged()
-    {
-        EmitSignal(SignalName.RiverChanged);
-    }
-
-    public List<Vector3> GetCurvePoints()
-    {
-        var points = new List<Vector3>();
-
-        for (var p = 0; p < Curve.PointCount; p++)
-        {
-            points.Add(Curve.GetPointPosition(p));
-        }
-
-        return points;
-    }
+    #endregion
 }
