@@ -206,7 +206,7 @@ public static class WaterHelperMethods
         return st.Commit();
     }
 
-    public static async Task<Image> GenerateCollisionMap(Image image, MeshInstance3D meshInstance, float raycastDist, int steps, int stepLengthDivs, int stepWidthDivs, RiverManager river)
+    public static async Task<Image> GenerateCollisionMap(Image image, MeshInstance3D meshInstance, float raycastDist, uint raycastLayers, int steps, int stepLengthDivs, int stepWidthDivs, RiverManager river)
     {
         var spaceState = meshInstance.GetWorld3D().DirectSpaceState;
         var uv2 = meshInstance.Mesh.SurfaceGetArrays(0)[5].AsVector2Array();
@@ -278,10 +278,10 @@ public static class WaterHelperMethods
                 var realPos = BaryToCart(vert0, vert1, vert2, baryatricCoords);
                 var realPosUp = realPos + (Vector3.Up * raycastDist);
 
-                var rayParamsUp = PhysicsRayQueryParameters3D.Create(realPos, realPosUp);
+                var rayParamsUp = PhysicsRayQueryParameters3D.Create(realPos, realPosUp, raycastLayers);
                 var resultUp = spaceState.IntersectRay(rayParamsUp);
 
-                var rayParamsDown = PhysicsRayQueryParameters3D.Create(realPosUp, realPos);
+                var rayParamsDown = PhysicsRayQueryParameters3D.Create(realPosUp, realPos, raycastLayers);
                 var resultDown = spaceState.IntersectRay(rayParamsDown);
 
                 static bool CheckResult(Dictionary dict)
@@ -289,7 +289,7 @@ public static class WaterHelperMethods
                     return dict is { Count: > 0 };
                 }
 
-                var upHitFrontFace = resultUp?.ContainsKey("normal") == true && resultUp["normal"].AsVector3().Y < 0;
+                var upHitFrontFace = resultUp.ContainsKey("normal") && resultUp["normal"].AsVector3().Y < 0;
 
                 if ((CheckResult(resultUp) || CheckResult(resultDown)) && !upHitFrontFace && CheckResult(resultDown))
                 {

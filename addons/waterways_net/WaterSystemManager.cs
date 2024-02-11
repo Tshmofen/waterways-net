@@ -116,6 +116,7 @@ public partial class WaterSystemManager : Node3D
         }
 
         var renderer = ResourceLoader.Load<PackedScene>($"{WaterwaysPlugin.PluginPath}/system_map_renderer.tscn").Instantiate<SystemMapRenderer>();
+
         AddChild(renderer);
         var flowMap = await renderer.GrabFlow(rivers, _systemAabb);
         var heightMap = await renderer.GrabHeight(rivers, _systemAabb);

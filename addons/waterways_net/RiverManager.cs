@@ -73,7 +73,7 @@ public partial class RiverManager : Node3D
         public const ShaderType MatShaderType = ShaderType.Water;
         public const int BakingResolution = 2;
         public const float BakingRaycastDistance = 10.0f;
-        public const int BakingRaycastLayers = 1;
+        public const uint BakingRaycastLayers = 1;
         public const float BakingDilate = 0.6f;
         public const float BakingFlowmapBlur = 0.04f;
         public const float BakingFoamCutoff = 0.9f;
@@ -217,7 +217,7 @@ public partial class RiverManager : Node3D
     // Bake Properties
     public int BakingResolution { get; set; } = DefaultValues.BakingResolution;
     public float BakingRaycastDistance { get; set; } = DefaultValues.BakingRaycastDistance;
-    public int BakingRaycastLayers { get; set; } = DefaultValues.BakingRaycastLayers;
+    public uint BakingRaycastLayers { get; set; } = DefaultValues.BakingRaycastLayers;
     public float BakingDilate { get; set; } = DefaultValues.BakingDilate;
     public float BakingFlowmapBlur { get; set; } = DefaultValues.BakingFlowmapBlur;
     public float BakingFoamCutoff { get; set; } = DefaultValues.BakingFoamCutoff;
@@ -303,7 +303,7 @@ public partial class RiverManager : Node3D
         EmitSignal(SignalName.ProgressNotified, 0.0f, $"Calculating Collisions ({flowmapResolution}x{flowmapResolution})");
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
-        image = await WaterHelperMethods.GenerateCollisionMap(image, MeshInstance, BakingRaycastDistance, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, this);
+        image = await WaterHelperMethods.GenerateCollisionMap(image, MeshInstance, BakingRaycastDistance, BakingRaycastLayers, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, this);
 
         EmitSignal(SignalName.ProgressNotified, 0.95f, $"Applying filters ({flowmapResolution}x{flowmapResolution})");
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);

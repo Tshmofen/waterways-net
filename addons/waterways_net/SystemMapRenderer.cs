@@ -78,21 +78,21 @@ public partial class SystemMapRenderer : SubViewport
             Shader = ResourceLoader.Load(FlowShaderPath) as Shader
         };
 
-        foreach (var obj in waterObjects)
+        foreach (var manager in waterObjects)
         {
-            var waterMeshCopy = (MeshInstance3D) obj.MeshInstance.Duplicate((int)DuplicateFlags.Signals);
+            var waterMeshCopy = (MeshInstance3D) manager.MeshInstance.Duplicate((int)DuplicateFlags.Signals);
             _container.AddChild(waterMeshCopy);
-            waterMeshCopy.Transform = obj.Transform;
+            waterMeshCopy.Transform = manager.Transform;
             waterMeshCopy.MaterialOverride = flowMat;
             var shaderMaterial = (ShaderMaterial) waterMeshCopy.MaterialOverride;
-            shaderMaterial.SetShaderParameter("flowmap", obj.FlowFoamNoise);
-            shaderMaterial.SetShaderParameter("distmap", obj.DistPressure);
-            shaderMaterial.SetShaderParameter("flow_base", obj.GetShaderParameter("flow_base"));
-            shaderMaterial.SetShaderParameter("flow_steepness", obj.GetShaderParameter("flow_steepness"));
-            shaderMaterial.SetShaderParameter("flow_distance", obj.GetShaderParameter("flow_distance"));
-            shaderMaterial.SetShaderParameter("flow_pressure", obj.GetShaderParameter("flow_pressure"));
-            shaderMaterial.SetShaderParameter("flow_max", obj.GetShaderParameter("flow_max"));
-            shaderMaterial.SetShaderParameter("valid_flowmap", obj.GetShaderParameter("i_valid_flowmap"));
+            shaderMaterial.SetShaderParameter("flowmap", manager.FlowFoamNoise);
+            shaderMaterial.SetShaderParameter("distmap", manager.DistPressure);
+            shaderMaterial.SetShaderParameter("flow_base", manager.GetShaderParameter("flow_base"));
+            shaderMaterial.SetShaderParameter("flow_steepness", manager.GetShaderParameter("flow_steepness"));
+            shaderMaterial.SetShaderParameter("flow_distance", manager.GetShaderParameter("flow_distance"));
+            shaderMaterial.SetShaderParameter("flow_pressure", manager.GetShaderParameter("flow_pressure"));
+            shaderMaterial.SetShaderParameter("flow_max", manager.GetShaderParameter("flow_max"));
+            shaderMaterial.SetShaderParameter("valid_flowmap", manager.GetShaderParameter("i_valid_flowmap"));
         }
 
         switch (aabb.GetLongestAxisIndex())
