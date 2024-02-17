@@ -564,6 +564,7 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
         gizmo.Clear();
         river.CurrentGizmoRedraw = () => _Redraw(gizmo);
+        EditorPlugin.CurrentGizmoRedraw = () => _Redraw(gizmo);
 
         DrawPath(gizmo, river.Curve);
         DrawHandles(gizmo, river);

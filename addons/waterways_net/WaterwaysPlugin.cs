@@ -1,4 +1,5 @@
 using Godot;
+using System;
 using Waterways.Gui;
 using Waterways.Util;
 
@@ -13,6 +14,7 @@ public partial class WaterwaysPlugin : EditorPlugin
     private EditorSelection _editorSelection;
     private RiverMode _mode = RiverMode.Select;
 
+    public Action CurrentGizmoRedraw { get; set; }
     public RiverManager CurrentRiverManager { get; set; }
     public RiverGizmo RiverGizmo { get; set; } = new();
     public InspectorPlugin GradientInspector { get; set; } = new();
@@ -31,9 +33,24 @@ public partial class WaterwaysPlugin : EditorPlugin
         CurrentRiverManager.DebugView = index;
     }
 
+    private void HandleRiverManagerChange(RiverManager manager)
+    {
+        if (manager == null)
+        {
+            CurrentRiverManager = null;
+            CurrentGizmoRedraw?.Invoke();
+            HideRiverControlPanel();
+            return;
+        }
+
+        ShowRiverControlPanel();
+        CurrentRiverManager = manager;
+        CurrentGizmoRedraw?.Invoke();
+        _riverControls.Menu.DebugViewMenuSelected = manager.DebugView;
+    }
+
     private void OnSelectionChange()
     {
-        _editorSelection = EditorInterface.Singleton.GetSelection();
         var selected = _editorSelection.GetSelectedNodes();
 
         if (selected.Count == 0)
@@ -41,19 +58,7 @@ public partial class WaterwaysPlugin : EditorPlugin
             return;
         }
 
-        switch (selected[0])
-        {
-            case RiverManager manager:
-                ShowRiverControlPanel();
-                CurrentRiverManager = manager;
-                _riverControls.Menu.DebugViewMenuSelected = CurrentRiverManager.DebugView;
-                break;
-
-            default:
-                CurrentRiverManager = null;
-                HideRiverControlPanel();
-                break;
-        }
+        HandleRiverManagerChange(selected[0] as RiverManager);
     }
 
     private void OnSceneChanged(Node _)
@@ -345,7 +350,9 @@ public partial class WaterwaysPlugin : EditorPlugin
 
     public override bool _Handles(GodotObject @object)
     {
-        return @object is RiverManager;
+        var manager = @object as RiverManager;
+        HandleRiverManagerChange(manager);
+        return manager != null;
     }
 
     public override int _Forward3DGuiInput(Camera3D camera, InputEvent @event)
@@ -355,6 +362,11 @@ public partial class WaterwaysPlugin : EditorPlugin
             return 0;
         }
 
+        if (@event is not InputEventMouseButton { ButtonIndex: MouseButton.Left } mouseEvent)
+        {
+            return _riverControls.SpatialGuiInput(@event) ? 1 : 0;
+        }
+
         var globalTransform = CurrentRiverManager.Transform;
 
         if (CurrentRiverManager.IsInsideTree())
@@ -362,45 +374,34 @@ public partial class WaterwaysPlugin : EditorPlugin
             globalTransform = CurrentRiverManager.GlobalTransform;
         }
 
-        if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left } mouseEvent)
-        {
-            var rayFrom = camera.ProjectRayOrigin(mouseEvent.Position);
-            var rayDir = camera.ProjectRayNormal(mouseEvent.Position);
-            var closestSegment = GetClosestSegment(globalTransform, rayFrom, rayDir, out var bakedClosestPoint);
+        var rayFrom = camera.ProjectRayOrigin(mouseEvent.Position);
+        var rayDir = camera.ProjectRayNormal(mouseEvent.Position);
+        var closestSegment = GetClosestSegment(globalTransform, rayFrom, rayDir, out var bakedClosestPoint);
 
-            // We'll use this closest point to add a point in between if on the line
-            // and to remove if close to a point
-            switch (_mode)
-            {
-                case RiverMode.Select:
-                    if (!mouseEvent.Pressed)
-                    {
-                        RiverGizmo.Reset();
-                    }
+        // We'll use this closest point to add a point in between if on the line
+        // and to remove if close to a point
+        switch (_mode)
+        {
+            case RiverMode.Select:
+                if (!mouseEvent.Pressed)
+                {
+                    RiverGizmo.Reset();
+                }
+                return 0;
+
+            case RiverMode.Add when !mouseEvent.Pressed:
+                if (!AddPoint(closestSegment, globalTransform, camera, rayFrom, rayDir, bakedClosestPoint))
+                {
                     return 0;
+                }
+                break;
 
-                case RiverMode.Add when !mouseEvent.Pressed:
-                    if (!AddPoint(closestSegment, globalTransform, camera, rayFrom, rayDir, bakedClosestPoint))
-                    {
-                        return 0;
-                    }
-                    break;
-
-                case RiverMode.Remove when !mouseEvent.Pressed:
-                    RemovePoint(closestSegment, bakedClosestPoint);
-                    break;
-            }
-
-            return 1;
-        }
-
-        if (CurrentRiverManager is not null)
-        {
-            // Forward input to river controls.
-            return _riverControls.SpatialGuiInput(@event) ? 1 : 0;
+            case RiverMode.Remove when !mouseEvent.Pressed:
+                RemovePoint(closestSegment, bakedClosestPoint);
+                break;
         }
 
         // TODO - This should be updated to the enum when it's fixed https://github.com/godotengine/godot/pull/64465
-        return 0;
+        return 1;
     }
 }
