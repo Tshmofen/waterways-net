@@ -27,7 +27,7 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
     private Material _handleLinesMat;
     private Transform3D? _handleBaseTransform;
 
-    public WaterwaysPlugin EditorPlugin;
+    public WaterwaysPlugin EditorPlugin { get; set; }
 
     #region Util
 
@@ -214,12 +214,12 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
         // Add each handle twice, for both material types.
         // Needs to be grouped by material "type" since that's what influences the handle indices.
-        gizmo.AddHandles([.. handlesCenter], GetMaterial("handles_center", gizmo), []);
-        gizmo.AddHandles([.. handlesControlPoints], GetMaterial("handles_control_points", gizmo), []);
-        gizmo.AddHandles([.. handlesWidth], GetMaterial("handles_width", gizmo), []);
-        gizmo.AddHandles([.. handlesCenter], GetMaterial("handles_center_with_depth", gizmo), []);
-        gizmo.AddHandles([.. handlesControlPoints], GetMaterial("handles_control_points_with_depth", gizmo), []);
-        gizmo.AddHandles([.. handlesWidth], GetMaterial("handles_width_with_depth", gizmo), []);
+        gizmo.AddHandles([..handlesCenter], GetMaterial("handles_center", gizmo), []);
+        gizmo.AddHandles([..handlesControlPoints], GetMaterial("handles_control_points", gizmo), []);
+        gizmo.AddHandles([..handlesWidth], GetMaterial("handles_width", gizmo), []);
+        gizmo.AddHandles([..handlesCenter], GetMaterial("handles_center_with_depth", gizmo), []);
+        gizmo.AddHandles([..handlesControlPoints], GetMaterial("handles_control_points_with_depth", gizmo), []);
+        gizmo.AddHandles([..handlesWidth], GetMaterial("handles_width_with_depth", gizmo), []);
     }
 
     #endregion
@@ -549,6 +549,13 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
     public override void _Redraw(EditorNode3DGizmo gizmo)
     {
+        var river = EditorPlugin.CurrentRiverManager;
+        if (EditorPlugin.CurrentRiverManager == null)
+        {
+            gizmo.Clear();
+            return;
+        }
+
         // Work around for issue where using "get_material" doesn't return a
         // material when redraw is being called manually from _set_handle()
         // so I'm caching the materials instead
@@ -556,12 +563,7 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         _handleLinesMat ??= GetMaterial("handle_lines", gizmo);
 
         gizmo.Clear();
-        var river = (RiverManager)gizmo.GetNode3D();
-
-        if (!river.IsConnected(RiverManager.SignalName.RiverChanged, Callable.From<EditorNode3DGizmo>(_Redraw)))
-        {
-            river.RiverChanged += gizmo._Redraw;
-        }
+        river.CurrentGizmoRedraw = () => _Redraw(gizmo);
 
         DrawPath(gizmo, river.Curve);
         DrawHandles(gizmo, river);

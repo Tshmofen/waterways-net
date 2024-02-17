@@ -12,8 +12,8 @@ public partial class WaterwaysPlugin : EditorPlugin
     private RiverControls _riverControls;
     private EditorSelection _editorSelection;
     private RiverMode _mode = RiverMode.Select;
-    private RiverManager _editedRiverManager;
 
+    public RiverManager CurrentRiverManager { get; set; }
     public RiverGizmo RiverGizmo { get; set; } = new();
     public InspectorPlugin GradientInspector { get; set; } = new();
     public ConstraintType Constraint { get; set; } = ConstraintType.None;
@@ -23,12 +23,12 @@ public partial class WaterwaysPlugin : EditorPlugin
 
     private void OnGenerateMeshPressed()
     {
-        _editedRiverManager.CreateMeshDuplicate();
+        CurrentRiverManager.CreateMeshDuplicate();
     }
 
     private void OnDebugViewChanged(int index)
     {
-        _editedRiverManager.DebugView = index;
+        CurrentRiverManager.DebugView = index;
     }
 
     private void OnSelectionChange()
@@ -45,12 +45,12 @@ public partial class WaterwaysPlugin : EditorPlugin
         {
             case RiverManager manager:
                 ShowRiverControlPanel();
-                _editedRiverManager = manager;
-                _riverControls.Menu.DebugViewMenuSelected = _editedRiverManager.DebugView;
+                CurrentRiverManager = manager;
+                _riverControls.Menu.DebugViewMenuSelected = CurrentRiverManager.DebugView;
                 break;
 
             default:
-                _editedRiverManager = null;
+                CurrentRiverManager = null;
                 HideRiverControlPanel();
                 break;
         }
@@ -79,7 +79,7 @@ public partial class WaterwaysPlugin : EditorPlugin
                 Constraint = (ConstraintType)value;
                 if (Constraint == ConstraintType.Colliders)
                 {
-                    WaterHelperMethods.ResetAllColliders(_editedRiverManager.GetTree().Root);
+                    WaterHelperMethods.ResetAllColliders(CurrentRiverManager.GetTree().Root);
                 }
                 break;
 
@@ -125,7 +125,7 @@ public partial class WaterwaysPlugin : EditorPlugin
         var g2 = globalInverse * (rayFrom + (rayDir * 4096));
 
         // Iterate through points to find the closest segment
-        var curvePoints = _editedRiverManager.GetCurvePoints();
+        var curvePoints = CurrentRiverManager.GetCurvePoints();
         var closestDistance = 4096f;
         var closestSegment = -1;
 
@@ -146,7 +146,7 @@ public partial class WaterwaysPlugin : EditorPlugin
         }
 
         // Iterate through baked points to find the closest position on the curved path
-        var bakedCurvePoints = _editedRiverManager.Curve.GetBakedPoints();
+        var bakedCurvePoints = CurrentRiverManager.Curve.GetBakedPoints();
         var bakedClosestDistance = 4096f;
         var bakedPointFound = false;
 
@@ -187,23 +187,23 @@ public partial class WaterwaysPlugin : EditorPlugin
             return;
         }
 
-        var closestIndex = _editedRiverManager.GetClosestPointTo(bakedClosestPoint);
+        var closestIndex = CurrentRiverManager.GetClosestPointTo(bakedClosestPoint);
 
         var ur = GetUndoRedo();
         ur.CreateAction("Remove River point");
-        ur.AddDoMethod(_editedRiverManager, nameof(RiverManager.RemovePoint), closestIndex);
-        ur.AddDoMethod(_editedRiverManager, nameof(RiverManager.PropertiesChanged));
+        ur.AddDoMethod(CurrentRiverManager, nameof(RiverManager.RemovePoint), closestIndex);
+        ur.AddDoMethod(CurrentRiverManager, nameof(RiverManager.PropertiesChanged));
 
-        if (closestIndex == _editedRiverManager.Curve.PointCount - 1)
+        if (closestIndex == CurrentRiverManager.Curve.PointCount - 1)
         {
-            ur.AddUndoMethod(_editedRiverManager, nameof(RiverManager.AddPoint), _editedRiverManager.Curve.GetPointPosition(closestIndex), -1, Vector3.Zero, 0f);
+            ur.AddUndoMethod(CurrentRiverManager, nameof(RiverManager.AddPoint), CurrentRiverManager.Curve.GetPointPosition(closestIndex), -1, Vector3.Zero, 0f);
         }
         else
         {
-            ur.AddUndoMethod(_editedRiverManager, nameof(RiverManager.AddPoint), _editedRiverManager.Curve.GetPointPosition(closestIndex), closestIndex - 1, _editedRiverManager.Curve.GetPointOut(closestIndex), _editedRiverManager.Widths[closestIndex]);
+            ur.AddUndoMethod(CurrentRiverManager, nameof(RiverManager.AddPoint), CurrentRiverManager.Curve.GetPointPosition(closestIndex), closestIndex - 1, CurrentRiverManager.Curve.GetPointOut(closestIndex), CurrentRiverManager.Widths[closestIndex]);
         }
 
-        ur.AddUndoMethod(_editedRiverManager, nameof(RiverManager.PropertiesChanged));
+        ur.AddUndoMethod(CurrentRiverManager, nameof(RiverManager.PropertiesChanged));
         ur.CommitAction();
     }
 
@@ -213,10 +213,10 @@ public partial class WaterwaysPlugin : EditorPlugin
         // based of a plane of the last point of the curve
         if (closestSegment == -1)
         {
-            var endPos = _editedRiverManager.Curve.GetPointPosition(_editedRiverManager.Curve.PointCount - 1);
-            var endPosGlobal = _editedRiverManager.ToGlobal(endPos);
+            var endPos = CurrentRiverManager.Curve.GetPointPosition(CurrentRiverManager.Curve.PointCount - 1);
+            var endPosGlobal = CurrentRiverManager.ToGlobal(endPos);
 
-            var z = _editedRiverManager.Curve.GetPointOut(_editedRiverManager.Curve.PointCount - 1).Normalized();
+            var z = CurrentRiverManager.Curve.GetPointOut(CurrentRiverManager.Curve.PointCount - 1).Normalized();
             var x = z.Cross(Vector3.Down).Normalized();
             var y = z.Cross(x).Normalized();
             var handleBaseTransform = new Transform3D(new Basis(x, y, z) * globalTransform.Basis, endPosGlobal);
@@ -228,7 +228,7 @@ public partial class WaterwaysPlugin : EditorPlugin
             {
                 case ConstraintType.Colliders:
                     {
-                        var spaceState = _editedRiverManager.GetWorld3D().DirectSpaceState;
+                        var spaceState = CurrentRiverManager.GetWorld3D().DirectSpaceState;
                         var param = new PhysicsRayQueryParameters3D
                         {
                             From = rayFrom,
@@ -282,24 +282,24 @@ public partial class WaterwaysPlugin : EditorPlugin
                     break;
             }
 
-            bakedClosestPoint = _editedRiverManager.ToLocal(newPos);
+            bakedClosestPoint = CurrentRiverManager.ToLocal(newPos);
         }
 
         var ur = GetUndoRedo();
         ur.CreateAction("Add River point");
-        ur.AddDoMethod(_editedRiverManager, nameof(RiverManager.AddPoint), bakedClosestPoint, closestSegment, Vector3.Zero, 0f);
-        ur.AddDoMethod(_editedRiverManager, nameof(RiverManager.PropertiesChanged));
+        ur.AddDoMethod(CurrentRiverManager, nameof(RiverManager.AddPoint), bakedClosestPoint, closestSegment, Vector3.Zero, 0f);
+        ur.AddDoMethod(CurrentRiverManager, nameof(RiverManager.PropertiesChanged));
 
         if (closestSegment == -1)
         {
-            ur.AddUndoMethod(_editedRiverManager, nameof(RiverManager.RemovePoint), _editedRiverManager.Curve.PointCount);
+            ur.AddUndoMethod(CurrentRiverManager, nameof(RiverManager.RemovePoint), CurrentRiverManager.Curve.PointCount);
         }
         else
         {
-            ur.AddUndoMethod(_editedRiverManager, nameof(RiverManager.RemovePoint), closestSegment + 1);
+            ur.AddUndoMethod(CurrentRiverManager, nameof(RiverManager.RemovePoint), closestSegment + 1);
         }
 
-        ur.AddUndoMethod(_editedRiverManager, nameof(RiverManager.PropertiesChanged));
+        ur.AddUndoMethod(CurrentRiverManager, nameof(RiverManager.PropertiesChanged));
         ur.CommitAction();
 
         return true;
@@ -350,16 +350,16 @@ public partial class WaterwaysPlugin : EditorPlugin
 
     public override int _Forward3DGuiInput(Camera3D camera, InputEvent @event)
     {
-        if (_editedRiverManager == null)
+        if (CurrentRiverManager == null)
         {
             return 0;
         }
 
-        var globalTransform = _editedRiverManager.Transform;
+        var globalTransform = CurrentRiverManager.Transform;
 
-        if (_editedRiverManager.IsInsideTree())
+        if (CurrentRiverManager.IsInsideTree())
         {
-            globalTransform = _editedRiverManager.GlobalTransform;
+            globalTransform = CurrentRiverManager.GlobalTransform;
         }
 
         if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left } mouseEvent)
@@ -394,7 +394,7 @@ public partial class WaterwaysPlugin : EditorPlugin
             return 1;
         }
 
-        if (_editedRiverManager is not null)
+        if (CurrentRiverManager is not null)
         {
             // Forward input to river controls.
             return _riverControls.SpatialGuiInput(@event) ? 1 : 0;

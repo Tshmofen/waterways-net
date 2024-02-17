@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using Godot.Collections;
@@ -58,7 +59,6 @@ public partial class RiverManager : Node3D
         { $"{nameof(MaterialCategory.Custom).ToLower()}_", MaterialCategory.Custom}
     };
 
-
     public static class DefaultValues
     {
         public const int ShapeStepLengthDivs = 1;
@@ -69,6 +69,8 @@ public partial class RiverManager : Node3D
     }
 
     private Array<Dictionary> _cachedPropertyList;
+
+    public Action CurrentGizmoRedraw { get; set; }
 
     // Shape Properties
     private int _shapeStepLengthDivs = DefaultValues.ShapeStepLengthDivs;
@@ -364,6 +366,17 @@ public partial class RiverManager : Node3D
         return _cachedPropertyList = resultProperties;
     }
 
+    public void SetShaderParameter(string param, Variant value)
+    {
+        _material.SetShaderParameter(param, value);
+        _debugMaterial.SetShaderParameter(param, value);
+    }
+
+    public void PropertiesChanged()
+    {
+        EmitSignal(SignalName.RiverChanged);
+    }
+
     public override bool _PropertyCanRevert(StringName property)
     {
         return GetCachedProperty(property)?.ContainsKey(PropertyGenerator.Revert) == true || base._PropertyCanRevert(property);
@@ -401,22 +414,6 @@ public partial class RiverManager : Node3D
         return _material.GetShaderParameter(paramName);
     }
 
-    public Variant GetShaderParameter(string param)
-    {
-        return _material.GetShaderParameter(param);
-    }
-
-    public void SetShaderParameter(string param, Variant value)
-    {
-        _material.SetShaderParameter(param, value);
-        _debugMaterial.SetShaderParameter(param, value);
-    }
-
-    public void PropertiesChanged()
-    {
-        EmitSignal(SignalName.RiverChanged);
-    }
-
     #endregion
 
     public RiverManager()
@@ -444,10 +441,10 @@ public partial class RiverManager : Node3D
             _material.SetShaderParameter(name, ResourceLoader.Load(path) as Texture2D);
         }
 
-        // Have to manually set the color, or it does not default right. Not sure how to work around this
+        // Have to manually set the color, or it does not default right
         _material.SetShaderParameter("albedo_color", new Transform3D(new Vector3(0.0f, 0.8f, 1.0f), new Vector3(0.15f, 0.2f, 0.5f), Vector3.Zero, Vector3.Zero));
-
         PropertyListChanged += () => _cachedPropertyList = null;
+        RiverChanged += () => CurrentGizmoRedraw?.Invoke();
     }
 
     public override void _EnterTree()
@@ -582,8 +579,8 @@ public partial class RiverManager : Node3D
             Widths.Insert(index + 1, newWidth); // We set the width to the average of the two surrounding widths
         }
 
-        EmitSignal(SignalName.RiverChanged);
         GenerateRiver();
+        EmitSignal(SignalName.RiverChanged);
     }
 
     public void RemovePoint(int index)
@@ -596,8 +593,8 @@ public partial class RiverManager : Node3D
 
         Curve.RemovePoint(index);
         Widths.RemoveAt(index);
-        EmitSignal(SignalName.RiverChanged);
         GenerateRiver();
+        EmitSignal(SignalName.RiverChanged);
     }
 
     #endregion
