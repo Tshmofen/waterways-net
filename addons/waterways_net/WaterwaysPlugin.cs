@@ -331,7 +331,6 @@ public partial class WaterwaysPlugin : EditorPlugin
         AddCustomType("River", nameof(Node3D), ResourceLoader.Load<Script>($"{PluginPath}/RiverManager.cs"), ResourceLoader.Load<Texture2D>($"{PluginPath}/icons/river.svg"));
         AddCustomType("RiverFloatSystem", nameof(Node3D), ResourceLoader.Load<Script>($"{PluginPath}/RiverFloatSystem.cs"), ResourceLoader.Load<Texture2D>($"{PluginPath}/icons/float.svg"));
         _riverControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/river_controls.tscn").Instantiate<RiverControls>();
-        GD.Print(_riverControls);
 
         AddNode3DGizmoPlugin(RiverGizmo);
 
