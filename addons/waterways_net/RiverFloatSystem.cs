@@ -1,5 +1,4 @@
 ﻿using Godot;
-using System;
 using System.Collections.Generic;
 
 namespace Waterways;
@@ -9,19 +8,18 @@ public partial class RiverFloatSystem : Node3D
 {
     private RiverManager _riverManager;
     private StaticBody3D _riverBody;
-    private RayCast3D _rayCastUp;
-    private RayCast3D _rayCastDown;
+    private RayCast3D _rayCast;
 
-    [Export] public Vector3 RiverAreaPadding { get; set; } = new(0, 2, 0);
-    [Export] public float CheckLength { get; set; } = 10f;
+    [Export] public float CheckLength { get; set; } = 15;
+    [Export] public float MaxDepth { get; set; } = 20;
     [Export] public float DefaultHeight { get; set; } = 0;
     [Export(PropertyHint.Layers3DPhysics)] public uint FloatLayer { get; set; } = 256;
 
     #region Util
 
-    private StaticBody3D GenerateCollisionBody(RiverManager riverManager)
+    private StaticBody3D GenerateCollisionBody()
     {
-        var mesh = riverManager.GetMeshCopy();
+        var mesh = _riverManager.GetMeshCopy();
         mesh.CreateTrimeshCollision();
         var body = mesh.GetChild<StaticBody3D>(0);
         body.CollisionMask = 0;
@@ -33,18 +31,20 @@ public partial class RiverFloatSystem : Node3D
         return body;
     }
 
-    private RayCast3D GenerateRayCast(Vector3 targetCheck)
+    private RayCast3D GenerateRayCast()
     {
         return new RayCast3D
         {
-            TargetPosition = targetCheck,
-            CollisionMask = FloatLayer
+            TargetPosition = new Vector3(0, -(CheckLength + MaxDepth), 0),
+            CollisionMask = FloatLayer,
+            Enabled = false
         };
     }
 
     private bool TryGetRiverCollision(RayCast3D rayCast, Vector3 from, out float height)
     {
         rayCast.GlobalPosition = from;
+        rayCast.ForceRaycastUpdate();
         var collider = rayCast.GetCollider();
 
         if (collider == _riverBody)
@@ -62,23 +62,18 @@ public partial class RiverFloatSystem : Node3D
         if (_riverBody != null)
         {
             _riverBody.QueueFree();
-            _rayCastUp.QueueFree();
-            _rayCastDown.QueueFree();
+            _rayCast.QueueFree();
         }
 
-        AddChild(_riverBody = GenerateCollisionBody(_riverManager));
-        AddChild(_rayCastUp = GenerateRayCast(Vector3.Up * CheckLength));
-        AddChild(_rayCastDown = GenerateRayCast(Vector3.Down * CheckLength));
+        AddChild(_riverBody = GenerateCollisionBody());
+        AddChild(_rayCast = GenerateRayCast());
     }
 
     private static Vector3 GetGlobalFlowDirection(Node3D relativeNode, IReadOnlyList<Vector3> bakedPoints, int startIndex, int endIndex)
     {
         var startPoint = relativeNode.ToGlobal(bakedPoints[startIndex]);
         var endPoint = relativeNode.ToGlobal(bakedPoints[endIndex]);
-
         var direction = endPoint - startPoint;
-        //direction.Y = 0;
-
         return direction.Normalized();
     }
 
@@ -148,12 +143,9 @@ public partial class RiverFloatSystem : Node3D
             return DefaultHeight;
         }
 
-        if (TryGetRiverCollision(_rayCastDown, globalPosition, out var height))
-        {
-            return height;
-        }
+        var checkPosition = globalPosition + new Vector3(0, MaxDepth, 0);
 
-        if (TryGetRiverCollision(_rayCastUp, globalPosition, out height))
+        if (TryGetRiverCollision(_rayCast, checkPosition, out var height))
         {
             return height;
         }
@@ -161,7 +153,7 @@ public partial class RiverFloatSystem : Node3D
         return DefaultHeight;
     }
 
-    public Vector3 GetWaterFlow(Vector3 globalPosition)
+    public Vector3 GetWaterFlowDirection(Vector3 globalPosition)
     {
         // no river or not enough info for interpolation
         if (_riverManager == null || _riverManager.Curve.PointCount < 2)

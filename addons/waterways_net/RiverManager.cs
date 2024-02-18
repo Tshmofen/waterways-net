@@ -523,7 +523,7 @@ public partial class RiverManager : Node3D
     public MeshInstance3D GetMeshCopy()
     {
         var newMesh = (MeshInstance3D)MeshInstance.Duplicate();
-        newMesh.GlobalPosition = GlobalPosition;
+        newMesh.GlobalTransform = MeshInstance.GlobalTransform;
         newMesh.MaterialOverride = null;
         return newMesh;
     }

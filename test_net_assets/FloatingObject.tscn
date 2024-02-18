@@ -7,7 +7,7 @@
 [sub_resource type="BoxMesh" id="2"]
 
 [node name="RigidBody" type="RigidBody3D"]
-mass = 10.0
+mass = 15.0
 script = ExtResource("1")
 
 [node name="CollisionShape" type="CollisionShape3D" parent="."]
