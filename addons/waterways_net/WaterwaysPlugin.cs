@@ -46,7 +46,7 @@ public partial class WaterwaysPlugin : EditorPlugin
         ShowRiverControlPanel();
         CurrentRiverManager = manager;
         CurrentGizmoRedraw?.Invoke();
-        _riverControls.Menu.DebugViewMenuSelected = manager.DebugView;
+        _riverControls.Menu.SelectedDebugViewMenuIndex = manager.DebugView;
     }
 
     private void OnSelectionChange()
@@ -314,7 +314,8 @@ public partial class WaterwaysPlugin : EditorPlugin
 
     public override void _EnterTree()
     {
-        AddCustomType("River", "Node3D", ResourceLoader.Load<Script>($"{PluginPath}/RiverManager.cs"), ResourceLoader.Load<Texture2D>($"{PluginPath}/icons/river.svg"));
+        AddCustomType("River", nameof(Node3D), ResourceLoader.Load<Script>($"{PluginPath}/RiverManager.cs"), ResourceLoader.Load<Texture2D>($"{PluginPath}/icons/river.svg"));
+        AddCustomType("RiverFloatSystem", nameof(Node3D), ResourceLoader.Load<Script>($"{PluginPath}/RiverFloatSystem.cs"), ResourceLoader.Load<Texture2D>($"{PluginPath}/icons/float.svg"));
         _riverControls = ResourceLoader.Load<PackedScene>($"{PluginPath}/gui/river_controls.tscn").Instantiate<RiverControls>();
         GD.Print(_riverControls);
 

@@ -2,6 +2,7 @@ using Godot;
 
 namespace TestAssets;
 
+[GlobalClass]
 public partial class ObjectDestroyer : Area3D
 {
 	public override void _Ready()

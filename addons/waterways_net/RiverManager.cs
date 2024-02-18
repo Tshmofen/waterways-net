@@ -11,12 +11,12 @@ namespace Waterways;
 [Tool]
 public partial class RiverManager : Node3D
 {
-    #region Vars
+    [Signal] public delegate void RiverChangedEventHandler();
+
+    #region Const
 
     private const string MaterialParamPrefix = "mat_";
     private const string FoamNoisePath = $"{WaterwaysPlugin.PluginPath}/textures/foam_noise.png";
-
-    [Signal] public delegate void RiverChangedEventHandler();
 
     private static readonly List<RiverShader> BuiltInShaders = [
         new RiverShader
@@ -67,6 +67,10 @@ public partial class RiverManager : Node3D
         public const ShaderType MatShaderType = ShaderType.Water;
         public const float LodLod0Distance = 50.0f;
     }
+
+    #endregion
+
+    #region Properties
 
     private Array<Dictionary> _cachedPropertyList;
 
@@ -251,20 +255,6 @@ public partial class RiverManager : Node3D
 
     #endregion
 
-    #region Util
-
-    private void GenerateRiver()
-    {
-        var averageWidth = Widths.Sum() / (Widths.Count / 2f);
-        _steps = (int)(Mathf.Max(1.0f, Mathf.Round(Curve.GetBakedLength() / averageWidth)));
-
-        var riverWidthValues = WaterHelperMethods.GenerateRiverWidthValues(Curve, _steps, ShapeStepLengthDivs, Widths);
-        MeshInstance.Mesh = WaterHelperMethods.GenerateRiverMesh(Curve, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, ShapeSmoothness, riverWidthValues);
-        MeshInstance.Mesh.SurfaceSetMaterial(0, _material);
-    }
-
-    #endregion
-
     #region Properties Management
 
     private Dictionary GetCachedProperty(StringName name)
@@ -416,6 +406,20 @@ public partial class RiverManager : Node3D
 
     #endregion
 
+    #region Util
+
+    private void GenerateRiver()
+    {
+        var averageWidth = Widths.Sum() / (Widths.Count / 2f);
+        _steps = (int)(Mathf.Max(1.0f, Mathf.Round(Curve.GetBakedLength() / averageWidth)));
+
+        var riverWidthValues = WaterHelperMethods.GenerateRiverWidthValues(Curve, _steps, ShapeStepLengthDivs, Widths);
+        MeshInstance.Mesh = WaterHelperMethods.GenerateRiverMesh(Curve, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, ShapeSmoothness, riverWidthValues);
+        MeshInstance.Mesh.SurfaceSetMaterial(0, _material);
+    }
+
+    #endregion
+
     public RiverManager()
     {
         _surfaceTool = new SurfaceTool();
@@ -447,6 +451,11 @@ public partial class RiverManager : Node3D
         RiverChanged += () => CurrentGizmoRedraw?.Invoke();
     }
 
+    public override void _Ready()
+    {
+        EmitSignal(SignalName.RiverChanged);
+    }
+
     public override void _EnterTree()
     {
         if (Engine.IsEditorHint() && _firstEnterTree)
@@ -465,21 +474,31 @@ public partial class RiverManager : Node3D
             Curve.AddPoint(new Vector3(0.0f, 0.0f, 1.0f), new Vector3(0.0f, 0.0f, -0.25f), new Vector3(0.0f, 0.0f, 0.25f));
         }
 
-        if (GetChildCount() <= 0)
+        var generateMesh = true;
+        foreach (var child in GetChildren())
+        {
+            if (child is not MeshInstance3D mesh || !mesh.HasMeta("RiverManager"))
+            {
+                continue;
+            }
+
+            generateMesh = false;
+            MeshInstance = mesh;
+            _material = MeshInstance.Mesh.SurfaceGetMaterial(0) as ShaderMaterial;
+            break;
+        }
+
+        if (generateMesh)
         {
             var newMeshInstance = new MeshInstance3D
             {
                 Name = "RiverMeshInstance"
             };
 
+            newMeshInstance.SetMeta("RiverManager", true);
             AddChild(newMeshInstance);
             MeshInstance = newMeshInstance;
             GenerateRiver();
-        }
-        else
-        {
-            MeshInstance = (MeshInstance3D) GetChild(0);
-            _material = MeshInstance.Mesh.SurfaceGetMaterial(0) as ShaderMaterial;
         }
 
         SetShaderParameter("i_uv2_sides", _uv2Sides);
@@ -495,11 +514,18 @@ public partial class RiverManager : Node3D
             return;
         }
 
-        var siblingMesh = (MeshInstance3D)MeshInstance.Duplicate((int)DuplicateFlags.Signals);
+        var siblingMesh = GetMeshCopy();
+        siblingMesh.Name = $"{Name}Mesh";
         GetParent().AddChild(siblingMesh);
         siblingMesh.Owner = GetTree().EditedSceneRoot;
-        siblingMesh.Position = Position;
-        siblingMesh.MaterialOverride = null;
+    }
+
+    public MeshInstance3D GetMeshCopy()
+    {
+        var newMesh = (MeshInstance3D)MeshInstance.Duplicate();
+        newMesh.GlobalPosition = GlobalPosition;
+        newMesh.MaterialOverride = null;
+        return newMesh;
     }
 
     #region Points Management
