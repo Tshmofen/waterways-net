@@ -23,8 +23,6 @@ public partial class FloatSpawner : Node3D
 			return;
 		}
 
-		var test = "1";
-
 		var cube = _spawnObject.Instantiate<FloatingCube>();
 		Owner.AddChild(cube);
 

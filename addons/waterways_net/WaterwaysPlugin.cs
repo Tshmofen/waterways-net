@@ -105,8 +105,16 @@ public partial class WaterwaysPlugin : EditorPlugin
         }
 
         AddControlToContainer(CustomControlContainer.SpatialEditorMenu, _riverControls);
-        _riverControls.Menu.GenerateMesh += OnGenerateMeshPressed;
-        _riverControls.Menu.DebugViewChanged += OnDebugViewChanged;
+
+        if (!_riverControls.Menu.IsConnected(RiverMenu.SignalName.GenerateMesh, Callable.From(OnGenerateMeshPressed)))
+        {
+            _riverControls.Menu.Connect(RiverMenu.SignalName.GenerateMesh, Callable.From(OnGenerateMeshPressed));
+        }
+
+        if (!_riverControls.Menu.IsConnected(RiverMenu.SignalName.DebugViewChanged, Callable.From<int>(OnDebugViewChanged)))
+        {
+            _riverControls.Menu.Connect(RiverMenu.SignalName.DebugViewChanged, Callable.From<int>(OnDebugViewChanged));
+        }
     }
 
     private void HideRiverControlPanel()
@@ -118,8 +126,15 @@ public partial class WaterwaysPlugin : EditorPlugin
 
         RemoveControlFromContainer(CustomControlContainer.SpatialEditorMenu, _riverControls);
 
-        _riverControls.Menu.GenerateMesh -= OnGenerateMeshPressed;
-        _riverControls.Menu.DebugViewChanged -= OnDebugViewChanged;
+        if (_riverControls.Menu.IsConnected(RiverMenu.SignalName.GenerateMesh, Callable.From(OnGenerateMeshPressed)))
+        {
+            _riverControls.Menu.Disconnect(RiverMenu.SignalName.GenerateMesh, Callable.From(OnGenerateMeshPressed));
+        }
+
+        if (_riverControls.Menu.IsConnected(RiverMenu.SignalName.GenerateMesh, Callable.From(OnGenerateMeshPressed)))
+        {
+            _riverControls.Menu.Disconnect(RiverMenu.SignalName.GenerateMesh, Callable.From(OnGenerateMeshPressed));
+        }
     }
 
     private int GetClosestSegment(Transform3D globalTransform, Vector3 rayFrom, Vector3 rayDir, out Vector3 bakedClosestPoint)
