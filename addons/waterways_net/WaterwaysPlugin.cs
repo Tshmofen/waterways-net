@@ -17,7 +17,6 @@ public partial class WaterwaysPlugin : EditorPlugin
     public Action CurrentGizmoRedraw { get; set; }
     public RiverManager CurrentRiverManager { get; set; }
     public RiverGizmo RiverGizmo { get; set; } = new();
-    public InspectorPlugin GradientInspector { get; set; } = new();
     public ConstraintType Constraint { get; set; } = ConstraintType.None;
     public bool LocalEditing { get; set; }
 
@@ -320,7 +319,6 @@ public partial class WaterwaysPlugin : EditorPlugin
         GD.Print(_riverControls);
 
         AddNode3DGizmoPlugin(RiverGizmo);
-        AddInspectorPlugin(GradientInspector);
 
         RiverGizmo.EditorPlugin = this;
         _riverControls.Mode += OnModeChange;
@@ -337,7 +335,6 @@ public partial class WaterwaysPlugin : EditorPlugin
     {
         RemoveCustomType("River");
         RemoveNode3DGizmoPlugin(RiverGizmo);
-        RemoveInspectorPlugin(GradientInspector);
 
         _riverControls.Mode -= OnModeChange;
         _riverControls.Options -= OnOptionChange;
@@ -352,7 +349,7 @@ public partial class WaterwaysPlugin : EditorPlugin
     public override bool _Handles(GodotObject @object)
     {
         var manager = @object as RiverManager;
-        HandleRiverManagerChange(manager);
+        CallDeferred(MethodName.HandleRiverManagerChange, manager);
         return manager != null;
     }
 

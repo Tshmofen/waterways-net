@@ -9,12 +9,16 @@ using Waterways.Util;
 namespace Waterways;
 
 [Tool]
+[GlobalClass]
 public partial class RiverManager : Node3D
 {
     [Signal] public delegate void RiverChangedEventHandler();
 
     #region Const
 
+    private const string CustomColorFirstProperty = "mat_albedo_color_first";
+    private const string CustomColorSecondProperty = "mat_albedo_color_second";
+    private const string CustomColorAlbedoProperty = "albedo_color";
     private const string MaterialParamPrefix = "mat_";
     private const string FoamNoisePath = $"{WaterwaysPlugin.PluginPath}/textures/foam_noise.png";
 
@@ -268,6 +272,13 @@ public partial class RiverManager : Node3D
         return property[PropertyGenerator.Name].AsString();
     }
 
+    private void SetCustomColorParameter(Color color, int index)
+    {
+        var albedo = _material.GetShaderParameter(CustomColorAlbedoProperty).AsProjection();
+        albedo[index] = new Vector4(color.R, color.G, color.B, color.A);
+        _material.SetShaderParameter(CustomColorAlbedoProperty, albedo);
+    }
+
     private static Dictionary CreateShaderParameter(Dictionary param, Rid shaderRid)
     {
         var paramName = GetPropertyName(param);
@@ -287,6 +298,13 @@ public partial class RiverManager : Node3D
         }
 
         return newProperty;
+    }
+
+    private static Dictionary[] CreateCustomColorParameter()
+    {
+        var firstColor = PropertyGenerator.CreateProperty(CustomColorFirstProperty, Variant.Type.Color, revert: new Color(0.6f, 0.7f, 0.65f));
+        var secondColor = PropertyGenerator.CreateProperty(CustomColorSecondProperty, Variant.Type.Color, revert: new Color(0.25f, 0.35f, 0.35f));
+        return [firstColor, secondColor];
     }
 
     private List<Dictionary> AccumulateShaderParameters()
@@ -317,7 +335,15 @@ public partial class RiverManager : Node3D
 
             foreach (var param in group)
             {
-                parameters.Add(CreateShaderParameter(param, shaderRid));
+                if (GetPropertyName(param) == CustomColorAlbedoProperty)
+                {
+                    parameters.AddRange(CreateCustomColorParameter());
+                }
+                else
+                {
+                    parameters.Add(CreateShaderParameter(param, shaderRid));
+                }
+
                 shaderParameters.Remove(param);
             }
         }
@@ -386,6 +412,12 @@ public partial class RiverManager : Node3D
             return false;
         }
 
+        if (propertyStr is CustomColorFirstProperty or CustomColorSecondProperty)
+        {
+            SetCustomColorParameter(value.AsColor(), propertyStr == CustomColorFirstProperty ? 0 : 1);
+            return true;
+        }
+
         var paramName = propertyStr.Replace(MaterialParamPrefix, string.Empty);
         _material.SetShaderParameter(paramName, value);
         return true;
@@ -400,8 +432,29 @@ public partial class RiverManager : Node3D
             return Variant.From<GodotObject>(null);
         }
 
+        if (propertyStr is CustomColorFirstProperty or CustomColorSecondProperty)
+        {
+            var albedo = _material.GetShaderParameter(CustomColorAlbedoProperty).AsProjection();
+            var vectorColor = albedo[propertyStr == CustomColorFirstProperty ? 0 : 1];
+            return new Color(vectorColor.X, vectorColor.Y, vectorColor.Z, vectorColor.W);
+        }
+
         var paramName = propertyStr.Replace(MaterialParamPrefix, string.Empty);
         return _material.GetShaderParameter(paramName);
+    }
+
+    #endregion
+
+    #region Event Handlers 
+
+    private void ClearPropertyListCache()
+    {
+        _cachedPropertyList = null;
+    }
+
+    private void RedrawCurrentGizmo()
+    {
+        CurrentGizmoRedraw?.Invoke();
     }
 
     #endregion
@@ -447,8 +500,14 @@ public partial class RiverManager : Node3D
 
         // Have to manually set the color, or it does not default right
         _material.SetShaderParameter("albedo_color", new Transform3D(new Vector3(0.0f, 0.8f, 1.0f), new Vector3(0.15f, 0.2f, 0.5f), Vector3.Zero, Vector3.Zero));
-        PropertyListChanged += () => _cachedPropertyList = null;
-        RiverChanged += () => CurrentGizmoRedraw?.Invoke();
+        PropertyListChanged += ClearPropertyListCache;
+        RiverChanged += RedrawCurrentGizmo;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        PropertyListChanged -= ClearPropertyListCache;
+        RiverChanged -= RedrawCurrentGizmo;
     }
 
     public override void _Ready()
