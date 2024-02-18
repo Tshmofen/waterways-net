@@ -11,8 +11,7 @@ public partial class RiverFloatSystem : Node3D
     private StaticBody3D _riverBody;
     private RayCast3D _rayCast;
 
-    [Export] public float CheckLength { get; set; } = 15;
-    [Export] public float MaxDepth { get; set; } = 20;
+    [Export] public float MaxDepth { get; set; } = 25;
     [Export] public float DefaultHeight { get; set; } = 0;
     [Export] public float FlowBakeInterval { get; set; } = 5f;
     [Export(PropertyHint.Layers3DPhysics)] public uint FloatLayer { get; set; } = 256;
@@ -37,7 +36,7 @@ public partial class RiverFloatSystem : Node3D
     {
         return new RayCast3D
         {
-            TargetPosition = new Vector3(0, -(CheckLength + MaxDepth), 0),
+            TargetPosition = new Vector3(0, -MaxDepth, 0),
             CollisionMask = FloatLayer,
             Enabled = false
         };
@@ -88,7 +87,7 @@ public partial class RiverFloatSystem : Node3D
     }
 
     // .NET adaptation of these changes: https://github.com/godotengine/godot/pull/70977/commits/1319db2c9de7987821fbcdebda95e5bcc8ae4ae5
-    // TODO: Replace with actual C++ function, once it is merged in Godot; or provide more optimized version later
+    // TODO: Replace with actual C++ function once it is merged in Godot; or provide more optimized version later
     private static int GetClosestPointIndex(IReadOnlyList<Vector3> bakedPoints, Vector3 localPoint)
     {
         // brute force
