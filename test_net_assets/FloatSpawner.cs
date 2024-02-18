@@ -4,7 +4,7 @@ using Waterways;
 namespace TestAssets;
 
 [GlobalClass]
-public partial class FloatSpawner : Node3D 
+public partial class FloatSpawner : Node3D
 {
 	private PackedScene _spawnObject;
 
@@ -23,10 +23,9 @@ public partial class FloatSpawner : Node3D
 			return;
 		}
 
-		GD.Print("Spawned an object");
 		var cube = _spawnObject.Instantiate<FloatingCube>();
-
 		Owner.AddChild(cube);
+
 		cube.FloatSystem = FloatSystem;
 		cube.GlobalPosition = GlobalPosition;
 		cube.Rotation = new Vector3(GD.Randf() * float.Tau, GD.Randf() * float.Tau, GD.Randf() * float.Tau);

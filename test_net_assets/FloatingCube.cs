@@ -6,6 +6,7 @@ namespace Waterways;
 public partial class FloatingCube : RigidBody3D
 {
     private static readonly float Gravity = ProjectSettings.GetSetting("physics/3d/default_gravity").AsSingle();
+
     [Export] public RiverFloatSystem FloatSystem { get; set; }
     [Export] public float MaxEffectiveDepth { get; set; } = 2;
     [Export] public float WaterHeightOffset { get; set; } = 0.7f;

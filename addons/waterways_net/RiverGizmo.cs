@@ -485,7 +485,7 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
                 p2 = river.Curve.GetPointOut(pIndex).Cross(Vector3.Down).Normalized() * 4096;
             }
 
-            var g1 = globalInverse * (rayFrom);
+            var g1 = globalInverse * rayFrom;
             var g2 = globalInverse * (rayFrom + (rayDir * 4096));
 
             var geoPoints = Geometry3D.GetClosestPointsBetweenSegments(p1, p2, g1, g2);

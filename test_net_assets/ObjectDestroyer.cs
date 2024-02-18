@@ -1,4 +1,5 @@
 using Godot;
+using Waterways;
 
 namespace TestAssets;
 
@@ -12,9 +13,9 @@ public partial class ObjectDestroyer : Area3D
 
 	private static void OnBodyEntered(Node3D node)
 	{
-		if (node is RigidBody3D body)
+		if (node is FloatingCube cube)
 		{
-            body.QueueFree();
+            cube.QueueFree();
         }
     }
 }
