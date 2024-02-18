@@ -6,6 +6,7 @@ namespace Waterways;
 [Tool]
 public partial class RiverFloatSystem : Node3D
 {
+    private Curve3D _bakedCurve;
     private RiverManager _riverManager;
     private StaticBody3D _riverBody;
     private RayCast3D _rayCast;
@@ -13,6 +14,7 @@ public partial class RiverFloatSystem : Node3D
     [Export] public float CheckLength { get; set; } = 15;
     [Export] public float MaxDepth { get; set; } = 20;
     [Export] public float DefaultHeight { get; set; } = 0;
+    [Export] public float FlowBakeInterval { get; set; } = 5f;
     [Export(PropertyHint.Layers3DPhysics)] public uint FloatLayer { get; set; } = 256;
 
     #region Util
@@ -41,6 +43,13 @@ public partial class RiverFloatSystem : Node3D
         };
     }
 
+    private Curve3D GenerateCurve()
+    {
+        var curve = (Curve3D) _riverManager.Curve.Duplicate();
+        curve.BakeInterval = FlowBakeInterval;
+        return curve;
+    }
+
     private bool TryGetRiverCollision(RayCast3D rayCast, Vector3 from, out float height)
     {
         rayCast.GlobalPosition = from;
@@ -67,6 +76,7 @@ public partial class RiverFloatSystem : Node3D
 
         AddChild(_riverBody = GenerateCollisionBody());
         AddChild(_rayCast = GenerateRayCast());
+        _bakedCurve = GenerateCurve();
     }
 
     private static Vector3 GetGlobalFlowDirection(Node3D relativeNode, IReadOnlyList<Vector3> bakedPoints, int startIndex, int endIndex)
@@ -161,8 +171,7 @@ public partial class RiverFloatSystem : Node3D
             return Vector3.Zero;
         }
 
-        var curve = _riverManager.Curve;
-        var bakedPoints = curve.GetBakedPoints();
+        var bakedPoints = _bakedCurve.GetBakedPoints();
         var closestIndex = GetClosestPointIndex(bakedPoints, _riverManager.ToLocal(globalPosition));
 
         return (closestIndex + 1 < bakedPoints.Length)
