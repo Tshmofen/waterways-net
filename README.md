@@ -6,7 +6,7 @@ Note that starting from `v0.1.3` I've changed some of the systems in `Waterways`
 
 Even though the original intention of the plugin was to implement flow baking I didn't really found it much useful, but the mesh generation and instruments to create rivers with nice-and-correct flow across the curve is amazing, so it shouldn't be a wonder, why I got rid of baking.
 
-Main differences with [original](https://github.com/Arnklit/Waterways)
+Main Differences - [Original](https://github.com/Arnklit/Waterways)
 ---
 * Flow/height baking is removed because of the many issues it was introducing.
   * Flow baking was generally leading to really messy/not-pleasant results and the default behavior where flow just follows the main curve is much more nice and understandable (it also allows for waterfall-like river bends, unlike the original bake).
@@ -33,7 +33,7 @@ Obviously, as it is a rewrite for another language, it may have introduced a few
 
 For now, it seems the only issue that remains is intermittent-appearing `Use deffered` error - it is not affecting anything and the plugin is working as expected whenever it popups in the log; probably will be fixed later when I have some time & mood to debug it.
 
-`RiverManager` Documentatation
+Documentatation `RiverManager`
 ---
 The river's parameters are split into 3 sections.
 
@@ -88,7 +88,7 @@ The river's parameters are split into 3 sections.
 **Lod**
 - `Lod0 Distance` - Controls the cutoff point for whether the shader samples textures twice to create an FBM effect for the waves and foam.
 
-`RiverFloatSystem` Documentation
+ Documentation `RiverFloatSystem`
 ----------------------
 - `Max Depth` - Max depth of the river, effectively it is the offset of the raycast above of the water. If water height is being checked below the river on `MaxDepth` distance it will just return `DefaulHeight`. 
 - `Default Height` - Default height to be returned when there was no river below for given position or water height check was done too deep below the river (see `Max Depth` setting).
