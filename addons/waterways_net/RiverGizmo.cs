@@ -169,13 +169,13 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         var path = new List<Vector3>();
         var bakedPoints = curve.GetBakedPoints();
 
-        for (var i = 0; i < bakedPoints.Length; i++)
+        for (var i = 0; i < bakedPoints.Length - 1; i++)
         {
             path.Add(bakedPoints[i]);
-            path.Add(bakedPoints[(i + 1) % bakedPoints.Length]);
+            path.Add(bakedPoints[i + 1]);
         }
 
-        gizmo.AddLines([.. path], _pathMat);
+        gizmo.AddLines([..path], _pathMat);
     }
 
     private void DrawHandles(EditorNode3DGizmo gizmo, RiverManager river)
