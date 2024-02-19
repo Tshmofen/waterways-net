@@ -106,5 +106,6 @@ The river's parameters are split into 3 sections.
 Notes
 ---
 - It is not included here, but `test_net_assets` are actually using Zylann's `HeightMap terrain plugin`, so before accessing the test correctly you should [[download it]](https://github.com/Zylann/godot_heightmap_plugin) and place it in the `addons` folder. If something goes wrong, try use version `1.7.2`, that was used by me during development.
+- Starting from `v0.1.3` Godot 4.0 will likely be unsupported because of `[GlobalClass]` annotations, you might just remove them and rebuild, but I haven't tested it.
 
 (c) Tshmofen - Timofey Ivanov, 2023
