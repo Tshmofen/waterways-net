@@ -1,8 +1,8 @@
-# Waterways .NET (Godot 4.0+)
+# Waterways .NET (Godot 4.2+)
 
 ![Waterways-NET Add-on for Godot 4](https://github.com/Tshmofen/waterways-net/blob/main/images/river_flow.gif)
 
-It is a port to `Godot 4.0+`/`.NET` of a tool to generate river meshes with correct flow based on bezier curves. Visit the original page for more context and info: [https://github.com/Arnklit/Waterways](https://github.com/Arnklit/Waterways).  
+It is a port to `Godot 4`/`.NET` of a tool to generate river meshes with correct flow based on bezier curves. Visit the original page for more context and info: [https://github.com/Arnklit/Waterways](https://github.com/Arnklit/Waterways).  
 
 Note that starting from `v0.1.3` I've changed some of the systems in `Waterways`, if you want the version with all the original features use branch [original-net](https://github.com/Tshmofen/waterways-net/tree/original-net). Though, this version is not supported and no fixes will be published for it in the future. 
 
