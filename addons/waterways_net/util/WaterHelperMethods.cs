@@ -1,41 +1,11 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Godot;
 using Godot.Collections;
-using static Godot.Image;
 
 namespace Waterways.Util;
 
 public static class WaterHelperMethods
 {
-    public static Vector3 CartToBary(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
-    {
-        var v0 = b - a;
-        var v1 = c - a;
-        var v2 = p - a;
-        var d00 = v0.Dot(v0);
-        var d01 = v0.Dot(v1);
-        var d11 = v1.Dot(v1);
-        var d20 = v2.Dot(v0);
-        var d21 = v2.Dot(v1);
-        var denominator = (d00 * d11) - (d01 * d01);
-        var v = ((d11 * d20) - (d01 * d21)) / denominator;
-        var w = ((d00 * d21) - (d01 * d20)) / denominator;
-        var u = 1.0f - v - w;
-        return new Vector3(u, v, w);
-    }
-
-    public static Vector3 BaryToCart(Vector3 a, Vector3 b, Vector3 c, Vector3 barycentric)
-    {
-        return (barycentric.X * a) + (barycentric.Y * b) + (barycentric.Z * c);
-    }
-
-    public static bool IsPointInBariatric(Vector3 v)
-    {
-        return v.X is >= 0 and <= 1 && v.Y is >= 0 and <= 1 && v.Z is >= 0 and <= 1;
-    }
-
     public static void ResetAllColliders(Node node)
     {
         foreach (var n in node.GetChildren())
@@ -204,109 +174,5 @@ public static class WaterHelperMethods
         st.CreateFrom(mesh2, 0);
         st.Index();
         return st.Commit();
-    }
-
-    public static async Task<Image> GenerateCollisionMap(Image image, MeshInstance3D meshInstance, float raycastDist, uint raycastLayers, int steps, int stepLengthDivs, int stepWidthDivs, RiverManager river)
-    {
-        var spaceState = meshInstance.GetWorld3D().DirectSpaceState;
-        var uv2 = meshInstance.Mesh.SurfaceGetArrays(0)[5].AsVector2Array();
-        var vertices = meshInstance.Mesh.SurfaceGetArrays(0)[0].AsVector3Array();
-
-        // We need to move the verts into world space
-        var worldVertices = vertices.Select(vertex => meshInstance.GlobalTransform * vertex).ToList();
-        var trisInStepQuad = stepLengthDivs * stepWidthDivs * 2;
-        var side = CalculateSide(steps);
-        var percentage = 0.0f;
-
-        river.EmitSignal(RiverManager.SignalName.ProgressNotified, percentage, $"Calculating Collisions ({image.GetWidth()}x{image.GetWidth()})");
-        await river.ToSignal(river.GetTree(), SceneTree.SignalName.ProcessFrame);
-
-        for (var x = 0; x < image.GetWidth(); x++)
-        {
-            var curPercentage = x / (float)image.GetWidth();
-
-            if (curPercentage > percentage + 0.1f)
-            {
-                percentage += 0.1f;
-                river.EmitSignal(RiverManager.SignalName.ProgressNotified, percentage, $"Calculating Collisions ({image.GetWidth()}x{image.GetWidth()})");
-                await river.ToSignal(river.GetTree(), SceneTree.SignalName.ProcessFrame);
-            }
-
-            for (var y = 0; y < image.GetHeight(); y++)
-            {
-                var uvCoordinate = new Vector2((0.5f + x) / image.GetWidth(), (0.5f + y) / image.GetHeight());
-                var baryatricCoords = Vector3.Zero;
-                var correctTriangle = new List<int>();
-
-                var pixel = (x * image.GetWidth()) + y;
-                var column = pixel / image.GetWidth() / (image.GetWidth() / side);
-                var row = pixel % image.GetWidth() / (image.GetWidth() / side);
-                var stepQuad = (column * side) + row;
-
-                if (stepQuad >= steps)
-                {
-                    break; // we are in the empty part of UV2, so we break to the next column
-                }
-
-                for (var tris = 0; tris < trisInStepQuad; tris++)
-                {
-                    var offsetTris = (trisInStepQuad * stepQuad) + tris;
-                    var p = new Vector3(uvCoordinate.X, uvCoordinate.Y, 0.0f);
-                    var a = new Vector3(uv2[offsetTris * 3].X, uv2[offsetTris * 3].Y, 0.0f);
-                    var b = new Vector3(uv2[(offsetTris * 3) + 1].X, uv2[(offsetTris * 3) + 1].Y, 0.0f);
-                    var c = new Vector3(uv2[(offsetTris * 3) + 2].X, uv2[(offsetTris * 3) + 2].Y, 0.0f);
-                    baryatricCoords = CartToBary(p, a, b, c);
-
-                    if (!IsPointInBariatric(baryatricCoords))
-                    {
-                        continue;
-                    }
-
-                    correctTriangle = [offsetTris * 3, (offsetTris * 3) + 1, (offsetTris * 3) + 2];
-                    break; // we have the correct triangle, so we break out of loop
-                }
-
-                if (correctTriangle.Count == 0)
-                {
-                    continue;
-                }
-
-                var vert0 = worldVertices[correctTriangle[0]];
-                var vert1 = worldVertices[correctTriangle[1]];
-                var vert2 = worldVertices[correctTriangle[2]];
-
-                var realPos = BaryToCart(vert0, vert1, vert2, baryatricCoords);
-                var realPosUp = realPos + (Vector3.Up * raycastDist);
-
-                var rayParamsUp = PhysicsRayQueryParameters3D.Create(realPos, realPosUp, raycastLayers);
-                var resultUp = spaceState.IntersectRay(rayParamsUp);
-
-                var rayParamsDown = PhysicsRayQueryParameters3D.Create(realPosUp, realPos, raycastLayers);
-                var resultDown = spaceState.IntersectRay(rayParamsDown);
-
-                static bool IsCastSuccess(Dictionary dict)
-                {
-                    return dict is { Count: > 0 };
-                }
-
-                var upHitFrontFace = resultUp.TryGetValue("normal", out var normal) && normal.AsVector3().Y < 0;
-                if ((IsCastSuccess(resultUp) && !upHitFrontFace) || IsCastSuccess(resultDown))
-                {
-                    image.SetPixel(x, y, new Color(1.0f, 1.0f, 1.0f));
-                }
-            }
-        }
-
-        return image;
-    }
-
-    public static Image AddMargins(Image image, int resolution, int margin)
-    {
-        var withMarginsSize = resolution + (2 * margin);
-        var imageWithMargins = Create(withMarginsSize, withMarginsSize, true, Format.Rgb8);
-        imageWithMargins.BlendRect(image, new Rect2I(0, resolution - margin, resolution, margin), new Vector2I(margin + margin, 0));
-        imageWithMargins.BlendRect(image, new Rect2I(0, 0, resolution, resolution), new Vector2I(margin, margin));
-        imageWithMargins.BlendRect(image, new Rect2I(0, 0, resolution, margin), new Vector2I(0, resolution + margin));
-        return imageWithMargins;
     }
 }

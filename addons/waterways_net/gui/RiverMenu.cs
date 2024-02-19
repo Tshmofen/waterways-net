@@ -5,11 +5,12 @@ namespace Waterways.Gui;
 [Tool]
 public partial class RiverMenu : MenuButton
 {
-    [Signal] public delegate void GenerateFlowmapEventHandler();
+    private PopupMenu _popup;
+
     [Signal] public delegate void GenerateMeshEventHandler();
     [Signal] public delegate void DebugViewChangedEventHandler(int index);
 
-    public int DebugViewMenuSelected { get; set; }
+    public int SelectedDebugViewMenuIndex { get; set; }
     public PopupMenu DebugViewMenu { get; set; }
 
     #region Signal Handlers
@@ -18,10 +19,6 @@ public partial class RiverMenu : MenuButton
     {
         switch ((RiverMenuType)index)
         {
-            case RiverMenuType.Generate:
-                EmitSignal(SignalName.GenerateFlowmap);
-                break;
-
             case RiverMenuType.GenerateMesh:
                 EmitSignal(SignalName.GenerateMesh);
                 break;
@@ -33,7 +30,7 @@ public partial class RiverMenu : MenuButton
 
     private void OnDebugMenuItemSelected(long index)
     {
-        DebugViewMenuSelected = (int)index;
+        SelectedDebugViewMenuIndex = (int)index;
         EmitSignal(SignalName.DebugViewChanged, (int)index);
     }
 
@@ -41,7 +38,6 @@ public partial class RiverMenu : MenuButton
     {
         DebugViewMenu.Clear();
         DebugViewMenu.AddRadioCheckItem("Display Normal");
-        DebugViewMenu.AddRadioCheckItem("Display Debug Flow Map (RG)");
         DebugViewMenu.AddRadioCheckItem("Display Debug Foam Map (B)");
         DebugViewMenu.AddRadioCheckItem("Display Debug Noise Map (A)");
         DebugViewMenu.AddRadioCheckItem("Display Debug Distance Field Map (R)");
@@ -50,30 +46,42 @@ public partial class RiverMenu : MenuButton
         DebugViewMenu.AddRadioCheckItem("Display Debug Flow Arrows");
         DebugViewMenu.AddRadioCheckItem("Display Debug Flow Strength");
         DebugViewMenu.AddRadioCheckItem("Display Debug Foam Mix");
-        DebugViewMenu.SetItemChecked(DebugViewMenuSelected, true);
+        DebugViewMenu.SetItemChecked(SelectedDebugViewMenuIndex, true);
     }
 
     #endregion
 
     public override void _EnterTree()
     {
-        GetPopup().Clear();
-        GetPopup().IdPressed += OnMenuItemSelected;
-        GetPopup().AddItem("Generate Flow & Foam Map");
-        GetPopup().AddItem("Generate MeshInstance3D Sibling");
+        _popup = GetPopup();
+
+        _popup.Clear();
+        _popup.Connect(PopupMenu.SignalName.IdPressed, Callable.From<long>(OnMenuItemSelected));
+        _popup.AddItem("Generate MeshInstance3D Sibling");
 
         DebugViewMenu = new PopupMenu { Name = "DebugViewMenu"};
-        DebugViewMenu.AboutToPopup += OnDebugViewMenuAboutToPopup;
-        DebugViewMenu.IdPressed += OnDebugMenuItemSelected;
+        DebugViewMenu.Connect(Window.SignalName.AboutToPopup, Callable.From(OnDebugViewMenuAboutToPopup));
+        DebugViewMenu.Connect(PopupMenu.SignalName.IdPressed, Callable.From<long>(OnDebugMenuItemSelected));
 
-        GetPopup().AddChild(DebugViewMenu);
-        GetPopup().AddSubmenuItem("Debug View", DebugViewMenu.Name);
+        _popup.AddChild(DebugViewMenu);
+        _popup.AddSubmenuItem("Debug View", DebugViewMenu.Name);
     }
 
     public override void _ExitTree()
     {
-        GetPopup().IdPressed -= OnMenuItemSelected;
-        DebugViewMenu.AboutToPopup -= OnDebugViewMenuAboutToPopup;
-        DebugViewMenu.IdPressed -= OnDebugMenuItemSelected;
+        if (_popup.IsConnected(PopupMenu.SignalName.IdPressed, Callable.From<long>(OnMenuItemSelected)))
+        {
+            _popup.Disconnect(PopupMenu.SignalName.IdPressed, Callable.From<long>(OnMenuItemSelected));
+        }
+
+        if (DebugViewMenu.IsConnected(Window.SignalName.AboutToPopup, Callable.From(OnDebugViewMenuAboutToPopup)))
+        {
+            DebugViewMenu.Disconnect(Window.SignalName.AboutToPopup, Callable.From(OnDebugViewMenuAboutToPopup));
+        }
+
+        if (DebugViewMenu.IsConnected(PopupMenu.SignalName.IdPressed, Callable.From<long>(OnDebugMenuItemSelected)))
+        {
+            DebugViewMenu.Disconnect(PopupMenu.SignalName.IdPressed, Callable.From<long>(OnDebugMenuItemSelected));
+        }
     }
 }

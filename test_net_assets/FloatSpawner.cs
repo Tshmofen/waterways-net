@@ -1,12 +1,15 @@
 using Godot;
+using Waterways;
 
 namespace TestAssets;
 
-public partial class FloatSpawner : Node3D 
+[GlobalClass]
+public partial class FloatSpawner : Node3D
 {
 	private PackedScene _spawnObject;
 
     [Export(PropertyHint.File)] public string SpawnObjectPath { get; set; }
+    [Export] public RiverFloatSystem FloatSystem { get; set; }
 
 	public override void _Ready()
 	{
@@ -20,13 +23,13 @@ public partial class FloatSpawner : Node3D
 			return;
 		}
 
-		GD.Print("Spawned an object");
-		var obj = _spawnObject.Instantiate<RigidBody3D>();
+		var cube = _spawnObject.Instantiate<FloatingCube>();
+		Owner.AddChild(cube);
 
-		Owner.AddChild(obj);
-		obj.GlobalPosition = GlobalPosition;
-		obj.Rotation = new Vector3(GD.Randf() * float.Tau, GD.Randf() * float.Tau, GD.Randf() * float.Tau);
-		obj.ApplyCentralImpulse(GlobalBasis.Z * -10.0f);
-		obj.AngularVelocity = new Vector3((-0.5f + GD.Randf()) * 3.0f, (-0.5f + GD.Randf()) * 3.0f, (-0.5f + GD.Randf()) * 3.0f);
+		cube.FloatSystem = FloatSystem;
+		cube.GlobalPosition = GlobalPosition;
+		cube.Rotation = new Vector3(GD.Randf() * float.Tau, GD.Randf() * float.Tau, GD.Randf() * float.Tau);
+		cube.ApplyCentralImpulse(GlobalBasis.Z * -10.0f);
+		cube.AngularVelocity = new Vector3((-0.5f + GD.Randf()) * 3.0f, (-0.5f + GD.Randf()) * 3.0f, (-0.5f + GD.Randf()) * 3.0f);
     }
 }

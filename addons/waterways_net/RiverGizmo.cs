@@ -27,7 +27,7 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
     private Material _handleLinesMat;
     private Transform3D? _handleBaseTransform;
 
-    public WaterwaysPlugin EditorPlugin;
+    public WaterwaysPlugin EditorPlugin { get; set; }
 
     #region Util
 
@@ -169,13 +169,13 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         var path = new List<Vector3>();
         var bakedPoints = curve.GetBakedPoints();
 
-        for (var i = 0; i < bakedPoints.Length; i++)
+        for (var i = 0; i < bakedPoints.Length - 1; i++)
         {
             path.Add(bakedPoints[i]);
-            path.Add(bakedPoints[(i + 1) % bakedPoints.Length]);
+            path.Add(bakedPoints[i + 1]);
         }
 
-        gizmo.AddLines([.. path], _pathMat);
+        gizmo.AddLines([..path], _pathMat);
     }
 
     private void DrawHandles(EditorNode3DGizmo gizmo, RiverManager river)
@@ -214,12 +214,12 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
         // Add each handle twice, for both material types.
         // Needs to be grouped by material "type" since that's what influences the handle indices.
-        gizmo.AddHandles([.. handlesCenter], GetMaterial("handles_center", gizmo), []);
-        gizmo.AddHandles([.. handlesControlPoints], GetMaterial("handles_control_points", gizmo), []);
-        gizmo.AddHandles([.. handlesWidth], GetMaterial("handles_width", gizmo), []);
-        gizmo.AddHandles([.. handlesCenter], GetMaterial("handles_center_with_depth", gizmo), []);
-        gizmo.AddHandles([.. handlesControlPoints], GetMaterial("handles_control_points_with_depth", gizmo), []);
-        gizmo.AddHandles([.. handlesWidth], GetMaterial("handles_width_with_depth", gizmo), []);
+        gizmo.AddHandles([..handlesCenter], GetMaterial("handles_center", gizmo), []);
+        gizmo.AddHandles([..handlesControlPoints], GetMaterial("handles_control_points", gizmo), []);
+        gizmo.AddHandles([..handlesWidth], GetMaterial("handles_width", gizmo), []);
+        gizmo.AddHandles([..handlesCenter], GetMaterial("handles_center_with_depth", gizmo), []);
+        gizmo.AddHandles([..handlesControlPoints], GetMaterial("handles_control_points_with_depth", gizmo), []);
+        gizmo.AddHandles([..handlesWidth], GetMaterial("handles_width_with_depth", gizmo), []);
     }
 
     #endregion
@@ -411,9 +411,8 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
                     }
                 default:
                     {
-                        if (AxisMapping.ContainsKey(EditorPlugin.Constraint))
+                        if (AxisMapping.TryGetValue(EditorPlugin.Constraint, out var axis))
                         {
-                            var axis = AxisMapping[EditorPlugin.Constraint];
                             if (EditorPlugin.LocalEditing)
                             {
                                 axis = _handleBaseTransform.Value.Basis * (axis);
@@ -425,9 +424,8 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
                             var result = Geometry3D.GetClosestPointsBetweenSegments(axisFrom, axisTo, rayFrom, rayTo);
                             newPos = result[0];
                         }
-                        else if (PlaneMapping.ContainsKey(EditorPlugin.Constraint))
+                        else if (PlaneMapping.TryGetValue(EditorPlugin.Constraint, out var normal))
                         {
-                            var normal = PlaneMapping[EditorPlugin.Constraint];
                             if (EditorPlugin.LocalEditing)
                             {
                                 normal = _handleBaseTransform.Value.Basis * (normal);
@@ -487,7 +485,7 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
                 p2 = river.Curve.GetPointOut(pIndex).Cross(Vector3.Down).Normalized() * 4096;
             }
 
-            var g1 = globalInverse * (rayFrom);
+            var g1 = globalInverse * rayFrom;
             var g2 = globalInverse * (rayFrom + (rayDir * 4096));
 
             var geoPoints = Geometry3D.GetClosestPointsBetweenSegments(p1, p2, g1, g2);
@@ -514,42 +512,36 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
         if (IsCenterPoint(index, pointCount))
         {
-            plugin.AddDoMethod(river, RiverManager.MethodName.SetCurvePointPosition, pIndex, river.Curve.GetPointPosition(pIndex));
-            plugin.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointPosition, pIndex, restoreF);
+            plugin.AddDoMethod(river, nameof(RiverManager.SetCurvePointPosition), pIndex, river.Curve.GetPointPosition(pIndex));
+            plugin.AddUndoMethod(river, nameof(RiverManager.SetCurvePointPosition), pIndex, restoreF);
         }
 
         if (IsControlPointIn(index, pointCount))
         {
-            plugin.AddDoMethod(river, RiverManager.MethodName.SetCurvePointIn, pIndex, river.Curve.GetPointIn(pIndex));
-            plugin.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointIn, pIndex, restoreF);
-            plugin.AddDoMethod(river, RiverManager.MethodName.SetCurvePointOut, pIndex, river.Curve.GetPointOut(pIndex));
-            plugin.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointOut, pIndex, -restoreF);
+            plugin.AddDoMethod(river, nameof(RiverManager.SetCurvePointIn), pIndex, river.Curve.GetPointIn(pIndex));
+            plugin.AddUndoMethod(river, nameof(RiverManager.SetCurvePointIn), pIndex, restoreF);
+            plugin.AddDoMethod(river, nameof(RiverManager.SetCurvePointOut), pIndex, river.Curve.GetPointOut(pIndex));
+            plugin.AddUndoMethod(river, nameof(RiverManager.SetCurvePointOut), pIndex, -restoreF);
         }
 
         if (IsControlPointOut(index, pointCount))
         {
-            plugin.AddDoMethod(river, RiverManager.MethodName.SetCurvePointOut, pIndex, river.Curve.GetPointOut(pIndex));
-            plugin.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointOut, pIndex, restoreF);
-            plugin.AddDoMethod(river, RiverManager.MethodName.SetCurvePointIn, pIndex, river.Curve.GetPointIn(pIndex));
-            plugin.AddUndoMethod(river, RiverManager.MethodName.SetCurvePointIn, pIndex, -restoreF);
+            plugin.AddDoMethod(river, nameof(RiverManager.SetCurvePointOut), pIndex, river.Curve.GetPointOut(pIndex));
+            plugin.AddUndoMethod(river, nameof(RiverManager.SetCurvePointOut), pIndex, restoreF);
+            plugin.AddDoMethod(river, nameof(RiverManager.SetCurvePointIn), pIndex, river.Curve.GetPointIn(pIndex));
+            plugin.AddUndoMethod(river, nameof(RiverManager.SetCurvePointIn), pIndex, -restoreF);
         }
 
         if (IsWidthPointLeft(index, pointCount) || IsWidthPointRight(index, pointCount))
         {
             var riverWidthsUndo = river.Widths.Duplicate(true);
             riverWidthsUndo[pIndex] = restoreF;
-            plugin.AddDoProperty(river, RiverManager.PropertyName.Widths, river.Widths);
-            plugin.AddUndoProperty(river, RiverManager.PropertyName.Widths, riverWidthsUndo);
+            plugin.AddDoProperty(river, nameof(RiverManager.Widths), river.Widths);
+            plugin.AddUndoProperty(river, nameof(RiverManager.Widths), riverWidthsUndo);
         }
 
-        plugin.AddDoMethod(river, RiverManager.MethodName.PropertiesChanged);
-        plugin.AddDoMethod(river, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", false);
-        plugin.AddDoProperty(river, RiverManager.PropertyName.ValidFlowmap, false);
-        plugin.AddDoMethod(river, Node.MethodName.UpdateConfigurationWarnings);
-        plugin.AddUndoMethod(river, RiverManager.MethodName.PropertiesChanged);
-        plugin.AddUndoMethod(river, RiverManager.MethodName.SetMaterials, "i_valid_flowmap", river.ValidFlowmap);
-        plugin.AddUndoProperty(river, RiverManager.PropertyName.ValidFlowmap, river.ValidFlowmap);
-        plugin.AddUndoMethod(river, Node.MethodName.UpdateConfigurationWarnings);
+        plugin.AddDoMethod(river, nameof(RiverManager.PropertiesChanged));
+        plugin.AddUndoMethod(river, nameof(RiverManager.PropertiesChanged));
         plugin.CommitAction();
 
         _Redraw(gizmo);
@@ -557,6 +549,13 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
     public override void _Redraw(EditorNode3DGizmo gizmo)
     {
+        var river = EditorPlugin.CurrentRiverManager;
+        if (EditorPlugin.CurrentRiverManager == null)
+        {
+            gizmo.Clear();
+            return;
+        }
+
         // Work around for issue where using "get_material" doesn't return a
         // material when redraw is being called manually from _set_handle()
         // so I'm caching the materials instead
@@ -564,12 +563,8 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         _handleLinesMat ??= GetMaterial("handle_lines", gizmo);
 
         gizmo.Clear();
-        var river = (RiverManager)gizmo.GetNode3D();
-
-        if (!river.IsConnected(RiverManager.SignalName.RiverChanged, Callable.From<EditorNode3DGizmo>(_Redraw)))
-        {
-            river.RiverChanged += gizmo._Redraw;
-        }
+        river.CurrentGizmoRedraw = () => _Redraw(gizmo);
+        EditorPlugin.CurrentGizmoRedraw = () => _Redraw(gizmo);
 
         DrawPath(gizmo, river.Curve);
         DrawHandles(gizmo, river);
