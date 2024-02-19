@@ -6,7 +6,7 @@ It is a port to `Godot 4.0+`/`.NET` of a tool to generate river meshes with corr
 
 Note that starting from `v0.1.3` I've changed some of the systems in `Waterways`, if you want the version with all the original features use branch [original-net](https://github.com/Tshmofen/waterways-net/tree/original-net). Though, this version is not supported and no fixes will be published for it in the future. 
 
-Even though the original intention of the plugin was to implement flow baking I didn't really found it much useful, but the mesh generation and instruments to create rivers with nice-and-correct flow across the curve is amazing, so it shouldn't be a wonder, why I got rid of baking.
+Even though the original intention of the plugin was to implement flow baking I didn't really found it much useful, but the mesh generation and instruments to create rivers with nice-and-correct flow across the curve is amazing, so it shouldn't be a wonder why I got rid of baking.
 
 Main Differences - [Original](https://github.com/Arnklit/Waterways)
 ---
@@ -19,7 +19,7 @@ Main Differences - [Original](https://github.com/Arnklit/Waterways)
 * The special node for floating objects is not present anymore, I feel like just providing public interface to acquire flow direction and height is much more flexible, and the user can decide how to use it without any restrictions (or copy the code from my test implementation).
 * And in-general code quality shoud be much improved. When it was being ported, a lot of code was rewritten to decrease complexity, improve readability, remove copy-paste and decrease the general scope of the plugin. I hope it is now much better, especially property generation and float system parts that were rebuilt from the ground (though, I'm still not happy with amount of stuff in `RiverManager`, but let's leave it for later).
 
-#### Well, enjoy the cool rivers! :)
+#### No additional licenses applied, just do not forget to mention the original authors and, well, enjoy the cool rivers! :)
 
 ![Waterways-NET Add-on for Godot 4](https://github.com/Tshmofen/waterways-net/blob/rework/images/river_test_editor.png)
 
@@ -93,7 +93,7 @@ The river's parameters are split into 3 sections.
 - `Lod0 Distance` - Controls the cutoff point for whether the shader samples textures twice to create an FBM effect for the waves and foam.
 
  Documentation `RiverFloatSystem`
-----------------------
+---
 - `Max Depth` - Max depth of the river, effectively it is the offset of the raycast above of the water. If water height is being checked below the river on `MaxDepth` distance it will just return `DefaulHeight`. 
 - `Default Height` - Default height to be returned when there was no river below for given position or water height check was done too deep below the river (see `Max Depth` setting).
 - `Flow Bake Interval` - `RiverFloatSystem` is using the original curve of the river, but it is containing too much baked points that are not really needed for flow calculations, this setting is used to create curve copy with bigger intervals for improved perfomance.
@@ -102,5 +102,9 @@ The river's parameters are split into 3 sections.
 `float GetWaterHeight(Vector3 globalPosition)` - When this method receives global position, it will do a raycast from it and return global height of the river for this point or `DefaultHeight` if river wasn't hit.
 
 `Vector3 GetWaterFlowDirection(Vector3 globalPosition)` - When this method receives global position, it will find a nearest baked river point and will interpolate river flow direction from it. The `Vector3` being returned is normalized.
+
+Notes
+---
+- It is not included here, but `test_net_assets` are actually using Zylann's `HeightMap terrain plugin`, so before accessing the test correctly you should [[download it]](https://github.com/Zylann/godot_heightmap_plugin) and place it in the `addons` folder. If something goes wrong, try use version `1.7.2`, that was used by me during development.
 
 (c) Tshmofen - Timofey Ivanov, 2023
