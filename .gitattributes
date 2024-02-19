@@ -1,17 +1,7 @@
-# Exclude all top-level files and directories (except addons) from ZIP downloads.
-# This makes installing through the AssetLib easier, because no files and folders
-# need to be unchecked.
+# Normalize line endings for all files that Git considers text files.
+* text=auto eol=lf
 
-/.editorconfig export-ignore
-/.gitattributes export-ignore
-/.gitignore export-ignore
-/README.md export-ignore
-/LICENSE.md export-ignore
-/CHANGELOG.md export-ignore
-/icon.png export-ignore
-/icon.png.import export-ignore
-/project.godot export-ignore
-/waterways_net.csproj export-ignore
-/waterways_net.sln export-ignore
-/waterways_net.sln.DotSettings export-ignore
-test_net_assets/ export-ignore
+# Only include the addons folder when downloading from the Asset Library.
+/**        export-ignore
+/addons    !export-ignore
+/addons/** !export-ignore
