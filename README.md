@@ -1,8 +1,8 @@
-# Waterways .NET (Godot 4.2+)
+# Waterways .NET (Godot 4.0+)
 
 ![Waterways-NET Add-on for Godot 4](https://github.com/Tshmofen/waterways-net/blob/main/images/river_flow.gif)
 
-It is a port to `Godot 4`/`.NET` of a tool to generate river meshes with correct flow based on bezier curves. Visit the original page for more context and info: [https://github.com/Arnklit/Waterways](https://github.com/Arnklit/Waterways).  
+It is a port to `Godot 4.0`/`.NET 8.0` of a tool to generate river meshes with correct flow based on bezier curves. Visit the original page for more context and info: [https://github.com/Arnklit/Waterways](https://github.com/Arnklit/Waterways).  
 
 Note that starting from `v0.1.3` I've changed some of the systems in `Waterways`, if you want the version with all the original features use branch [original-net](https://github.com/Tshmofen/waterways-net/tree/original-net). Though, this version is not supported and no fixes will be published for it in the future. 
 
@@ -106,6 +106,7 @@ The river's parameters are split into 3 sections.
 Notes
 ---
 - It is not included here, but `test_net_assets` are actually using Zylann's `HeightMap terrain plugin`, so before accessing the test correctly you should [[download it]](https://github.com/Zylann/godot_heightmap_plugin) and place it in the `addons` folder. If something goes wrong, try use version `1.7.2`, that was used by me during development.
-- Starting from `v0.1.3` Godot 4.0 will likely be unsupported because of `[GlobalClass]` annotations, you might just remove them and rebuild, but I haven't tested it.
+- Test assets will likely will not work on Godot 4.0, because of `[GlobalClass]` annotations. You can just remove them and rebuild to make it compatible again, just new nodes will not be visible in the search. 
+
 
 (c) Tshmofen - Timofey Ivanov, 2023

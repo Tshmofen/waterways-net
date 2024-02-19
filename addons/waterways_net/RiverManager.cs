@@ -9,7 +9,6 @@ using Waterways.Util;
 namespace Waterways;
 
 [Tool]
-[GlobalClass]
 public partial class RiverManager : Node3D
 {
     [Signal] public delegate void RiverChangedEventHandler();
