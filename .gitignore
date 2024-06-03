@@ -1,3 +1,4 @@
+# Used optional addons 
 addons/zylann.hterrain/
 
 # Godot 4+ specific ignores
@@ -16,3 +17,7 @@ export_presets.cfg
 data_*/
 mono_crash.*.json
 .vs/
+
+# C++ Debug
+Debug/x64/
+x64/

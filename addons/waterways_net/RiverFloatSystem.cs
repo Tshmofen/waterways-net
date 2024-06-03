@@ -6,6 +6,9 @@ namespace Waterways;
 [Tool]
 public partial class RiverFloatSystem : Node3D
 {
+    public const string PluginNodeAlias = nameof(RiverFloatSystem);
+    public const string PluginBaseAlias = nameof(Node3D);
+
     private Curve3D _bakedCurve;
     private RiverManager _riverManager;
     private StaticBody3D _riverBody;
@@ -133,7 +136,7 @@ public partial class RiverFloatSystem : Node3D
         _riverManager = GetParentOrNull<RiverManager>();
         if (_riverManager != null && !Engine.IsEditorHint())
         {
-            _riverManager.RiverChanged += GenerateFloatSystem;
+            _riverManager.CurveChanged += GenerateFloatSystem;
         }
     }
 
@@ -141,7 +144,7 @@ public partial class RiverFloatSystem : Node3D
     {
         if (_riverManager != null)
         {
-            _riverManager.RiverChanged -= GenerateFloatSystem;
+            _riverManager.CurveChanged -= GenerateFloatSystem;
         }
     }
 
