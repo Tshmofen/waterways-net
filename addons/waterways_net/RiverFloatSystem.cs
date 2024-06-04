@@ -8,6 +8,8 @@ public partial class RiverFloatSystem : Node3D
 {
     public const string PluginNodeAlias = nameof(RiverFloatSystem);
     public const string PluginBaseAlias = nameof(Node3D);
+    public const string ScriptPath = $"{nameof(RiverFloatSystem)}.cs";
+    public const string IconPath = "float.svg";
 
     private Curve3D _bakedCurve;
     private RiverManager _riverManager;

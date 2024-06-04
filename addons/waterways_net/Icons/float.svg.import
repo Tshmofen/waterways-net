@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dnjok0de3mopo"
-path="res://.godot/imported/create.svg-48bc4a252a02846ad596af4d8e6dc4dd.ctex"
+uid="uid://qvgue5wakkua"
+path="res://.godot/imported/float.svg-615148f58ccfaceae4ee818f962a4e47.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/waterways_net/Icon/create.svg"
-dest_files=["res://.godot/imported/create.svg-48bc4a252a02846ad596af4d8e6dc4dd.ctex"]
+source_file="res://addons/waterways_net/Icons/float.svg"
+dest_files=["res://.godot/imported/float.svg-615148f58ccfaceae4ee818f962a4e47.ctex"]
 
 [params]
 

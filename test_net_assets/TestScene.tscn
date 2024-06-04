@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://pgvwvu6wke6p"]
+[gd_scene load_steps=24 format=3 uid="uid://pgvwvu6wke6p"]
 
 [ext_resource type="PackedScene" uid="uid://cyq12ycnotl2x" path="res://test_net_assets/rock.tscn" id="10"]
 [ext_resource type="Script" path="res://addons/zylann.hterrain/hterrain.gd" id="10_kn76s"]
@@ -8,8 +8,10 @@
 [ext_resource type="Texture2D" uid="uid://k8lt88ugpbm8" path="res://test_net_assets/terrain_textures/grass_alb_bump.png" id="13_5t4sd"]
 [ext_resource type="Script" path="res://addons/waterways_net/RiverManager.cs" id="13_j0wny"]
 [ext_resource type="Script" path="res://test_net_assets/FloatSpawner.cs" id="14"]
+[ext_resource type="Texture2D" uid="uid://b85tlq8wcklbo" path="res://addons/waterways_net/Textures/water1_normal_bump.png" id="14_e3jbr"]
 [ext_resource type="Texture2D" uid="uid://13thf406otb8" path="res://test_net_assets/terrain_textures/dirt_alb_bump.png" id="14_qadyq"]
 [ext_resource type="Texture2D" uid="uid://bwl0ymoej6jwx" path="res://test_net_assets/terrain_textures/riverbed_alb_bump.png" id="15_fjbi0"]
+[ext_resource type="Script" path="res://addons/waterways_net/Data/RiverShaderSettings.cs" id="15_p8jm3"]
 [ext_resource type="Texture2D" uid="uid://d2ul8cjrj362o" path="res://test_net_assets/terrain_textures/grass_nor_rough.png" id="16_shvfv"]
 [ext_resource type="Texture2D" uid="uid://k4brb2w6y37u" path="res://test_net_assets/terrain_textures/dirt_nor_rough.png" id="17_x8to4"]
 [ext_resource type="Texture2D" uid="uid://nw61drbjop33" path="res://test_net_assets/terrain_textures/riverbed_nor_rough.png" id="18_sunow"]
@@ -58,6 +60,34 @@ _data = {
 "tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, -1.7946, 0, 0)
 }
 point_count = 10
+
+[sub_resource type="Resource" id="Resource_gt7ro"]
+script = ExtResource("15_p8jm3")
+MatShaderType = 0
+mat_albedo_color_first = Color(0.6, 0.7, 0.65, 1)
+mat_albedo_color_second = Color(0.25, 0.35, 0.35, 1)
+mat_albedo_depth = 10.0
+mat_albedo_depth_curve = 0.25
+mat_transparency_clarity = 10.0
+mat_transparency_depth_curve = 0.25
+mat_transparency_refraction = 0.05
+mat_normal_scale = 1.0
+mat_normal_bump_texture = ExtResource("14_e3jbr")
+mat_flow_speed = 1.0
+mat_flow_base = 0.0
+mat_flow_steepness = 2.0
+mat_flow_distance = 1.0
+mat_flow_pressure = 1.0
+mat_flow_max = 4.0
+mat_foam_color = Color(0.9, 0.9, 0.9, 1)
+mat_foam_amount = 2.0
+mat_foam_steepness = 2.0
+mat_foam_smoothness = 0.3
+mat_uv_scale = Vector3(1, 1, 1)
+mat_roughness = 0.2
+mat_edge_fade = 0.25
+LodLod0Distance = 50.0
+_selectedShader = 0
 
 [node name="World" type="Node3D"]
 
@@ -140,6 +170,7 @@ shape = SubResource("12")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.42, 8.68095, 16.5659)
 curve = SubResource("Curve3D_321ia")
 script = ExtResource("13_j0wny")
+ShaderSettings = SubResource("Resource_gt7ro")
 RiverWidth = 8.0
 ShapeStepLengthDivs = 3
 ShapeStepWidthDivs = 3

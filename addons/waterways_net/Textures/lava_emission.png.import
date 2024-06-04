@@ -2,20 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cd13iarl2736p"
-path="res://.godot/imported/flow_offset_noise.png-3c1f21370989e113ce7293d71f98c6e9.ctex"
+uid="uid://bhy00kugslxiw"
+path.s3tc="res://.godot/imported/lava_emission.png-be3e6f693c0a4f3621c37b9c75a35b2b.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
-source_file="res://addons/waterways_net/Texture/flow_offset_noise.png"
-dest_files=["res://.godot/imported/flow_offset_noise.png-3c1f21370989e113ce7293d71f98c6e9.ctex"]
+source_file="res://addons/waterways_net/Textures/lava_emission.png"
+dest_files=["res://.godot/imported/lava_emission.png-be3e6f693c0a4f3621c37b9c75a35b2b.s3tc.ctex"]
 
 [params]
 
-compress/mode=1
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/hdr_compression=1
@@ -25,10 +26,10 @@ mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
-process/fix_alpha_border=false
+process/fix_alpha_border=true
 process/premult_alpha=false
 process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

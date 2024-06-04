@@ -9,6 +9,8 @@ public partial class RiverManager : Path3D
 {
     public const string PluginBaseAlias = nameof(Path3D);
     public const string PluginNodeAlias = nameof(RiverManager);
+    public const string ScriptPath = $"{nameof(RiverManager)}.cs";
+    public const string IconPath = "river.svg";
 
     private const string RiverManagerStamp = "RiverManager";
     private MeshInstance3D _meshInstance;

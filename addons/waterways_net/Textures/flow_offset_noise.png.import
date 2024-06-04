@@ -2,20 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b85tlq8wcklbo"
-path="res://.godot/imported/water1_normal_bump.png-9671d19bc9318aac32998e0e7f9ec76a.ctex"
+uid="uid://cd13iarl2736p"
+path="res://.godot/imported/flow_offset_noise.png-aff8a6f48ac41ab6d06263ff543a38f9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/waterways_net/Texture/water1_normal_bump.png"
-dest_files=["res://.godot/imported/water1_normal_bump.png-9671d19bc9318aac32998e0e7f9ec76a.ctex"]
+source_file="res://addons/waterways_net/Textures/flow_offset_noise.png"
+dest_files=["res://.godot/imported/flow_offset_noise.png-aff8a6f48ac41ab6d06263ff543a38f9.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=1
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/hdr_compression=1
@@ -25,10 +25,10 @@ mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
-process/fix_alpha_border=true
+process/fix_alpha_border=false
 process/premult_alpha=false
 process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=0
+detect_3d/compress_to=1

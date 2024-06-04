@@ -12,7 +12,7 @@ public static class MaterialConstant
     public const string Foam = "Foam";
     public const string Custom = "Custom";
 
-    public const string FoamNoisePath = $"{WaterwaysPlugin.PluginPath}/textures/foam_noise.png";
+    public const string FoamNoisePath = $"{WaterwaysPlugin.PluginPath}/Textures/foam_noise.png";
     public const string CustomColorFirstProperty = "mat_albedo_color_first";
     public const string CustomColorSecondProperty = "mat_albedo_color_second";
     public const string CustomColorAlbedoProperty = "albedo_color";

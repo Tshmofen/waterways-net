@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bhy00kugslxiw"
-path.s3tc="res://.godot/imported/lava_emission.png-e8ade2934afda49e80934086bcd837a5.s3tc.ctex"
+uid="uid://dwi2k45x8qyrv"
+path.s3tc="res://.godot/imported/debug_pattern.png-b9b82d240c48928584fa28908a29b96e.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://addons/waterways_net/Texture/lava_emission.png"
-dest_files=["res://.godot/imported/lava_emission.png-e8ade2934afda49e80934086bcd837a5.s3tc.ctex"]
+source_file="res://addons/waterways_net/Textures/debug_pattern.png"
+dest_files=["res://.godot/imported/debug_pattern.png-b9b82d240c48928584fa28908a29b96e.s3tc.ctex"]
 
 [params]
 
@@ -20,7 +20,7 @@ compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/hdr_compression=1
-compress/normal_map=2
+compress/normal_map=0
 compress/channel_pack=0
 mipmaps/generate=true
 mipmaps/limit=-1
