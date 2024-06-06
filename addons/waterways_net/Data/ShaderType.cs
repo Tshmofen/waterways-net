@@ -3,6 +3,6 @@
 public enum ShaderType
 {
     Water,
-    Lava,
+    None,
     Custom
 }

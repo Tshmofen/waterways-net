@@ -14,10 +14,8 @@ public static class RiverShaderHelper
                 material.SetShaderParameter("normal_bump_texture", ResourceLoader.Load<Texture>($"{WaterwaysPlugin.PluginPath}/Textures/water1_normal_bump.png"));
                 break;
 
-            case ShaderType.Lava:
-                material.Shader = ResourceLoader.Load<Shader>($"{WaterwaysPlugin.PluginPath}/Shaders/lava.gdshader");
-                material.SetShaderParameter("normal_bump_texture", ResourceLoader.Load<Texture>($"{WaterwaysPlugin.PluginPath}/Textures/lava_normal_bump.png"));
-                material.SetShaderParameter("emission_texture", ResourceLoader.Load<Texture>($"{WaterwaysPlugin.PluginPath}/Textures/lava_emission.png"));
+            case ShaderType.None:
+                material.Shader = null;
                 break;
         }
     }

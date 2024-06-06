@@ -16,44 +16,129 @@ public partial class RiverManager : Path3D
     private MeshInstance3D _meshInstance;
     private int _steps = 2;
 
-    [Export] public RiverShaderSettings ShaderSettings { get; set; }
-    [Export] public float RiverWidth { get; set; } = 3f;
-    [Export(PropertyHint.Range, "1,8")] public int ShapeStepLengthDivs { get; set; } = 1;
-    [Export(PropertyHint.Range, "1,8")] public int ShapeStepWidthDivs { get; set; } = 1;
-    [Export(PropertyHint.Range, "0.1,5.0")] public float ShapeSmoothness { get; set; } = 0.5f;
+    #region Export Properties
+
+    private RiverShaderSettings _shaderSettings;
+    [Export] public RiverShaderSettings ShaderSettings
+    {
+        get => _shaderSettings;
+        set
+        {
+            _shaderSettings = value;
+
+            if (_shaderSettings == null)
+            {
+                _shaderSettings = new RiverShaderSettings();
+                _shaderSettings.CallDeferred(RiverShaderSettings.MethodName.SetDefaultProperties);
+            }
+
+            var material = GetShaderMaterial();
+            if (material != null)
+            {
+                _shaderSettings.Material = _meshInstance?.Mesh?.SurfaceGetMaterial(0) as ShaderMaterial;
+                EmitSignal(Path3D.SignalName.CurveChanged);
+            }
+        }
+    }
+
+    [ExportCategory("Shape Settings")]
+
+    private float _riverWidth = 5f;
+    [Export] public float RiverWidth
+    {
+        get => _riverWidth;
+        set
+        {
+            _riverWidth = value;
+            EmitSignal(Path3D.SignalName.CurveChanged);
+        }
+    }
+
+    private int _shapeStepLengthDivs = 3;
+    [Export(PropertyHint.Range, "1,8")] public int ShapeStepLengthDivs
+    {
+        get => _shapeStepLengthDivs;
+        set
+        {
+            _shapeStepLengthDivs = value;
+            EmitSignal(Path3D.SignalName.CurveChanged);
+        }
+    }
+
+    private int _shapeStepWidthDivs = 5;
+    [Export(PropertyHint.Range, "1,8")] public int ShapeStepWidthDivs
+    {
+        get => _shapeStepWidthDivs;
+        set
+        {
+            _shapeStepWidthDivs = value;
+            EmitSignal(Path3D.SignalName.CurveChanged);
+        }
+    }
+
+    private float _shapeSmoothness = 0.5f;
+    [Export(PropertyHint.Range, "0.1,5.0")] public float ShapeSmoothness
+    {
+        get => _shapeSmoothness;
+        set
+        {
+            _shapeSmoothness = value;
+            EmitSignal(Path3D.SignalName.CurveChanged);
+        }
+    }
+
+    #endregion
 
     #region Util
 
+    private ShaderMaterial GetShaderMaterial()
+    {
+        return _meshInstance?.Mesh?.SurfaceGetMaterial(0) as ShaderMaterial;
+    }
+
     private void GenerateRiver()
     {
+        EnsureWidthsCurveValidity();
+
         if (_meshInstance == null)
         {
             return;
         }
 
-        _steps = (int)(Mathf.Max(1.0f, Mathf.Round(Curve.GetBakedLength() / RiverWidth)));
+        _steps = (int) Mathf.Max(1.0f, Mathf.Round(Curve.GetBakedLength() / RiverWidth));
         _meshInstance.Mesh = RiverGenerator.GenerateRiverMesh(Curve, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, ShapeSmoothness, RiverWidth);
         _meshInstance.Mesh.SurfaceSetMaterial(0, ShaderSettings.Material);
     }
 
     private void EnsureWidthsCurveValidity()
     {
-        Curve ??= new Curve3D
+        if (Curve != null && Curve.PointCount >= 2)
+        {
+            return;
+        }
+
+        var curve = new Curve3D
         {
             BakeInterval = 0.05f
         };
 
-        if (Curve.PointCount < 2)
-        {
-            Curve.ClearPoints();
-            Curve.AddPoint(new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 0.0f, -0.25f), new Vector3(0.0f, 0.0f, 0.25f));
-            Curve.AddPoint(new Vector3(0.0f, 0.0f, 1.0f), new Vector3(0.0f, 0.0f, -0.25f), new Vector3(0.0f, 0.0f, 0.25f));
-        }
+        curve.AddPoint(new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 0.0f, -0.25f), new Vector3(0.0f, 0.0f, 0.25f));
+        curve.AddPoint(new Vector3(0.0f, 0.0f, 1.0f), new Vector3(0.0f, 0.0f, -0.25f), new Vector3(0.0f, 0.0f, 0.25f));
+        
+        Curve = curve;
     }
 
     #endregion
 
-    public override void _EnterTree()
+    public RiverManager()
+    {
+        if (!IsConnected(Path3D.SignalName.CurveChanged, Callable.From(GenerateRiver)))
+        {
+            Connect(Path3D.SignalName.CurveChanged, Callable.From(GenerateRiver));
+        }
+    }
+
+    public override void _Ready()
     {
         EnsureWidthsCurveValidity();
 
@@ -89,14 +174,19 @@ public partial class RiverManager : Path3D
             _meshInstance = newMeshInstance;
             GenerateRiver();
         }
-
-        CurveChanged += GenerateRiver;
     }
 
-    public override void _ExitTree()
+    #if TOOLS
+
+    protected override void Dispose(bool disposing)
     {
-        CurveChanged -= GenerateRiver;
+        if (IsConnected(Path3D.SignalName.CurveChanged, Callable.From(GenerateRiver)))
+        {
+            Disconnect(Path3D.SignalName.CurveChanged, Callable.From(GenerateRiver));
+        }
     }
+
+    #endif
 
     #region Public Actions
 

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Godot;
-using Godot.Collections;
 
 namespace Waterways.Utils;
 
@@ -20,9 +20,7 @@ public static class RiverGenerator
         return (int)sideFloat;
     }
 
-    #endregion
-
-    public static List<float> GenerateRiverWidthValues(Curve3D curve, int steps, int stepLengthDivs, Array<float> widths)
+    private static List<float> GenerateRiverWidthValues(Curve3D curve, int steps, int stepLengthDivs, IList<float> widths)
     {
         var riverWidthValues = new List<float>();
 
@@ -58,14 +56,18 @@ public static class RiverGenerator
         return riverWidthValues;
     }
 
+    #endregion
+
     public static Mesh GenerateRiverMesh(Curve3D curve, int steps, int stepLengthDivs, int stepWidthDivs, float smoothness, float riverWidth)
     {
         var surface = new SurfaceTool();
         surface.Begin(Mesh.PrimitiveType.Triangles);
+
         var curveLength = curve.GetBakedLength();
         surface.SetSmoothGroup(0);
 
         // Generating the verts
+        var riverWidthsValues = GenerateRiverWidthValues(curve, steps, stepLengthDivs, Enumerable.Repeat(riverWidth, curve.PointCount).ToArray());
         for (var step = 0; step < (steps * stepLengthDivs) + 1; step++)
         {
             var position = curve.SampleBaked(step / (float)(steps * stepLengthDivs) * curveLength);
@@ -73,7 +75,7 @@ public static class RiverGenerator
             var forwardPos = curve.SampleBaked((step + smoothness) / (steps * stepLengthDivs) * curveLength);
             var forwardVector = forwardPos - backwardPos;
             var rightVector = forwardVector.Cross(Vector3.Up).Normalized();
-            var widthLerp = riverWidth;
+            var widthLerp = riverWidthsValues[step];
 
             for (var wSub = 0; wSub < stepWidthDivs + 1; wSub++)
             {
