@@ -160,6 +160,9 @@ public static class RiverGenerator
         surface.Clear();
         surface.CreateFrom(arrayMesh, 0);
         surface.Index();
-        return surface.Commit();
+
+        var finalMesh = surface.Commit();
+        finalMesh.ResourceLocalToScene = true;
+        return finalMesh;
     }
 }

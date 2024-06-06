@@ -11,6 +11,7 @@ public static class RiverShaderHelper
         {
             case ShaderType.Water:
                 material.Shader = ResourceLoader.Load<Shader>($"{WaterwaysPlugin.PluginPath}/Shaders/river.gdshader");
+                material.Shader.ResourceLocalToScene = true;
                 material.SetShaderParameter("normal_bump_texture", ResourceLoader.Load<Texture>($"{WaterwaysPlugin.PluginPath}/Textures/water1_normal_bump.png"));
                 break;
 

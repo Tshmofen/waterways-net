@@ -13,6 +13,7 @@ public partial class RiverManager : Path3D
     public const string IconPath = "river.svg";
 
     private const string RiverManagerStamp = "RiverManager";
+    private const string RiverCreationStamp = "RiverCreation";
     private MeshInstance3D _meshInstance;
     private int _steps = 2;
 
@@ -35,7 +36,7 @@ public partial class RiverManager : Path3D
             var material = GetShaderMaterial();
             if (material != null)
             {
-                _shaderSettings.Material = _meshInstance?.Mesh?.SurfaceGetMaterial(0) as ShaderMaterial;
+                _shaderSettings.Material = material;
                 EmitSignal(Path3D.SignalName.CurveChanged);
             }
         }
@@ -96,6 +97,18 @@ public partial class RiverManager : Path3D
         return _meshInstance?.Mesh?.SurfaceGetMaterial(0) as ShaderMaterial;
     }
 
+    private void MakeShaderMaterialUnique()
+    {
+        var shader = GetShaderMaterial();
+
+        if (shader == null)
+        {
+            return;
+        }
+
+        _meshInstance.Mesh.SurfaceSetMaterial(0, shader.Duplicate() as ShaderMaterial);
+    }
+
     private void GenerateRiver()
     {
         EnsureWidthsCurveValidity();
@@ -119,7 +132,8 @@ public partial class RiverManager : Path3D
 
         var curve = new Curve3D
         {
-            BakeInterval = 0.05f
+            BakeInterval = 0.05f,
+            ResourceLocalToScene = true
         };
 
         curve.AddPoint(new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 0.0f, -0.25f), new Vector3(0.0f, 0.0f, 0.25f));
@@ -158,7 +172,7 @@ public partial class RiverManager : Path3D
 
             generateMesh = false;
             _meshInstance = mesh;
-            ShaderSettings.Material = _meshInstance.Mesh.SurfaceGetMaterial(0) as ShaderMaterial;
+            ShaderSettings.Material = GetShaderMaterial();
             break;
         }
 
@@ -166,13 +180,21 @@ public partial class RiverManager : Path3D
         {
             var newMeshInstance = new MeshInstance3D
             {
-                Name = "RiverMeshInstance"
+                Name = "RiverMeshInstance",
             };
 
             newMeshInstance.SetMeta(RiverManagerStamp, true);
             AddChild(newMeshInstance);
             _meshInstance = newMeshInstance;
             GenerateRiver();
+        }
+
+        if (Curve.GetMeta(RiverCreationStamp, 0ul).AsUInt64() != GetInstanceId())
+        {
+            ShaderSettings = ShaderSettings.Duplicate() as RiverShaderSettings;
+            MakeShaderMaterialUnique();
+            _shaderSettings.Material = GetShaderMaterial();
+            Curve = Curve.Duplicate() as Curve3D;
         }
     }
 
