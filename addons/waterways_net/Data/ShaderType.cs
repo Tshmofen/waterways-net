@@ -2,7 +2,7 @@
 
 public enum ShaderType
 {
-    Water,
     None,
+    Water,
     Custom
 }

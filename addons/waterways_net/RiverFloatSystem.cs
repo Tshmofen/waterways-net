@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 namespace Waterways;
 
-[Tool]
 public partial class RiverFloatSystem : Node3D
 {
     public const string PluginNodeAlias = nameof(RiverFloatSystem);
@@ -133,20 +132,12 @@ public partial class RiverFloatSystem : Node3D
         return [];
     }
 
-    public override void _EnterTree()
+    public override void _Ready()
     {
         _riverManager = GetParentOrNull<RiverManager>();
-        if (_riverManager != null && !Engine.IsEditorHint())
-        {
-            _riverManager.CurveChanged += GenerateFloatSystem;
-        }
-    }
-
-    public override void _ExitTree()
-    {
         if (_riverManager != null)
         {
-            _riverManager.CurveChanged -= GenerateFloatSystem;
+            _riverManager.CurveChanged += GenerateFloatSystem;
         }
     }
 

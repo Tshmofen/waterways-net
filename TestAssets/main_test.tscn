@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3 uid="uid://pgvwvu6wke6p"]
+[gd_scene load_steps=25 format=3 uid="uid://pgvwvu6wke6p"]
 
 [ext_resource type="Script" path="res://addons/zylann.hterrain/hterrain.gd" id="1_c2hoe"]
 [ext_resource type="Resource" path="res://TestAssets/Terrain/data.hterrain" id="2_juqy4"]
@@ -11,10 +11,12 @@
 [ext_resource type="Texture2D" uid="uid://nw61drbjop33" path="res://TestAssets/Terrain/Textures/riverbed_nor_rough.png" id="9_kichf"]
 [ext_resource type="PackedScene" uid="uid://cyq12ycnotl2x" path="res://TestAssets/rock.tscn" id="10_ia66j"]
 [ext_resource type="Script" path="res://TestAssets/Scripts/FloatSpawner.cs" id="11_6teed"]
+[ext_resource type="PackedScene" uid="uid://bn4fflqma5nvj" path="res://TestAssets/floating_cube.tscn" id="12_0hd0b"]
 [ext_resource type="Script" path="res://TestAssets/Scripts/ObjectDestroyer.cs" id="12_hqmh7"]
 [ext_resource type="Script" path="res://addons/waterways_net/RiverManager.cs" id="13_dg81e"]
 [ext_resource type="Texture2D" uid="uid://b85tlq8wcklbo" path="res://addons/waterways_net/Textures/water_normal_bump.png" id="14_mycmf"]
 [ext_resource type="Script" path="res://addons/waterways_net/Data/RiverShaderSettings.cs" id="15_pphx5"]
+[ext_resource type="Script" path="res://addons/waterways_net/RiverFloatSystem.cs" id="17_nqy82"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_42iq4"]
 sky_top_color = Color(0.352941, 0.517647, 0.505882, 1)
@@ -48,22 +50,19 @@ script = ExtResource("3_84qpo")
 mode = 0
 textures = [[ExtResource("4_3arg6"), ExtResource("5_ba170"), ExtResource("6_npdy2")], [ExtResource("7_5uvfw"), ExtResource("8_jy01s"), ExtResource("9_kichf")]]
 
-[sub_resource type="Curve3D" id="Curve3D_vfa4q"]
-bake_interval = 52.83
-
 [sub_resource type="BoxShape3D" id="12"]
 size = Vector3(11.484, 6.85648, 7.49257)
 
-[sub_resource type="Curve3D" id="Curve3D_a4mg1"]
+[sub_resource type="Curve3D" id="Curve3D_0gf5v"]
 _data = {
 "points": PackedVector3Array(-0.126808, -0.105554, -0.54207, 0.126808, 0.105554, 0.54207, 40.247, 1.13027, -8.87324, 0, 0, 0, 0, 0, 0, 34.7502, -1.92137, 4.9163, -0.0405388, 0.018217, 0.0477686, 0.0405388, -0.018217, -0.0477686, 27.9724, -2.06337, 13.5705, 1.4533, -0.367734, 1.34513, -1.4533, 0.367734, -1.34513, 22.6578, -1.94497, 11.7826, 0.532566, 0.325903, 1.1197, -0.532566, -0.325903, -1.1197, 13.6952, -2.67276, 3.31427, 6.31036, -0.066288, 1.19293, -6.31036, 0.066288, -1.19293, 6.3906, -3.67016, -4.1905, 0, 0, 0, 0, 0, 0, -3.53277, -4.35284, 0.403032, 0.479003, 0.0435605, -1.1121, -0.479003, -0.0435605, 1.1121, -10.1041, -6.65058, 14.7466, 0.484883, -0.155982, -1.82749, -0.484883, 0.155982, 1.82749, -13.6358, -6.42738, 28.8359, 0, 0, 0, 0, 0, 0, -13.3641, -7.82438, 36.2678),
 "tilts": PackedFloat32Array(0, 0, 0, -0.168571, 0, 0, 0.623098, 1.80971, 0, 0)
 }
 point_count = 10
 
-[sub_resource type="Resource" id="Resource_7gg5o"]
+[sub_resource type="Resource" id="Resource_u7v6n"]
 script = ExtResource("15_pphx5")
-MatShaderType = 0
+MatShaderType = 1
 mat_albedo_color_first = Color(0.6, 0.7, 0.65, 1)
 mat_albedo_color_second = Color(0.25, 0.35, 0.35, 1)
 mat_albedo_depth = 10.0
@@ -152,15 +151,15 @@ transform = Transform3D(1.20075, -2.0075, -2.18348, -2.50558, -1.94717, 0.412345
 [node name="Camera" type="Camera3D" parent="."]
 transform = Transform3D(0.677773, -0.256857, 0.688947, 0.100967, 0.960635, 0.258819, -0.728305, -0.10586, 0.677027, 44, 15, 30)
 
-[node name="FloatSpawner" type="Node3D" parent="Camera"]
+[node name="FloatSpawner" type="Node3D" parent="Camera" node_paths=PackedStringArray("FloatSystem")]
 transform = Transform3D(1, 0, -2.98023e-08, 0, 1, 0, 2.98023e-08, 0, 1, 0, -1, 0)
 script = ExtResource("11_6teed")
-SpawnObjectPath = "res://test_net_assets/FloatingObject.tscn"
+SpawnScene = ExtResource("12_0hd0b")
+FloatSystem = NodePath("../../RiverManager/RiverFloatSystem")
 
 [node name="DestroyCubesArea" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.90241, 1.76456, 50.3508)
 script = ExtResource("12_hqmh7")
-points = SubResource("Curve3D_vfa4q")
 
 [node name="CollisionShape" type="CollisionShape3D" parent="DestroyCubesArea"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.46612)
@@ -168,7 +167,10 @@ shape = SubResource("12")
 
 [node name="RiverManager" type="Path3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.42, 8.68095, 16.5659)
-curve = SubResource("Curve3D_a4mg1")
+curve = SubResource("Curve3D_0gf5v")
 script = ExtResource("13_dg81e")
-ShaderSettings = SubResource("Resource_7gg5o")
+ShaderSettings = SubResource("Resource_u7v6n")
 RiverWidth = 8.0
+
+[node name="RiverFloatSystem" type="Node3D" parent="RiverManager"]
+script = ExtResource("17_nqy82")

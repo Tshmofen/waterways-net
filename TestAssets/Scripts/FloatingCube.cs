@@ -1,6 +1,6 @@
 ﻿using Godot;
 
-namespace Waterways;
+namespace Waterways.Scripts;
 
 [GlobalClass]
 public partial class FloatingCube : RigidBody3D
