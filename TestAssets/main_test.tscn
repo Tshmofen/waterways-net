@@ -174,3 +174,4 @@ RiverWidth = 8.0
 
 [node name="RiverFloatSystem" type="Node3D" parent="RiverManager"]
 script = ExtResource("17_nqy82")
+MaxDepth = 10.0
