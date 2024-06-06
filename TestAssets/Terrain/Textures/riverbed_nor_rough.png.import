@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bwl0ymoej6jwx"
-path.s3tc="res://.godot/imported/riverbed_alb_bump.png-ca2d263af3ecbe696e9c9c000eb397de.s3tc.ctex"
+uid="uid://nw61drbjop33"
+path.s3tc="res://.godot/imported/riverbed_nor_rough.png-c8c35016a597aa0385dc50a6a68e301f.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://TestAssets/TerrainData/Textures/riverbed_alb_bump.png"
-dest_files=["res://.godot/imported/riverbed_alb_bump.png-ca2d263af3ecbe696e9c9c000eb397de.s3tc.ctex"]
+source_file="res://TestAssets/Terrain/Textures/riverbed_nor_rough.png"
+dest_files=["res://.godot/imported/riverbed_nor_rough.png-c8c35016a597aa0385dc50a6a68e301f.s3tc.ctex"]
 
 [params]
 

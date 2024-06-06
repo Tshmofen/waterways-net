@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://1lqfg3p1h87g"
-path="res://.godot/imported/splat.png-24b19aa4cdbe46f145c103b76096a001.ctex"
+uid="uid://cjffc8x107vjk"
+path="res://.godot/imported/color.png-042c80d4b8c7bc8ef7a39daa911fe27c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://TestAssets/TerrainData/splat.png"
-dest_files=["res://.godot/imported/splat.png-24b19aa4cdbe46f145c103b76096a001.ctex"]
+source_file="res://TestAssets/Terrain/color.png"
+dest_files=["res://.godot/imported/color.png-042c80d4b8c7bc8ef7a39daa911fe27c.ctex"]
 
 [params]
 

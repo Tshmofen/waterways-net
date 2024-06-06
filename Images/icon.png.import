@@ -2,27 +2,26 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://nw61drbjop33"
-path.s3tc="res://.godot/imported/riverbed_nor_rough.png-292d00b18fb4177a845256a455dd0750.s3tc.ctex"
+uid="uid://dsy38bcxqmbck"
+path="res://.godot/imported/icon.png-5c54608cdf98940b04ad240121483c81.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
-source_file="res://TestAssets/TerrainData/Textures/riverbed_nor_rough.png"
-dest_files=["res://.godot/imported/riverbed_nor_rough.png-292d00b18fb4177a845256a455dd0750.s3tc.ctex"]
+source_file="res://Images/icon.png"
+dest_files=["res://.godot/imported/icon.png-5c54608cdf98940b04ad240121483c81.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
@@ -32,4 +31,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=0
+detect_3d/compress_to=1

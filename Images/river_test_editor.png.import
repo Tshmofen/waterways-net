@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cipdjjpwghak5"
-path="res://.godot/imported/river_test.png-cee2ec6bc2eab7f8684eeae3158ec6e9.ctex"
+uid="uid://buspgc623j0os"
+path="res://.godot/imported/river_test_editor.png-d97b03caae22bebe8a6523edb58db1a1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Image/river_test.png"
-dest_files=["res://.godot/imported/river_test.png-cee2ec6bc2eab7f8684eeae3158ec6e9.ctex"]
+source_file="res://Images/river_test_editor.png"
+dest_files=["res://.godot/imported/river_test_editor.png-d97b03caae22bebe8a6523edb58db1a1.ctex"]
 
 [params]
 

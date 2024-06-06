@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://k8lt88ugpbm8"
-path.s3tc="res://.godot/imported/grass_alb_bump.png-aa8a6c5ab1865a90f799956343a39dea.s3tc.ctex"
+uid="uid://k4brb2w6y37u"
+path.s3tc="res://.godot/imported/dirt_nor_rough.png-e6353dff2f38554d284b6ec329884db7.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://TestAssets/TerrainData/Textures/grass_alb_bump.png"
-dest_files=["res://.godot/imported/grass_alb_bump.png-aa8a6c5ab1865a90f799956343a39dea.s3tc.ctex"]
+source_file="res://TestAssets/Terrain/Textures/dirt_nor_rough.png"
+dest_files=["res://.godot/imported/dirt_nor_rough.png-e6353dff2f38554d284b6ec329884db7.s3tc.ctex"]
 
 [params]
 
