@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="waterways_net"
-run/main_scene="res://test_net_assets/TestScene.tscn"
+run/main_scene="res://TestAssets/main_test.tscn"
 config/features=PackedStringArray("4.2", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
