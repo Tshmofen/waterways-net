@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Godot;
 
-namespace Waterways.Utils;
+namespace Waterways.Util;
 
 public static class RiverGenerator
 {
@@ -58,7 +57,7 @@ public static class RiverGenerator
 
     #endregion
 
-    public static Mesh GenerateRiverMesh(Curve3D curve, int steps, int stepLengthDivs, int stepWidthDivs, float smoothness, float riverWidth)
+    public static Mesh GenerateRiverMesh(Curve3D curve, int steps, int stepLengthDivs, int stepWidthDivs, float smoothness, IList<float> riverWidths)
     {
         var surface = new SurfaceTool();
         surface.Begin(Mesh.PrimitiveType.Triangles);
@@ -67,7 +66,7 @@ public static class RiverGenerator
         surface.SetSmoothGroup(0);
 
         // Generating the verts
-        var riverWidthsValues = GenerateRiverWidthValues(curve, steps, stepLengthDivs, Enumerable.Repeat(riverWidth, curve.PointCount).ToArray());
+        var riverWidthsValues = GenerateRiverWidthValues(curve, steps, stepLengthDivs, riverWidths);
         for (var step = 0; step < (steps * stepLengthDivs) + 1; step++)
         {
             var position = curve.SampleBaked(step / (float)(steps * stepLengthDivs) * curveLength);

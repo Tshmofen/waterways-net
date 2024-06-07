@@ -1,19 +1,24 @@
 ﻿using Godot;
+using Godot.Collections;
+using System.Linq;
 using Waterways.Data;
-using Waterways.Utils;
+using Waterways.Util;
 
 namespace Waterways;
 
 [Tool]
-public partial class RiverManager : Path3D
+public partial class RiverManager : Node3D
 {
-    public const string PluginBaseAlias = nameof(Path3D);
+    [Signal] public delegate void RiverChangedEventHandler();
+
+    public const string PluginBaseAlias = nameof(Node3D);
     public const string PluginNodeAlias = nameof(RiverManager);
     public const string ScriptPath = $"{nameof(RiverManager)}.cs";
     public const string IconPath = "river.svg";
 
     private const string RiverManagerStamp = "RiverManager";
     private const string RiverCreationStamp = "RiverCreation";
+
     private MeshInstance3D _meshInstance;
     private int _steps = 2;
 
@@ -37,23 +42,12 @@ public partial class RiverManager : Path3D
             if (material != null)
             {
                 _shaderSettings.Material = material;
-                EmitSignal(Path3D.SignalName.CurveChanged);
+                CallDeferred(MethodName.UpdateRiver);
             }
         }
     }
 
     [ExportCategory("Shape Settings")]
-
-    private float _riverWidth = 5f;
-    [Export] public float RiverWidth
-    {
-        get => _riverWidth;
-        set
-        {
-            _riverWidth = value;
-            EmitSignal(Path3D.SignalName.CurveChanged);
-        }
-    }
 
     private int _shapeStepLengthDivs = 3;
     [Export(PropertyHint.Range, "1,8")] public int ShapeStepLengthDivs
@@ -62,7 +56,7 @@ public partial class RiverManager : Path3D
         set
         {
             _shapeStepLengthDivs = value;
-            EmitSignal(Path3D.SignalName.CurveChanged);
+            CallDeferred(MethodName.UpdateRiver);
         }
     }
 
@@ -73,7 +67,7 @@ public partial class RiverManager : Path3D
         set
         {
             _shapeStepWidthDivs = value;
-            EmitSignal(Path3D.SignalName.CurveChanged);
+            CallDeferred(MethodName.UpdateRiver);
         }
     }
 
@@ -84,7 +78,39 @@ public partial class RiverManager : Path3D
         set
         {
             _shapeSmoothness = value;
-            EmitSignal(Path3D.SignalName.CurveChanged);
+            CallDeferred(MethodName.UpdateRiver);
+        }
+    }
+
+    private Array<float> _pointWidths = [ 1, 1 ];
+    [Export] public Array<float> PointWidths
+    {
+        get => _pointWidths;
+        set
+        {
+            if (value == null || value.Count != _pointWidths.Count)
+            {
+                return;
+            }
+
+            _pointWidths = value;
+            CallDeferred(MethodName.UpdateRiver);
+        }
+    }
+
+    private Curve3D _curve = new();
+    [Export] public Curve3D Curve
+    { 
+        get => _curve;
+        set
+        {
+            if (value == null)
+            {
+                return;
+            }
+
+            _curve = value;
+            CallDeferred(MethodName.UpdateRiver);
         }
     }
 
@@ -118,39 +144,43 @@ public partial class RiverManager : Path3D
             return;
         }
 
-        _steps = (int) Mathf.Max(1.0f, Mathf.Round(Curve.GetBakedLength() / RiverWidth));
-        _meshInstance.Mesh = RiverGenerator.GenerateRiverMesh(Curve, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, ShapeSmoothness, RiverWidth);
+        _steps = (int) Mathf.Max(1.0f, Mathf.Round(Curve.GetBakedLength() / PointWidths.Average()));
+        _meshInstance.Mesh = RiverGenerator.GenerateRiverMesh(Curve, _steps, ShapeStepLengthDivs, ShapeStepWidthDivs, ShapeSmoothness, PointWidths);
         _meshInstance.Mesh.SurfaceSetMaterial(0, ShaderSettings.Material);
     }
 
     private void EnsureWidthsCurveValidity()
     {
-        if (Curve != null && Curve.PointCount >= 2)
+        if (Curve == null || Curve.PointCount < 2)
         {
-            return;
+            var curve = new Curve3D
+            {
+                BakeInterval = 0.05f,
+                ResourceLocalToScene = true
+            };
+
+            curve.AddPoint(new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 0.0f, -0.25f), new Vector3(0.0f, 0.0f, 0.25f));
+            curve.AddPoint(new Vector3(0.0f, 0.0f, 1.0f), new Vector3(0.0f, 0.0f, -0.25f), new Vector3(0.0f, 0.0f, 0.25f));
+
+            Curve = curve;
         }
 
-        var curve = new Curve3D
+        PointWidths ??= [1, 1];
+        if (PointWidths.Count != Curve.PointCount)
         {
-            BakeInterval = 0.05f,
-            ResourceLocalToScene = true
-        };
+            while (PointWidths.Count < Curve.PointCount)
+            {
+                PointWidths.Add(1f);
+            }
 
-        curve.AddPoint(new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 0.0f, -0.25f), new Vector3(0.0f, 0.0f, 0.25f));
-        curve.AddPoint(new Vector3(0.0f, 0.0f, 1.0f), new Vector3(0.0f, 0.0f, -0.25f), new Vector3(0.0f, 0.0f, 0.25f));
-        
-        Curve = curve;
+            while (PointWidths.Count > Curve.PointCount)
+            {
+                PointWidths.RemoveAt(PointWidths.Count - 1);
+            }
+        }
     }
 
     #endregion
-
-    public RiverManager()
-    {
-        if (!IsConnected(Path3D.SignalName.CurveChanged, Callable.From(GenerateRiver)))
-        {
-            Connect(Path3D.SignalName.CurveChanged, Callable.From(GenerateRiver));
-        }
-    }
 
     public override void _Ready()
     {
@@ -198,18 +228,6 @@ public partial class RiverManager : Path3D
         }
     }
 
-    #if TOOLS
-
-    protected override void Dispose(bool disposing)
-    {
-        if (IsConnected(Path3D.SignalName.CurveChanged, Callable.From(GenerateRiver)))
-        {
-            Disconnect(Path3D.SignalName.CurveChanged, Callable.From(GenerateRiver));
-        }
-    }
-
-    #endif
-
     #region Public Actions
 
     public void CreateMeshDuplicate()
@@ -232,6 +250,12 @@ public partial class RiverManager : Path3D
         newMesh.GlobalTransform = _meshInstance.GlobalTransform;
         newMesh.MaterialOverride = null;
         return newMesh;
+    }
+
+    public void UpdateRiver()
+    {
+        GenerateRiver();
+        EmitSignal(SignalName.RiverChanged);
     }
 
     #endregion

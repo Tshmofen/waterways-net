@@ -1,6 +1,8 @@
 #if TOOLS
 
 using Godot;
+using Waterways.UI;
+using Waterways.UI.Data;
 
 namespace Waterways;
 
@@ -8,6 +10,11 @@ namespace Waterways;
 public partial class WaterwaysPlugin : EditorPlugin
 {
     public const string PluginPath = "res://addons/waterways_net";
+
+    private RiverGizmo _riverGizmo;
+
+    public ConstraintType CurrentConstraint { get; set; } = ConstraintType.None;
+    public bool IsLocalEditing { get; set; } = false;
 
     #region Util
 
@@ -22,14 +29,21 @@ public partial class WaterwaysPlugin : EditorPlugin
 
     public override void _EnterTree()
     {
+        _riverGizmo = new RiverGizmo
+        {
+            EditorPlugin = this
+        };
+
+        AddNode3DGizmoPlugin(_riverGizmo);
         AddCustomType(RiverManager.PluginNodeAlias, RiverManager.PluginBaseAlias, RiverManager.ScriptPath, RiverManager.IconPath);
         AddCustomType(RiverFloatSystem.PluginNodeAlias, RiverFloatSystem.PluginBaseAlias, RiverFloatSystem.ScriptPath, RiverFloatSystem.IconPath);
     }
 
     public override void _ExitTree()
     {
-        RemoveCustomType(RiverManager.PluginNodeAlias);
         RemoveCustomType(RiverFloatSystem.PluginNodeAlias);
+        RemoveCustomType(RiverManager.PluginNodeAlias);
+        RemoveNode3DGizmoPlugin(_riverGizmo);
     }
 }
 

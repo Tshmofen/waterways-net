@@ -1,7 +1,7 @@
 ﻿using Godot;
 using Waterways.Data;
 
-namespace Waterways.Utils;
+namespace Waterways.Util;
 
 public static class RiverShaderHelper
 {

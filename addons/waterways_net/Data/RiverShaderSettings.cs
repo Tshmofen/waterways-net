@@ -1,7 +1,7 @@
 ﻿using Godot;
 using System.Collections.Generic;
 using System.Linq;
-using Waterways.Utils;
+using Waterways.Util;
 using Godot.Collections;
 
 namespace Waterways.Data;

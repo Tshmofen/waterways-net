@@ -137,7 +137,7 @@ public partial class RiverFloatSystem : Node3D
         _riverManager = GetParentOrNull<RiverManager>();
         if (_riverManager != null)
         {
-            _riverManager.CurveChanged += GenerateFloatSystem;
+            _riverManager.RiverChanged += GenerateFloatSystem;
         }
     }
 

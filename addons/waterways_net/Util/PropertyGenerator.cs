@@ -1,7 +1,7 @@
 ﻿using Godot;
 using Godot.Collections;
 
-namespace Waterways.Utils;
+namespace Waterways.Util;
 
 public static class PropertyGenerator
 {
