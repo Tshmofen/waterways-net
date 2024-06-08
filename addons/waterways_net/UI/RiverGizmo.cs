@@ -1,11 +1,13 @@
 ﻿using Godot;
 using System.Collections.Generic;
+using System.Linq;
 using Waterways.Data;
 using Waterways.Data.UI;
 using Waterways.Util;
 
 namespace Waterways.UI;
 
+[Tool]
 public partial class RiverGizmo : EditorNode3DGizmoPlugin
 {
     private Transform3D? _handleBaseTransform;
@@ -23,7 +25,11 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
             path.Add(bakedPoints[i + 1]);
         }
 
-        gizmo.AddLines([.. path], GetMaterial(GizmoMaterials.Path));
+        var material = IsCurrentNodeSelected(gizmo)
+            ? GetMaterial(GizmoMaterials.Path)
+            : GetMaterial(GizmoMaterials.PathBackground);
+
+        gizmo.AddLines([.. path], material);
     }
 
     private void DrawHandles(EditorNode3DGizmo gizmo, RiverManager river)
@@ -58,7 +64,10 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
             lines.Add(pointWidthPosLeft);
         }
 
-        gizmo.AddLines([.. lines], GetMaterial(GizmoMaterials.HandleLines));
+        var material = IsCurrentNodeSelected(gizmo)
+            ? GetMaterial(GizmoMaterials.HandleLines)
+            : GetMaterial(GizmoMaterials.HandleLinesBackground);
+        gizmo.AddLines([.. lines], material);
 
         // Add each handle twice, for both material types.
         // Needs to be grouped by material "type" since that's what influences the handle indices.
@@ -79,6 +88,24 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         handlesCenterMaterial.NoDepthTest = noDepthTest;
     }
 
+    private static StandardMaterial3D CreateRiverPathMaterial(Color color)
+    {
+        return new StandardMaterial3D
+        {
+            AlbedoColor = color,
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+            Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            RenderPriority = 10,
+            NoDepthTest = true
+        };
+    }
+
+    private bool IsCurrentNodeSelected(EditorNode3DGizmo gizmo)
+    {
+        var selection = EditorPlugin.Selection.GetSelectedNodes().FirstOrDefault();
+        return gizmo.GetNode3D() == selection;
+    }
+
     #endregion
 
     public RiverGizmo()
@@ -97,16 +124,13 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         CreateRiverHandleMaterial(GizmoMaterials.HandlesWidth, GizmoMaterials.HandlesWidthColor, true);
         CreateRiverHandleMaterial(GizmoMaterials.HandlesWidthDepth, GizmoMaterials.HandlesWidthDepthColor, false);
 
-        var lineMaterial = new StandardMaterial3D
-        {
-            AlbedoColor = GizmoMaterials.HandlesLineColor,
-            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-            RenderPriority = 10,
-            NoDepthTest = true
-        };
-
+        var lineMaterial = CreateRiverPathMaterial(GizmoMaterials.HandlesLineColor);
         AddMaterial(GizmoMaterials.Path, lineMaterial);
         AddMaterial(GizmoMaterials.HandleLines, lineMaterial);
+
+        var lineMaterialBackground = CreateRiverPathMaterial(GizmoMaterials.HandlesLineColorBackground);
+        AddMaterial(GizmoMaterials.PathBackground, lineMaterialBackground);
+        AddMaterial(GizmoMaterials.HandleLinesBackground, lineMaterialBackground);
     }
 
     public WaterwaysPlugin EditorPlugin { get; set; }

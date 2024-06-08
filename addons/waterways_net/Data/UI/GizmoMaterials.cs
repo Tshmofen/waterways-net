@@ -5,8 +5,11 @@ namespace Waterways.Data.UI;
 public static class GizmoMaterials
 {
     public const string Path = "path";
+    public const string PathBackground = "path_background";
     public const string HandleLines = "handle_lines";
+    public const string HandleLinesBackground = "handle_lines_background";
     public static readonly Color HandlesLineColor = new(1.0f, 1.0f, 0.0f);
+    public static readonly Color HandlesLineColorBackground = new(HandlesLineColor, 0.15f);
 
     public const string HandlesWidth = "handles_width";
     public const string HandlesWidthDepth = "handles_width_with_depth";

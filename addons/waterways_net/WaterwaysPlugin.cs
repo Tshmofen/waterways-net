@@ -50,6 +50,7 @@ public partial class WaterwaysPlugin : EditorPlugin
 
         if (selectedNode is not RiverManager riverManager || riverManager == null)
         {
+            RiverManager = null;
             SwitchRiverControl(false);
             return;
         }
@@ -167,9 +168,9 @@ public partial class WaterwaysPlugin : EditorPlugin
             RiverControl.Dispose();
             RiverGizmo.Dispose();
         }
-        catch (ObjectDisposedException)
+        catch (ObjectDisposedException ex)
         {
-            // Ignore already disposed objects on editor close
+            GD.PushWarning($"Error disposing Waterways plugin. {ex.Message}");
         }
     }
 
