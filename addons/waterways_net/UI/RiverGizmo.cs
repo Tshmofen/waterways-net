@@ -151,21 +151,20 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         return Variant.CreateFrom(-1);
     }
 
-    // Called when handle is moved
     public override void _SetHandle(EditorNode3DGizmo gizmo, int index, bool secondary, Camera3D camera, Vector2 point)
     {
         var river = (RiverManager)gizmo.GetNode3D();
         var state = new HandleState(river, index);
+        var curve = river.Curve;
 
         if (_handleBaseTransform == null)
         {
-            var z = river.Curve.GetPointOut(state.RiverPointIndex).Normalized();
+            var z = curve.GetPointOut(state.RiverPointIndex).Normalized();
             var x = z.Cross(Vector3.Down).Normalized();
             var y = z.Cross(x).Normalized();
             _handleBaseTransform = new Transform3D(new Basis(x, y, z) * state.GlobalTransform.Basis, state.PreviousGlobalPosition);
         }
 
-        // Point, in and out handles
         var spaceState = river.GetWorld3D().DirectSpaceState;
         var rayFrom = camera.ProjectRayOrigin(point);
         var rayDir = camera.ProjectRayNormal(point);
@@ -187,23 +186,21 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
                 return;
             }
 
-            // TODO: implement rounding when control is pressed.
-            // How do we round when in local axis/plane mode?
             var newPosition = river.ToLocal(newGlobalPosition.Value);
 
             if (state.HandleType is HandleType.Center)
             {
-                river.Curve.SetPointPosition(state.RiverPointIndex, newPosition);
+                curve.SetPointPosition(state.RiverPointIndex, newPosition);
             }
             else if (state.HandleType == HandleType.PointIn)
             {
-                river.Curve.SetPointIn(state.RiverPointIndex, newPosition - state.BasePointPosition);
-                river.Curve.SetPointOut(state.RiverPointIndex, -(newPosition - state.BasePointPosition));
+                curve.SetPointIn(state.RiverPointIndex, newPosition - state.BasePointPosition);
+                curve.SetPointOut(state.RiverPointIndex, -(newPosition - state.BasePointPosition));
             }
             else if (state.HandleType == HandleType.PointOut)
             {
-                river.Curve.SetPointOut(state.RiverPointIndex, newPosition - state.BasePointPosition);
-                river.Curve.SetPointIn(state.RiverPointIndex, -(newPosition - state.BasePointPosition));
+                curve.SetPointOut(state.RiverPointIndex, newPosition - state.BasePointPosition);
+                curve.SetPointIn(state.RiverPointIndex, -(newPosition - state.BasePointPosition));
             }
         }
 
@@ -215,11 +212,11 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
             if (state.HandleType == HandleType.WidthLeft)
             {
-                p2 = river.Curve.GetPointOut(state.RiverPointIndex).Cross(Vector3.Up).Normalized() * 4096;
+                p2 = curve.GetPointOut(state.RiverPointIndex).Cross(Vector3.Up).Normalized() * 4096;
             }
             else if (state.HandleType == HandleType.WidthRight)
             {
-                p2 = river.Curve.GetPointOut(state.RiverPointIndex).Cross(Vector3.Down).Normalized() * 4096;
+                p2 = curve.GetPointOut(state.RiverPointIndex).Cross(Vector3.Down).Normalized() * 4096;
             }
 
             var q1 = state.GlobalInverse * rayFrom;
@@ -249,7 +246,7 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         if (HandlesHelper.IsCenterPoint(index, pointCount))
         {
             plugin.AddDoMethod(curve, Curve3D.MethodName.SetPointPosition, pointIndex, river.Curve.GetPointPosition(pointIndex));
-            plugin.AddUndoMethod(curve, Curve3D.MethodName.SetPointPosition, pointIndex, restore.AsSingle());
+            plugin.AddUndoMethod(curve, Curve3D.MethodName.SetPointPosition, pointIndex, restore.AsVector3());
         }
         else if (HandlesHelper.IsControlPointIn(index, pointCount))
         {

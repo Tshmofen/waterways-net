@@ -1,6 +1,7 @@
 #if TOOLS
 
 using Godot;
+using System;
 using System.Linq;
 using Waterways.Data.UI;
 using Waterways.UI;
@@ -97,11 +98,45 @@ public partial class WaterwaysPlugin : EditorPlugin
         ur.CommitAction();
     }
 
+    private void OnMenuActionPressed(RiverMenuActionType action)
+    {
+        if (RiverManager == null)
+        {
+            return;
+        }
+
+        switch (action)
+        {
+            case RiverMenuActionType.GenerateMeshSibling:
+                if (RiverManager.Owner != null)
+                {
+                    var meshCopy = RiverManager.GetMeshCopy();
+                    RiverManager.GetParent().AddChild(meshCopy);
+                    meshCopy.Owner = RiverManager.GetTree().EditedSceneRoot;
+                }
+                else
+                {
+                    GD.PushWarning("Cannot create MeshInstance3D sibling when River is root.");
+                }
+
+                break;
+
+            case RiverMenuActionType.RecenterRiver:
+                RiverManager.RecenterRiver();
+                var undoRedo = GetUndoRedo();
+                var riverId = undoRedo.GetObjectHistoryId(RiverManager);
+                undoRedo.GetHistoryUndoRedo(riverId).ClearHistory();
+                GD.PushWarning("RiverManager UndoRedo history was cleared.");
+                break;
+        }
+    }
+
     #endregion
 
     public WaterwaysPlugin()
     {
         RiverControl = ResourceLoader.Load<PackedScene>(PluginPath + RiverControlNodePath).Instantiate<RiverControl>();
+        RiverControl.MenuAction += OnMenuActionPressed;
         RiverGizmo = new RiverGizmo { EditorPlugin = this };
         Selection = EditorInterface.Singleton.GetSelection();
         Selection.SelectionChanged += OnSelectionChange;
@@ -125,9 +160,17 @@ public partial class WaterwaysPlugin : EditorPlugin
 
     protected override void Dispose(bool disposing)
     {
-        Selection.SelectionChanged -= OnSelectionChange;
-        RiverControl.Dispose();
-        RiverGizmo.Dispose();
+        try
+        {
+            Selection.SelectionChanged -= OnSelectionChange;
+            RiverControl.MenuAction -= OnMenuActionPressed;
+            RiverControl.Dispose();
+            RiverGizmo.Dispose();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Ignore already disposed objects on editor close
+        }
     }
 
     public override bool _Handles(GodotObject @object)
@@ -187,7 +230,6 @@ public partial class WaterwaysPlugin : EditorPlugin
             }
         }
 
-        RiverManager.UpdateGizmos();
         return 1;
     }
 }

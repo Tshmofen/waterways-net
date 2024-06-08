@@ -1,5 +1,6 @@
 ﻿using Godot;
 using Godot.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using Waterways.Data;
 using Waterways.Util;
@@ -180,6 +181,13 @@ public partial class RiverManager : Node3D
         }
     }
 
+    private void UpdateRiverImmediate()
+    {
+        GenerateRiver();
+        UpdateGizmos();
+        EmitSignal(SignalName.RiverChanged);
+    }
+
     #endregion
 
     public override void _Ready()
@@ -270,15 +278,38 @@ public partial class RiverManager : Node3D
     public MeshInstance3D GetMeshCopy()
     {
         var newMesh = (MeshInstance3D)_meshInstance.Duplicate();
+        newMesh.Name = $"{Name}Mesh";
         newMesh.GlobalTransform = _meshInstance.GlobalTransform;
         newMesh.MaterialOverride = null;
         return newMesh;
     }
 
+    public void RecenterRiver()
+    {
+        var centerPoint = Vector3.Zero;
+        var pointsGlobalPositions = new List<Vector3>();
+
+        for (var point = 0; point < Curve.PointCount; point++)
+        {
+            var pointGlobalPosition = ToGlobal(Curve.GetPointPosition(point));
+            centerPoint += pointGlobalPosition / Curve.PointCount;
+            pointsGlobalPositions.Add(pointGlobalPosition);
+        }
+
+        GlobalPosition = centerPoint;
+
+        for (var point = 0; point < Curve.PointCount; point++)
+        {
+            var oldPosition = ToLocal(pointsGlobalPositions[point]);
+            Curve.SetPointPosition(point, oldPosition);
+        }
+
+        UpdateRiver();
+    }
+
     public void UpdateRiver()
     {
-        GenerateRiver();
-        EmitSignal(SignalName.RiverChanged);
+        CallDeferred(MethodName.UpdateRiverImmediate);
     }
 
     #endregion

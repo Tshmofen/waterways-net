@@ -1,4 +1,5 @@
 ﻿using Godot;
+using System;
 using Waterways.Data;
 using Waterways.Data.UI;
 
@@ -9,7 +10,10 @@ public partial class RiverControl : HBoxContainer
 {
     private bool _isMouseDown;
 
+    [Signal] public delegate void MenuActionEventHandler(RiverMenuActionType action);
+
     [Export] private OptionButton ConstraintButton { get; set; }
+    [Export] private MenuButton RiverMenuButton { get; set; }
     [Export] private CheckBox LocalModeButton { get; set; }
     [Export] private BaseButton SelectButton { get; set; }
     [Export] private BaseButton RemoveButton { get; set; }
@@ -44,12 +48,22 @@ public partial class RiverControl : HBoxContainer
         IsLocalEditing = enabled;
     }
 
+    private void OnMenuButtonPressed(long id)
+    {
+        if (Enum.IsDefined((RiverMenuActionType)id))
+        {
+            EmitSignal(SignalName.MenuAction, id);
+        }
+    }
+
     #endregion
 
     public override void _Ready()
     {
         ConstraintButton.ItemSelected += OnConstraintSelected;
         LocalModeButton.Toggled += OnLocalModeToggled;
+        RiverMenuButton.GetPopup().IdPressed += OnMenuButtonPressed;
+
         SelectButton.Pressed += () => OnSelectModeChange(SelectButton, RiverEditMode.Select, true);
         RemoveButton.Pressed += () => OnSelectModeChange(RemoveButton, RiverEditMode.Remove, false);
         AddButton.Pressed += () => OnSelectModeChange(AddButton, RiverEditMode.Add, true);
@@ -57,8 +71,7 @@ public partial class RiverControl : HBoxContainer
 
     public bool SpatialGuiInput(InputEvent @event)
     {
-        // This uses the forwarded spatial input in order to not react to events while the spatial editor is not in focus
-        // This is to avoid that the constraints are toggled while navigating the scene with WASD holding the right mouse button
+        // Avoid changes while navigating the scene with WASD holding the right mouse button
         if (@event is InputEventMouseButton)
         {
             _isMouseDown = @event.IsPressed();

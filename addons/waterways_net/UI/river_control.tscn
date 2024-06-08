@@ -5,11 +5,12 @@
 [ext_resource type="Texture2D" uid="uid://dnjok0de3mopo" path="res://addons/waterways_net/Icons/create.svg" id="4_cumdu"]
 [ext_resource type="Texture2D" uid="uid://cot00dv010gt2" path="res://addons/waterways_net/Icons/delete.svg" id="5_a4vrl"]
 
-[node name="RiverControl" type="HBoxContainer" node_paths=PackedStringArray("ConstraintButton", "LocalModeButton", "SelectButton", "RemoveButton", "AddButton")]
+[node name="RiverControl" type="HBoxContainer" node_paths=PackedStringArray("ConstraintButton", "RiverMenuButton", "LocalModeButton", "SelectButton", "RemoveButton", "AddButton")]
 offset_right = 128.0
 offset_bottom = 26.0
 script = ExtResource("1_miwrb")
 ConstraintButton = NodePath("Constraints")
+RiverMenuButton = NodePath("RiverMenu")
 LocalModeButton = NodePath("LocalMode")
 SelectButton = NodePath("Select")
 RemoveButton = NodePath("Remove")
@@ -18,9 +19,11 @@ AddButton = NodePath("Add")
 [node name="RiverMenu" type="MenuButton" parent="."]
 layout_mode = 2
 text = "River"
-item_count = 1
+item_count = 2
 popup/item_0/text = "Generate MeshInstance3D Sibling"
 popup/item_0/id = 1
+popup/item_1/text = "Re-center River (Clears Undo)"
+popup/item_1/id = 2
 
 [node name="VSeparator" type="VSeparator" parent="."]
 layout_mode = 2
