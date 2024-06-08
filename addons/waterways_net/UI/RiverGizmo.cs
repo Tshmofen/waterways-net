@@ -220,7 +220,7 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         {
             Vector3? newPos = null;
 
-            switch (EditorPlugin.CurrentConstraint)
+            switch (EditorPlugin.RiverControl.CurrentConstraint)
             {
                 case ConstraintType.Colliders:
                     {
@@ -248,9 +248,9 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
                     }
                 default:
                     {
-                        if (GizmoConstant.AxisMapping.TryGetValue(EditorPlugin.CurrentConstraint, out var axis))
+                        if (GizmoConstant.AxisMapping.TryGetValue(EditorPlugin.RiverControl.CurrentConstraint, out var axis))
                         {
-                            if (EditorPlugin.IsLocalEditing)
+                            if (EditorPlugin.RiverControl.IsLocalEditing)
                             {
                                 axis = _handleBaseTransform.Value.Basis * (axis);
                             }
@@ -261,9 +261,9 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
                             var result = Geometry3D.GetClosestPointsBetweenSegments(axisFrom, axisTo, rayFrom, rayTo);
                             newPos = result[0];
                         }
-                        else if (GizmoConstant.PlaneMapping.TryGetValue(EditorPlugin.CurrentConstraint, out var normal))
+                        else if (GizmoConstant.PlaneMapping.TryGetValue(EditorPlugin.RiverControl.CurrentConstraint, out var normal))
                         {
-                            if (EditorPlugin.IsLocalEditing)
+                            if (EditorPlugin.RiverControl.IsLocalEditing)
                             {
                                 normal = _handleBaseTransform.Value.Basis * (normal);
                             }
