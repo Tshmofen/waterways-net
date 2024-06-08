@@ -52,7 +52,7 @@ textures = [[ExtResource("4_3arg6"), ExtResource("5_ba170"), ExtResource("6_npdy
 [sub_resource type="BoxShape3D" id="12"]
 size = Vector3(11.484, 6.85648, 7.49257)
 
-[sub_resource type="Resource" id="Resource_tcbts"]
+[sub_resource type="Resource" id="Resource_d200u"]
 script = ExtResource("15_pphx5")
 MatShaderType = 1
 mat_albedo_color_first = Color(0.6, 0.7, 0.65, 1)
@@ -80,11 +80,11 @@ mat_edge_fade = 0.25
 LodLod0Distance = 50.0
 _selectedShader = 1
 
-[sub_resource type="Curve3D" id="Curve3D_1x4ie"]
+[sub_resource type="Curve3D" id="Curve3D_gwnvw"]
 resource_local_to_scene = true
 bake_interval = 0.05
 _data = {
-"points": PackedVector3Array(0.927176, 0.542363, -3.23079, -0.927176, -0.542363, 3.23079, 0.132267, 0.936717, -2.35495, -0.255417, 0.168821, -1.19481, 0.255417, -0.168821, 1.19481, -0.265446, -1.33943, 61.1918),
+"points": PackedVector3Array(0.23888, 0.0783269, -2.26322, -0.23888, -0.0783269, 2.26322, -0.334656, 0.381972, -2.28228, -0.255417, 0.168821, -1.19481, 0.255417, -0.168821, 1.19481, -0.265446, -1.33943, 61.1918),
 "tilts": PackedFloat32Array(0, 0)
 }
 point_count = 2
@@ -168,6 +168,6 @@ shape = SubResource("12")
 [node name="RiverManager" type="Node3D" parent="."]
 transform = Transform3D(0.853678, 0, -0.520801, 0, 1, 0, 0.520801, 0, 0.853678, 15.0478, 8.92995, 15.7596)
 script = ExtResource("13_dg81e")
-ShaderSettings = SubResource("Resource_tcbts")
-PointWidths = [4.57497, 2.19166]
-Curve = SubResource("Curve3D_1x4ie")
+ShaderSettings = SubResource("Resource_d200u")
+PointWidths = [3.07006, 2.19166]
+Curve = SubResource("Curve3D_gwnvw")

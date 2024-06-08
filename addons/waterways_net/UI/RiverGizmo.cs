@@ -1,4 +1,5 @@
 ﻿using Godot;
+using System;
 using System.Collections.Generic;
 using Waterways.UI.Data;
 using Waterways.UI.Util;
@@ -79,6 +80,66 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         handlesCenterMaterial.NoDepthTest = noDepthTest;
     }
 
+    private static Vector3? GetColliderHandlePosition(Vector3 rayFrom, Vector3 rayDirection, PhysicsDirectSpaceState3D spaceState)
+    {
+        // TODO - make in / out handles snap to a plane based on the normal of
+        // the raycast hit instead.
+        var rayParams = new PhysicsRayQueryParameters3D
+        {
+            From = rayFrom,
+            To = rayFrom + (rayDirection * 4096)
+        };
+
+        var newPos = (Vector3?) null;
+        var result = spaceState.IntersectRay(rayParams);
+        if (result?.Count > 0)
+        {
+            newPos = result["position"].AsVector3();
+        }
+
+        return newPos;
+    }
+
+    private static Vector3? GetDefaultHandlePosition(Vector3 rayFrom, Vector3 rayDirection, Camera3D camera, Vector3 positionPreviousGlobal)
+    {
+        var plane = new Plane(positionPreviousGlobal, positionPreviousGlobal + camera.Transform.Basis.X, positionPreviousGlobal + camera.Transform.Basis.Y);
+        return plane.IntersectsRay(rayFrom, rayDirection);
+    }
+
+    private Vector3? GetConstrainedHandlePosition(Vector3 rayFrom, Vector3 rayDirection, Vector3 positionPreviousGlobal)
+    {
+        var newPos = (Vector3?)null;
+
+        if (GizmoConstant.AxisMapping.TryGetValue(EditorPlugin.RiverControl.CurrentConstraint, out var axis))
+        {
+            if (EditorPlugin.RiverControl.IsLocalEditing)
+            {
+                axis = _handleBaseTransform.Value.Basis * (axis);
+            }
+
+            var axisFrom = positionPreviousGlobal + (axis * GizmoConstant.Constraints.AxisConstraintLength);
+            var axisTo = positionPreviousGlobal - (axis * GizmoConstant.Constraints.AxisConstraintLength);
+            var rayTo = rayFrom + (rayDirection * GizmoConstant.Constraints.AxisConstraintLength);
+            var result = Geometry3D.GetClosestPointsBetweenSegments(axisFrom, axisTo, rayFrom, rayTo);
+            newPos = result[0];
+        }
+        else if (GizmoConstant.PlaneMapping.TryGetValue(EditorPlugin.RiverControl.CurrentConstraint, out var normal))
+        {
+            if (EditorPlugin.RiverControl.IsLocalEditing)
+            {
+                normal = _handleBaseTransform.Value.Basis * (normal);
+            }
+
+            var projected = positionPreviousGlobal.Project(normal);
+            var direction = Mathf.Sign(projected.Dot(normal));
+            var distance = direction * projected.Length();
+            var plane = new Plane(normal, distance);
+            newPos = plane.IntersectsRay(rayFrom, rayDirection);
+        }
+
+        return newPos;
+    }
+
     #endregion
 
     public RiverGizmo()
@@ -155,180 +216,78 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
     public override void _SetHandle(EditorNode3DGizmo gizmo, int index, bool secondary, Camera3D camera, Vector2 point)
     {
         var river = (RiverManager)gizmo.GetNode3D();
-        var spaceState = river.GetWorld3D().DirectSpaceState;
-
-        var globalTransform = river.Transform;
-        if (river.IsInsideTree())
-        {
-            globalTransform = river.GlobalTransform;
-        }
-
-        var globalInverse = globalTransform.AffineInverse();
-
-        var rayFrom = camera.ProjectRayOrigin(point);
-        var rayDir = camera.ProjectRayNormal(point);
-
-        var oldPos = Vector3.Zero;
-        var pointCount = river.Curve.PointCount;
-        var pIndex = HandlesHelper.GetCurveIndex(index, pointCount);
-        var basePoint = river.Curve.GetPointPosition(pIndex);
-
-        // Logic to move handles
-        var isCenter = HandlesHelper.IsCenterPoint(index, pointCount);
-        var isPointIn = HandlesHelper.IsControlPointIn(index, pointCount);
-        var isPointOut = HandlesHelper.IsControlPointOut(index, pointCount);
-        var isWidthLeft = HandlesHelper.IsWidthPointLeft(index, pointCount);
-        var isWidthRight = HandlesHelper.IsWidthPointRight(index, pointCount);
-
-        if (isCenter)
-        {
-            oldPos = basePoint;
-        }
-
-        if (isPointIn)
-        {
-            oldPos = river.Curve.GetPointIn(pIndex) + basePoint;
-        }
-
-        if (isPointOut)
-        {
-            oldPos = river.Curve.GetPointOut(pIndex) + basePoint;
-        }
-
-        if (isWidthLeft)
-        {
-            oldPos = basePoint + (river.Curve.GetPointOut(pIndex).Cross(Vector3.Up).Normalized() * river.PointWidths[pIndex]);
-        }
-
-        if (isWidthRight)
-        {
-            oldPos = basePoint + (river.Curve.GetPointOut(pIndex).Cross(Vector3.Down).Normalized() * river.PointWidths[pIndex]);
-        }
-
-        var oldPosGlobal = river.ToGlobal(oldPos);
+        var state = new HandleState(river, index);
 
         if (_handleBaseTransform == null)
         {
-            var z = river.Curve.GetPointOut(pIndex).Normalized();
+            var z = river.Curve.GetPointOut(state.RiverPointIndex).Normalized();
             var x = z.Cross(Vector3.Down).Normalized();
             var y = z.Cross(x).Normalized();
-            _handleBaseTransform = new Transform3D(new Basis(x, y, z) * globalTransform.Basis, oldPosGlobal);
+            _handleBaseTransform = new Transform3D(new Basis(x, y, z) * state.GlobalTransform.Basis, state.PreviousGlobalPosition);
         }
 
         // Point, in and out handles
-        if (isCenter || isPointIn || isPointOut)
+        var spaceState = river.GetWorld3D().DirectSpaceState;
+        var rayFrom = camera.ProjectRayOrigin(point);
+        var rayDir = camera.ProjectRayNormal(point);
+
+        if (state.HandleType is HandleType.Center or HandleType.PointIn or HandleType.PointOut)
         {
-            Vector3? newPos = null;
-
-            switch (EditorPlugin.RiverControl.CurrentConstraint)
+            var newGlobalPosition = EditorPlugin.RiverControl.CurrentConstraint switch
             {
-                case ConstraintType.Colliders:
-                    {
-                        // TODO - make in / out handles snap to a plane based on the normal of
-                        // the raycast hit instead.
-                        var rayParams = new PhysicsRayQueryParameters3D
-                        {
-                            From = rayFrom,
-                            To = rayFrom + (rayDir * 4096)
-                        };
+                ConstraintType.None => GetDefaultHandlePosition(rayFrom, rayDir, camera, state.PreviousGlobalPosition),
+                ConstraintType.Colliders => GetColliderHandlePosition(rayFrom, rayDir, spaceState),
+                _ => GetConstrainedHandlePosition(rayFrom, rayDir, state.PreviousGlobalPosition),
+            };
 
-                        var result = spaceState.IntersectRay(rayParams);
-                        if (result?.Count > 0)
-                        {
-                            newPos = result["position"].AsVector3();
-                        }
-
-                        break;
-                    }
-                case ConstraintType.None:
-                    {
-                        var plane = new Plane(oldPosGlobal, oldPosGlobal + camera.Transform.Basis.X, oldPosGlobal + camera.Transform.Basis.Y);
-                        newPos = plane.IntersectsRay(rayFrom, rayDir);
-                        break;
-                    }
-                default:
-                    {
-                        if (GizmoConstant.AxisMapping.TryGetValue(EditorPlugin.RiverControl.CurrentConstraint, out var axis))
-                        {
-                            if (EditorPlugin.RiverControl.IsLocalEditing)
-                            {
-                                axis = _handleBaseTransform.Value.Basis * (axis);
-                            }
-
-                            var axisFrom = oldPosGlobal + (axis * GizmoConstant.Constraints.AxisConstraintLength);
-                            var axisTo = oldPosGlobal - (axis * GizmoConstant.Constraints.AxisConstraintLength);
-                            var rayTo = rayFrom + (rayDir * GizmoConstant.Constraints.AxisConstraintLength);
-                            var result = Geometry3D.GetClosestPointsBetweenSegments(axisFrom, axisTo, rayFrom, rayTo);
-                            newPos = result[0];
-                        }
-                        else if (GizmoConstant.PlaneMapping.TryGetValue(EditorPlugin.RiverControl.CurrentConstraint, out var normal))
-                        {
-                            if (EditorPlugin.RiverControl.IsLocalEditing)
-                            {
-                                normal = _handleBaseTransform.Value.Basis * (normal);
-                            }
-
-                            var projected = oldPosGlobal.Project(normal);
-                            var direction = Mathf.Sign(projected.Dot(normal));
-                            var distance = direction * projected.Length();
-                            var plane = new Plane(normal, distance);
-                            newPos = plane.IntersectsRay(rayFrom, rayDir);
-                        }
-
-                        break;
-                    }
-            }
-
-            // Discard if no valid position was found
-            if (newPos == null)
+            if (newGlobalPosition == null)
             {
                 return;
             }
 
             // TODO: implement rounding when control is pressed.
             // How do we round when in local axis/plane mode?
-            var newPosLocal = river.ToLocal(newPos.Value);
+            var newPosition = river.ToLocal(newGlobalPosition.Value);
 
-            if (isCenter)
+            if (state.HandleType is HandleType.Center)
             {
-                river.Curve.SetPointPosition(pIndex, newPosLocal);
+                river.Curve.SetPointPosition(state.RiverPointIndex, newPosition);
             }
-            if (isPointIn)
+            else if (state.HandleType == HandleType.PointIn)
             {
-                river.Curve.SetPointIn(pIndex, newPosLocal - basePoint);
-                river.Curve.SetPointOut(pIndex, -(newPosLocal - basePoint));
+                river.Curve.SetPointIn(state.RiverPointIndex, newPosition - state.BasePointPosition);
+                river.Curve.SetPointOut(state.RiverPointIndex, -(newPosition - state.BasePointPosition));
             }
-            if (isPointOut)
+            else if (state.HandleType == HandleType.PointOut)
             {
-                river.Curve.SetPointOut(pIndex, newPosLocal - basePoint);
-                river.Curve.SetPointIn(pIndex, -(newPosLocal - basePoint));
+                river.Curve.SetPointOut(state.RiverPointIndex, newPosition - state.BasePointPosition);
+                river.Curve.SetPointIn(state.RiverPointIndex, -(newPosition - state.BasePointPosition));
             }
         }
 
         // Widths handles
-        if (isWidthLeft || isWidthRight)
+        if (state.HandleType is HandleType.WidthLeft or HandleType.WidthRight)
         {
-            var p1 = basePoint;
+            var p1 = state.BasePointPosition;
             var p2 = Vector3.Zero;
 
-            if (isWidthLeft)
+            if (state.HandleType == HandleType.WidthLeft)
             {
-                p2 = river.Curve.GetPointOut(pIndex).Cross(Vector3.Up).Normalized() * 4096;
+                p2 = river.Curve.GetPointOut(state.RiverPointIndex).Cross(Vector3.Up).Normalized() * 4096;
+            }
+            else if (state.HandleType == HandleType.WidthRight)
+            {
+                p2 = river.Curve.GetPointOut(state.RiverPointIndex).Cross(Vector3.Down).Normalized() * 4096;
             }
 
-            if (isWidthRight)
-            {
-                p2 = river.Curve.GetPointOut(pIndex).Cross(Vector3.Down).Normalized() * 4096;
-            }
+            var q1 = state.GlobalInverse * rayFrom;
+            var q2 = state.GlobalInverse * (rayFrom + (rayDir * 4096));
 
-            var g1 = globalInverse * rayFrom;
-            var g2 = globalInverse * (rayFrom + (rayDir * 4096));
+            var closestPoints = Geometry3D.GetClosestPointsBetweenSegments(p1, p2, q1, q2);
+            var direction = closestPoints[0].DistanceTo(state.BasePointPosition) - state.PreviousPosition.DistanceTo(state.BasePointPosition);
 
-            var geoPoints = Geometry3D.GetClosestPointsBetweenSegments(p1, p2, g1, g2);
-            var dir = geoPoints[0].DistanceTo(basePoint) - oldPos.DistanceTo(basePoint);
-
-            river.PointWidths[pIndex] += dir;
-            river.PointWidths[pIndex] = Mathf.Max(river.PointWidths[pIndex], GizmoConstant.Constraints.MinDistanceToCenterHandle);
+            river.PointWidths[state.RiverPointIndex] += direction;
+            river.PointWidths[state.RiverPointIndex] = Mathf.Max(river.PointWidths[state.RiverPointIndex], GizmoConstant.Constraints.MinDistanceToCenterHandle);
         }
 
         _Redraw(gizmo);
@@ -336,7 +295,6 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
     public override void _CommitHandle(EditorNode3DGizmo gizmo, int index, bool secondary, Variant restore, bool cancel)
     {
-        var restoreF = restore.AsSingle();
         var river = (RiverManager)gizmo.GetNode3D();
 
         var curve = river.Curve;
@@ -344,34 +302,31 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
         var plugin = EditorPlugin.GetUndoRedo();
         plugin.CreateAction("Change River Shape");
-        var pIndex = HandlesHelper.GetCurveIndex(index, pointCount);
+        var pointIndex = HandlesHelper.GetCurveIndex(index, pointCount);
 
         if (HandlesHelper.IsCenterPoint(index, pointCount))
         {
-            plugin.AddDoMethod(curve, Curve3D.MethodName.SetPointPosition, pIndex, river.Curve.GetPointPosition(pIndex));
-            plugin.AddUndoMethod(curve, Curve3D.MethodName.SetPointPosition, pIndex, restoreF);
+            plugin.AddDoMethod(curve, Curve3D.MethodName.SetPointPosition, pointIndex, river.Curve.GetPointPosition(pointIndex));
+            plugin.AddUndoMethod(curve, Curve3D.MethodName.SetPointPosition, pointIndex, restore.AsSingle());
         }
-
-        if (HandlesHelper.IsControlPointIn(index, pointCount))
+        else if (HandlesHelper.IsControlPointIn(index, pointCount))
         {
-            plugin.AddDoMethod(curve, Curve3D.MethodName.SetPointIn, pIndex, river.Curve.GetPointIn(pIndex));
-            plugin.AddUndoMethod(curve, Curve3D.MethodName.SetPointIn, pIndex, restoreF);
-            plugin.AddDoMethod(curve, Curve3D.MethodName.SetPointOut, pIndex, river.Curve.GetPointOut(pIndex));
-            plugin.AddUndoMethod(curve, Curve3D.MethodName.SetPointOut, pIndex, -restoreF);
+            plugin.AddDoMethod(curve, Curve3D.MethodName.SetPointIn, pointIndex, river.Curve.GetPointIn(pointIndex));
+            plugin.AddUndoMethod(curve, Curve3D.MethodName.SetPointIn, pointIndex, restore.AsVector3());
+            plugin.AddDoMethod(curve, Curve3D.MethodName.SetPointOut, pointIndex, river.Curve.GetPointOut(pointIndex));
+            plugin.AddUndoMethod(curve, Curve3D.MethodName.SetPointOut, pointIndex, -restore.AsVector3());
         }
-
-        if (HandlesHelper.IsControlPointOut(index, pointCount))
+        else if (HandlesHelper.IsControlPointOut(index, pointCount))
         {
-            plugin.AddDoMethod(curve, Curve3D.MethodName.SetPointOut, pIndex, river.Curve.GetPointOut(pIndex));
-            plugin.AddUndoMethod(curve, Curve3D.MethodName.SetPointOut, pIndex, restoreF);
-            plugin.AddDoMethod(curve, Curve3D.MethodName.SetPointIn, pIndex, river.Curve.GetPointIn(pIndex));
-            plugin.AddUndoMethod(curve, Curve3D.MethodName.SetPointIn, pIndex, -restoreF);
+            plugin.AddDoMethod(curve, Curve3D.MethodName.SetPointOut, pointIndex, river.Curve.GetPointOut(pointIndex));
+            plugin.AddUndoMethod(curve, Curve3D.MethodName.SetPointOut, pointIndex, restore.AsVector3());
+            plugin.AddDoMethod(curve, Curve3D.MethodName.SetPointIn, pointIndex, river.Curve.GetPointIn(pointIndex));
+            plugin.AddUndoMethod(curve, Curve3D.MethodName.SetPointIn, pointIndex, -restore.AsVector3());
         }
-
-        if (HandlesHelper.IsWidthPointLeft(index, pointCount) || HandlesHelper.IsWidthPointRight(index, pointCount))
+        else if (HandlesHelper.IsWidthPointLeft(index, pointCount) || HandlesHelper.IsWidthPointRight(index, pointCount))
         {
             var riverWidthsUndo = river.PointWidths.Duplicate(true);
-            riverWidthsUndo[pIndex] = restoreF;
+            riverWidthsUndo[pointIndex] = restore.AsSingle();
             plugin.AddDoProperty(river, nameof(RiverManager.PointWidths), river.PointWidths);
             plugin.AddUndoProperty(river, nameof(RiverManager.PointWidths), riverWidthsUndo);
         }

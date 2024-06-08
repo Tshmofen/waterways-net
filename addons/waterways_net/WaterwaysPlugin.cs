@@ -74,7 +74,6 @@ public partial class WaterwaysPlugin : EditorPlugin
 
     protected override void Dispose(bool disposing)
     {
-        SwitchRiverControl(false);
         Selection.SelectionChanged -= OnSelectionChange;
         RiverControl.Dispose();
         RiverGizmo.Dispose();
