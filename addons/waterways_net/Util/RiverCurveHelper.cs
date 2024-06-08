@@ -5,10 +5,10 @@ namespace Waterways.Util;
 
 public static class RiverCurveHelper
 {
-    public static int? GetClosestPointTo(RiverManager river, Vector3 point)
+    public static int GetClosestPointTo(RiverManager river, Vector3 point)
     {
         var closestDistance = 4096.0f;
-        var closestIndex = (int?) null;
+        var closestIndex = -1;
 
         for (var p = 0; p < river.Curve.PointCount; p++)
         {
@@ -26,15 +26,64 @@ public static class RiverCurveHelper
         return closestIndex;
     }
 
-    public static int? GetRemovePointIndex(RiverManager river, int closestSegment, Vector3 bakedClosestPoint)
+    public static (int segment, Vector3? bakedPoint) GetClosestPosition(RiverManager river, Camera3D camera, Vector2 cameraPoint)
     {
-        // The closest_segment of -1 means we didn't press close enough to a point for it to be removed
-        if (closestSegment == -1)
+        var globalTransform = river.IsInsideTree() ? river.GlobalTransform : river.Transform;
+        var globalInverse = globalTransform.AffineInverse();
+
+        var rayFrom = camera.ProjectRayOrigin(cameraPoint);
+        var rayDir = camera.ProjectRayNormal(cameraPoint);
+        var g1 = globalInverse * rayFrom;
+        var g2 = globalInverse * (rayFrom + (rayDir * 4096));
+
+        var closestDistance = 4096f;
+        var closestSegment = -1;
+
+        for (var p = 0; p < river.Curve.PointCount; p++)
         {
-            return null;
+            var p1 = river.Curve.GetPointPosition(p);
+            var p2 = river.Curve.GetPointPosition((p + 1) % river.Curve.PointCount);
+            var result = Geometry3D.GetClosestPointsBetweenSegments(p1, p2, g1, g2);
+            var dist = result[0].DistanceTo(result[1]);
+
+            if (dist >= closestDistance)
+            {
+                continue;
+            }
+
+            closestDistance = dist;
+            closestSegment = p;
         }
 
-        return GetClosestPointTo(river, bakedClosestPoint);
+        // Iterate through baked points to find the closest position on the curved path
+        var bakedCurvePoints = river.Curve.GetBakedPoints();
+        var bakedClosestDistance = 4096f;
+        var bakedClosestPoint = (Vector3?) null;
+
+        for (var bakedPoint = 0; bakedPoint < bakedCurvePoints.Length; bakedPoint++)
+        {
+            var p1 = bakedCurvePoints[bakedPoint];
+            var p2 = bakedCurvePoints[(bakedPoint + 1) % bakedCurvePoints.Length];
+            var result = Geometry3D.GetClosestPointsBetweenSegments(p1, p2, g1, g2);
+            var dist = result[0].DistanceTo(result[1]);
+
+            if (dist >= 0.1f || dist >= bakedClosestDistance)
+            {
+                continue;
+            }
+
+            bakedClosestDistance = dist;
+            bakedClosestPoint = result[0];
+        }
+
+        // In case we were close enough to a line segment to find a segment,
+        // but not close enough to the curved line
+        if (bakedClosestPoint == null)
+        {
+            closestSegment = -1;
+        }
+
+        return (closestSegment, bakedClosestPoint);
     }
 
     public static Vector3? GetNewPoint(RiverManager river, Camera3D camera, Vector2 cameraPoint, ConstraintType constraint, bool isLocalEditing)

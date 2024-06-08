@@ -230,18 +230,41 @@ public partial class RiverManager : Node3D
 
     #region Public Actions
 
-    public void CreateMeshDuplicate()
+    public void AddPoint(Vector3 position, Vector3 direction, int index = -1, float width = -1)
     {
-        if (Owner == null)
+        if (index == -1)
         {
-            GD.PushWarning("Cannot create MeshInstance3D sibling when River is root.");
+            var lastIndex = Curve.PointCount - 1;
+            var distance = position.DistanceTo(Curve.GetPointPosition(lastIndex));
+            var newDirection = (direction != Vector3.Zero) ? direction : (position - Curve.GetPointPosition(lastIndex) - Curve.GetPointOut(lastIndex)).Normalized() * 0.25f * distance;
+            var newWidth = width > 0 ? width : PointWidths[^1]; // If this is a new point at the end, add a width that's the same as last
+
+            Curve.AddPoint(position, -newDirection, newDirection);
+            PointWidths.Add(newWidth);
+        }
+        else
+        {
+            var distance = Curve.GetPointPosition(index).DistanceTo(Curve.GetPointPosition(index + 1));
+            var newDirection = (direction != Vector3.Zero) ? direction : (Curve.GetPointPosition(index + 1) - Curve.GetPointPosition(index)).Normalized() * 0.25f * distance;
+            var newWidth = width > 0 ? width : (PointWidths[index] + PointWidths[index + 1]) / 2.0f; // We set the width to the average of the two surrounding widths
+
+            Curve.AddPoint(position, -newDirection, newDirection, index + 1);
+            PointWidths.Insert(index + 1, newWidth);
+        }
+
+        UpdateRiver();
+    }
+
+    public void RemovePoint(int index)
+    {
+        if (Curve.PointCount <= 2)
+        {
             return;
         }
 
-        var siblingMesh = GetMeshCopy();
-        siblingMesh.Name = $"{Name}Mesh";
-        GetParent().AddChild(siblingMesh);
-        siblingMesh.Owner = GetTree().EditedSceneRoot;
+        Curve.RemovePoint(index);
+        PointWidths.RemoveAt(index);
+        UpdateRiver();
     }
 
     public MeshInstance3D GetMeshCopy()

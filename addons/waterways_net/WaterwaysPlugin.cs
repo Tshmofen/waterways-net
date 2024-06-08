@@ -2,19 +2,25 @@
 
 using Godot;
 using System.Linq;
+using Waterways.Data.UI;
 using Waterways.UI;
+using Waterways.Util;
 
 namespace Waterways;
 
 [Tool]
 public partial class WaterwaysPlugin : EditorPlugin
 {
+    private const string AddPointMessage = "Add River Manager Point";
+    private const string RemovePointMessage = "Remove River Manager Point";
+
     public const string PluginPath = "res://addons/waterways_net";
     public const string RiverControlNodePath = "/UI/river_control.tscn";
 
     public EditorSelection Selection { get; private set; }
     public RiverGizmo RiverGizmo { get; private set; }
     public RiverControl RiverControl { get; private set; }
+    public RiverManager RiverManager { get; private set; }
 
     #region Util
 
@@ -40,10 +46,55 @@ public partial class WaterwaysPlugin : EditorPlugin
     private void OnSelectionChange()
     {
         var selectedNode = Selection.GetSelectedNodes().FirstOrDefault();
-        if (selectedNode != null)
+
+        if (selectedNode is not RiverManager riverManager || riverManager == null)
         {
-            SwitchRiverControl(selectedNode is RiverManager);
+            SwitchRiverControl(false);
+            return;
         }
+
+        RiverManager = riverManager;
+        SwitchRiverControl(true);
+    }
+
+    private void CommitPointAdd(Vector3 point, int segment)
+    {
+        var ur = GetUndoRedo();
+        ur.CreateAction(AddPointMessage);
+        ur.AddDoMethod(RiverManager, RiverManager.MethodName.AddPoint, point, Vector3.Zero, segment, -1);
+        ur.AddDoMethod(RiverManager, RiverManager.MethodName.UpdateRiver);
+
+        if (segment == -1)
+        {
+            ur.AddUndoMethod(RiverManager, RiverManager.MethodName.RemovePoint, RiverManager.Curve.PointCount);
+        }
+        else
+        {
+            ur.AddUndoMethod(RiverManager, RiverManager.MethodName.RemovePoint, segment + 1);
+        }
+
+        ur.AddUndoMethod(RiverManager, RiverManager.MethodName.UpdateRiver);
+        ur.CommitAction();
+    }
+
+    private void CommitPointRemove(int index)
+    {
+        var ur = GetUndoRedo();
+        ur.CreateAction(RemovePointMessage);
+        ur.AddDoMethod(RiverManager, RiverManager.MethodName.RemovePoint, index);
+        ur.AddDoMethod(RiverManager, RiverManager.MethodName.UpdateRiver);
+
+        if (index == RiverManager.Curve.PointCount - 1)
+        {
+            ur.AddUndoMethod(RiverManager, RiverManager.MethodName.AddPoint, RiverManager.Curve.GetPointPosition(index), Vector3.Zero, - 1, -1);
+        }
+        else
+        {
+            ur.AddUndoMethod(RiverManager, RiverManager.MethodName.AddPoint, RiverManager.Curve.GetPointPosition(index), RiverManager.Curve.GetPointOut(index), index - 1, RiverManager.PointWidths[index]);
+        }
+
+        ur.AddUndoMethod(RiverManager, RiverManager.MethodName.UpdateRiver);
+        ur.CommitAction();
     }
 
     #endregion
@@ -86,54 +137,58 @@ public partial class WaterwaysPlugin : EditorPlugin
 
     public override int _Forward3DGuiInput(Camera3D camera, InputEvent @event)
     {
-        /*if (CurrentRiverManager == null)
+        if (RiverManager is null)
         {
             return 0;
-        }*/
+        }
 
-        if (@event is not InputEventMouseButton { ButtonIndex: MouseButton.Left })
+        if (@event is not InputEventMouseButton { ButtonIndex: MouseButton.Left } mouseEvent)
         {
             return RiverControl.SpatialGuiInput(@event) ? 1 : 0;
         }
 
-        return 0;
+        var cameraPoint = mouseEvent.Position;
+        var (segment, point) = RiverCurveHelper.GetClosestPosition(RiverManager, camera, cameraPoint);
 
-        /*var globalTransform = CurrentRiverManager.Transform;
-
-        if (CurrentRiverManager.IsInsideTree())
+        switch (RiverControl.CurrentEditMode)
         {
-            globalTransform = CurrentRiverManager.GlobalTransform;
-        }
-
-        var rayFrom = camera.ProjectRayOrigin(mouseEvent.Position);
-        var rayDir = camera.ProjectRayNormal(mouseEvent.Position);
-        var closestSegment = GetClosestSegment(globalTransform, rayFrom, rayDir, out var bakedClosestPoint);
-
-        // We'll use this closest point to add a point in between if on the line
-        // and to remove if close to a point
-        switch (_mode)
-        {
-            case RiverMode.Select:
-                if (!mouseEvent.Pressed)
-                {
-                    RiverGizmo.Reset();
-                }
+            case RiverEditMode.Select:
+            {
                 return 0;
+            }
 
-            case RiverMode.Add when !mouseEvent.Pressed:
-                if (!AddPoint(closestSegment, globalTransform, camera, rayFrom, rayDir, bakedClosestPoint))
+            case RiverEditMode.Add when !mouseEvent.Pressed:
+            {
+                var newPoint = point;
+
+                if (segment == -1)
+                {
+                    newPoint = RiverCurveHelper.GetNewPoint(RiverManager, camera, cameraPoint, RiverControl.CurrentConstraint, RiverControl.IsLocalEditing);
+                }
+
+                if (newPoint == null)
                 {
                     return 0;
                 }
-                break;
 
-            case RiverMode.Remove when !mouseEvent.Pressed:
-                RemovePoint(closestSegment, bakedClosestPoint);
+                CommitPointAdd(newPoint.Value, segment);
                 break;
+            }
+
+            case RiverEditMode.Remove when !mouseEvent.Pressed:
+            {
+                if (segment != -1 && point != null)
+                {
+                    var closestIndex = RiverCurveHelper.GetClosestPointTo(RiverManager, point.Value);
+                    CommitPointRemove(closestIndex);
+                }
+
+                break;
+            }
         }
 
-        // TODO - This should be updated to the enum when it's fixed https://github.com/godotengine/godot/pull/64465
-        return 1;*/
+        RiverManager.UpdateGizmos();
+        return 1;
     }
 }
 
