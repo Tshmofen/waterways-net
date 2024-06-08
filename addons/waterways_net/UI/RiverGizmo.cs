@@ -1,9 +1,8 @@
 ﻿using Godot;
-using System;
 using System.Collections.Generic;
-using Waterways.UI.Data;
-using Waterways.UI.Util;
-using Waterwaysnet.addons.waterways_net.UI.Data;
+using Waterways.Data;
+using Waterways.Data.UI;
+using Waterways.Util;
 
 namespace Waterways.UI;
 
@@ -24,7 +23,7 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
             path.Add(bakedPoints[i + 1]);
         }
 
-        gizmo.AddLines([.. path], GetMaterial(GizmoConstant.Materials.Path));
+        gizmo.AddLines([.. path], GetMaterial(GizmoMaterials.Path));
     }
 
     private void DrawHandles(EditorNode3DGizmo gizmo, RiverManager river)
@@ -59,17 +58,17 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
             lines.Add(pointWidthPosLeft);
         }
 
-        gizmo.AddLines([.. lines], GetMaterial(GizmoConstant.Materials.HandleLines));
+        gizmo.AddLines([.. lines], GetMaterial(GizmoMaterials.HandleLines));
 
         // Add each handle twice, for both material types.
         // Needs to be grouped by material "type" since that's what influences the handle indices.
-        gizmo.AddHandles([.. handlesCenter], GetMaterial(GizmoConstant.Materials.HandlesCenter, gizmo), []);
-        gizmo.AddHandles([.. handlesControlPoints], GetMaterial(GizmoConstant.Materials.HandlesControlPoints, gizmo), []);
-        gizmo.AddHandles([.. handlesWidth], GetMaterial(GizmoConstant.Materials.HandlesWidth, gizmo), []);
+        gizmo.AddHandles([.. handlesCenter], GetMaterial(GizmoMaterials.HandlesCenter, gizmo), []);
+        gizmo.AddHandles([.. handlesControlPoints], GetMaterial(GizmoMaterials.HandlesControlPoints, gizmo), []);
+        gizmo.AddHandles([.. handlesWidth], GetMaterial(GizmoMaterials.HandlesWidth, gizmo), []);
 
-        gizmo.AddHandles([.. handlesCenter], GetMaterial(GizmoConstant.Materials.HandlesCenterDepth, gizmo), []);
-        gizmo.AddHandles([.. handlesControlPoints], GetMaterial(GizmoConstant.Materials.HandlesControlPointsDepth, gizmo), []);
-        gizmo.AddHandles([.. handlesWidth], GetMaterial(GizmoConstant.Materials.HandlesWidthDepth, gizmo), []);
+        gizmo.AddHandles([.. handlesCenter], GetMaterial(GizmoMaterials.HandlesCenterDepth, gizmo), []);
+        gizmo.AddHandles([.. handlesControlPoints], GetMaterial(GizmoMaterials.HandlesControlPointsDepth, gizmo), []);
+        gizmo.AddHandles([.. handlesWidth], GetMaterial(GizmoMaterials.HandlesWidthDepth, gizmo), []);
     }
 
     private void CreateRiverHandleMaterial(string name, Color color, bool noDepthTest)
@@ -78,66 +77,6 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         var handlesCenterMaterial = GetMaterial(name);
         handlesCenterMaterial.AlbedoColor = color;
         handlesCenterMaterial.NoDepthTest = noDepthTest;
-    }
-
-    private static Vector3? GetColliderHandlePosition(Vector3 rayFrom, Vector3 rayDirection, PhysicsDirectSpaceState3D spaceState)
-    {
-        // TODO - make in / out handles snap to a plane based on the normal of
-        // the raycast hit instead.
-        var rayParams = new PhysicsRayQueryParameters3D
-        {
-            From = rayFrom,
-            To = rayFrom + (rayDirection * 4096)
-        };
-
-        var newPos = (Vector3?) null;
-        var result = spaceState.IntersectRay(rayParams);
-        if (result?.Count > 0)
-        {
-            newPos = result["position"].AsVector3();
-        }
-
-        return newPos;
-    }
-
-    private static Vector3? GetDefaultHandlePosition(Vector3 rayFrom, Vector3 rayDirection, Camera3D camera, Vector3 positionPreviousGlobal)
-    {
-        var plane = new Plane(positionPreviousGlobal, positionPreviousGlobal + camera.Transform.Basis.X, positionPreviousGlobal + camera.Transform.Basis.Y);
-        return plane.IntersectsRay(rayFrom, rayDirection);
-    }
-
-    private Vector3? GetConstrainedHandlePosition(Vector3 rayFrom, Vector3 rayDirection, Vector3 positionPreviousGlobal)
-    {
-        var newPos = (Vector3?)null;
-
-        if (GizmoConstant.AxisMapping.TryGetValue(EditorPlugin.RiverControl.CurrentConstraint, out var axis))
-        {
-            if (EditorPlugin.RiverControl.IsLocalEditing)
-            {
-                axis = _handleBaseTransform.Value.Basis * (axis);
-            }
-
-            var axisFrom = positionPreviousGlobal + (axis * GizmoConstant.Constraints.AxisConstraintLength);
-            var axisTo = positionPreviousGlobal - (axis * GizmoConstant.Constraints.AxisConstraintLength);
-            var rayTo = rayFrom + (rayDirection * GizmoConstant.Constraints.AxisConstraintLength);
-            var result = Geometry3D.GetClosestPointsBetweenSegments(axisFrom, axisTo, rayFrom, rayTo);
-            newPos = result[0];
-        }
-        else if (GizmoConstant.PlaneMapping.TryGetValue(EditorPlugin.RiverControl.CurrentConstraint, out var normal))
-        {
-            if (EditorPlugin.RiverControl.IsLocalEditing)
-            {
-                normal = _handleBaseTransform.Value.Basis * (normal);
-            }
-
-            var projected = positionPreviousGlobal.Project(normal);
-            var direction = Mathf.Sign(projected.Dot(normal));
-            var distance = direction * projected.Length();
-            var plane = new Plane(normal, distance);
-            newPos = plane.IntersectsRay(rayFrom, rayDirection);
-        }
-
-        return newPos;
     }
 
     #endregion
@@ -149,25 +88,25 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         // 2) Opaque handle that is only shown above terrain (when passing depth test)
         // Note that this impacts the point index of the handles. See table in HandlesHelper.cs
 
-        CreateRiverHandleMaterial(GizmoConstant.Materials.HandlesCenter, GizmoConstant.Materials.HandlesCenterColor, true);
-        CreateRiverHandleMaterial(GizmoConstant.Materials.HandlesCenterDepth, GizmoConstant.Materials.HandlesCenterDepthColor, false);
+        CreateRiverHandleMaterial(GizmoMaterials.HandlesCenter, GizmoMaterials.HandlesCenterColor, true);
+        CreateRiverHandleMaterial(GizmoMaterials.HandlesCenterDepth, GizmoMaterials.HandlesCenterDepthColor, false);
 
-        CreateRiverHandleMaterial(GizmoConstant.Materials.HandlesControlPoints, GizmoConstant.Materials.HandlesControlColor, true);
-        CreateRiverHandleMaterial(GizmoConstant.Materials.HandlesControlPointsDepth, GizmoConstant.Materials.HandlesControlDepthColor, false);
+        CreateRiverHandleMaterial(GizmoMaterials.HandlesControlPoints, GizmoMaterials.HandlesControlColor, true);
+        CreateRiverHandleMaterial(GizmoMaterials.HandlesControlPointsDepth, GizmoMaterials.HandlesControlDepthColor, false);
 
-        CreateRiverHandleMaterial(GizmoConstant.Materials.HandlesWidth, GizmoConstant.Materials.HandlesWidthColor, true);
-        CreateRiverHandleMaterial(GizmoConstant.Materials.HandlesWidthDepth, GizmoConstant.Materials.HandlesWidthDepthColor, false);
+        CreateRiverHandleMaterial(GizmoMaterials.HandlesWidth, GizmoMaterials.HandlesWidthColor, true);
+        CreateRiverHandleMaterial(GizmoMaterials.HandlesWidthDepth, GizmoMaterials.HandlesWidthDepthColor, false);
 
         var lineMaterial = new StandardMaterial3D
         {
-            AlbedoColor = GizmoConstant.Materials.HandlesLineColor,
+            AlbedoColor = GizmoMaterials.HandlesLineColor,
             ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
             RenderPriority = 10,
             NoDepthTest = true
         };
 
-        AddMaterial(GizmoConstant.Materials.Path, lineMaterial);
-        AddMaterial(GizmoConstant.Materials.HandleLines, lineMaterial);
+        AddMaterial(GizmoMaterials.Path, lineMaterial);
+        AddMaterial(GizmoMaterials.HandleLines, lineMaterial);
     }
 
     public WaterwaysPlugin EditorPlugin { get; set; }
@@ -233,11 +172,14 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
         if (state.HandleType is HandleType.Center or HandleType.PointIn or HandleType.PointOut)
         {
-            var newGlobalPosition = EditorPlugin.RiverControl.CurrentConstraint switch
+            var currentConstraint = EditorPlugin.RiverControl.CurrentConstraint;
+            var isLocalEditing = EditorPlugin.RiverControl.IsLocalEditing;
+
+            var newGlobalPosition = currentConstraint switch
             {
-                ConstraintType.None => GetDefaultHandlePosition(rayFrom, rayDir, camera, state.PreviousGlobalPosition),
-                ConstraintType.Colliders => GetColliderHandlePosition(rayFrom, rayDir, spaceState),
-                _ => GetConstrainedHandlePosition(rayFrom, rayDir, state.PreviousGlobalPosition),
+                ConstraintType.None => HandlesHelper.GetDefaultHandlePosition(rayFrom, rayDir, camera, state.PreviousGlobalPosition),
+                ConstraintType.Colliders => HandlesHelper.GetColliderHandlePosition(rayFrom, rayDir, spaceState),
+                _ => HandlesHelper.GetConstrainedHandlePosition(rayFrom, rayDir, state.PreviousGlobalPosition, _handleBaseTransform.Value, currentConstraint, isLocalEditing)
             };
 
             if (newGlobalPosition == null)
@@ -287,7 +229,7 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
             var direction = closestPoints[0].DistanceTo(state.BasePointPosition) - state.PreviousPosition.DistanceTo(state.BasePointPosition);
 
             river.PointWidths[state.RiverPointIndex] += direction;
-            river.PointWidths[state.RiverPointIndex] = Mathf.Max(river.PointWidths[state.RiverPointIndex], GizmoConstant.Constraints.MinDistanceToCenterHandle);
+            river.PointWidths[state.RiverPointIndex] = Mathf.Max(river.PointWidths[state.RiverPointIndex], ConstraintConstants.MinDistanceToCenterHandle);
         }
 
         _Redraw(gizmo);

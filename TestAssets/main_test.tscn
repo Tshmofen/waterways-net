@@ -84,7 +84,7 @@ _selectedShader = 1
 resource_local_to_scene = true
 bake_interval = 0.05
 _data = {
-"points": PackedVector3Array(0.23888, 0.0783269, -2.26322, -0.23888, -0.0783269, 2.26322, -0.334656, 0.381972, -2.28228, -0.255417, 0.168821, -1.19481, 0.255417, -0.168821, 1.19481, -0.265446, -1.33943, 61.1918),
+"points": PackedVector3Array(0.132511, -0.279946, -2.21038, -0.132511, 0.279946, 2.21038, 0.528231, 0.377785, -3.03926, -0.255417, 0.168821, -1.19481, 0.255417, -0.168821, 1.19481, -0.265446, -1.33943, 61.1918),
 "tilts": PackedFloat32Array(0, 0)
 }
 point_count = 2
@@ -169,5 +169,5 @@ shape = SubResource("12")
 transform = Transform3D(0.853678, 0, -0.520801, 0, 1, 0, 0.520801, 0, 0.853678, 15.0478, 8.92995, 15.7596)
 script = ExtResource("13_dg81e")
 ShaderSettings = SubResource("Resource_d200u")
-PointWidths = [3.07006, 2.19166]
+PointWidths = [4.05389, 2.19166]
 Curve = SubResource("Curve3D_gwnvw")

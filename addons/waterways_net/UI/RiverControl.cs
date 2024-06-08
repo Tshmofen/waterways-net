@@ -1,5 +1,6 @@
 ﻿using Godot;
-using Waterways.UI.Data;
+using Waterways.Data;
+using Waterways.Data.UI;
 
 namespace Waterways.UI;
 

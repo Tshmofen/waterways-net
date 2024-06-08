@@ -1,4 +1,4 @@
-﻿namespace Waterways.UI.Data;
+﻿namespace Waterways.Data;
 
 public enum ConstraintType
 {

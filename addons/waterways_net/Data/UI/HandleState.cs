@@ -1,7 +1,7 @@
 ﻿using Godot;
-using Waterways.UI.Util;
+using Waterways.Util;
 
-namespace Waterways.UI.Data;
+namespace Waterways.Data.UI;
 
 public class HandleState
 {
@@ -44,12 +44,12 @@ public class HandleState
         }
         else if (HandlesHelper.IsWidthPointLeft(handleIndex, pointCount))
         {
-            PreviousPosition = BasePointPosition + (river.Curve.GetPointOut(RiverPointIndex).Cross(Vector3.Up).Normalized() * river.PointWidths[RiverPointIndex]);
+            PreviousPosition = BasePointPosition + river.Curve.GetPointOut(RiverPointIndex).Cross(Vector3.Up).Normalized() * river.PointWidths[RiverPointIndex];
             HandleType = HandleType.WidthLeft;
         }
         else if (HandlesHelper.IsWidthPointRight(handleIndex, pointCount))
         {
-            PreviousPosition = BasePointPosition + (river.Curve.GetPointOut(RiverPointIndex).Cross(Vector3.Down).Normalized() * river.PointWidths[RiverPointIndex]);
+            PreviousPosition = BasePointPosition + river.Curve.GetPointOut(RiverPointIndex).Cross(Vector3.Down).Normalized() * river.PointWidths[RiverPointIndex];
             HandleType = HandleType.WidthRight;
         }
 
