@@ -15,7 +15,6 @@ public partial class RiverControl : HBoxContainer
     [Export] private OptionButton ConstraintButton { get; set; }
     [Export] private MenuButton RiverMenuButton { get; set; }
     [Export] private CheckBox LocalModeButton { get; set; }
-    [Export] private CheckBox AddToStartButton { get; set; }
     [Export] private BaseButton SelectButton { get; set; }
     [Export] private BaseButton RemoveButton { get; set; }
     [Export] private BaseButton AddButton { get; set; }
@@ -23,7 +22,6 @@ public partial class RiverControl : HBoxContainer
     public ConstraintType CurrentConstraint { get; private set; } = ConstraintType.None;
     public RiverEditMode CurrentEditMode { get; private set; } = RiverEditMode.Select;
     public bool IsLocalEditing { get; private set; } = false;
-    public bool IsAddingToStart { get; private set; } = false;
 
     #region Signal Handlers
 
@@ -50,11 +48,6 @@ public partial class RiverControl : HBoxContainer
         IsLocalEditing = toggled;
     }
 
-    private void OnAddToStartToggled(bool toggled)
-    {
-        IsAddingToStart = toggled;
-    }
-
     private void OnMenuButtonPressed(long id)
     {
         if (Enum.IsDefined((RiverMenuActionType)id))
@@ -69,7 +62,6 @@ public partial class RiverControl : HBoxContainer
     {
         ConstraintButton.ItemSelected += OnConstraintSelected;
         LocalModeButton.Toggled += OnLocalModeToggled;
-        AddToStartButton.Toggled += OnAddToStartToggled;
         RiverMenuButton.GetPopup().IdPressed += OnMenuButtonPressed;
 
         SelectButton.Pressed += () => OnSelectModeChange(SelectButton, RiverEditMode.Select, true);

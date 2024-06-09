@@ -111,4 +111,12 @@ public static class RiverCurveHelper
 
         return newPosition != null ? river.ToLocal(newPosition.Value) : null;
     }
+
+    public static bool IsStartPointNear(RiverManager river, Vector3 point)
+    {
+        var curve = river.Curve;
+        var startDistance = curve.GetPointPosition(0).DistanceSquaredTo(point);
+        var endDistance = curve.GetPointPosition(curve.PointCount - 1).DistanceSquaredTo(point);
+        return startDistance < endDistance;
+    }
 }

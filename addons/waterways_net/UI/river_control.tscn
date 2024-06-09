@@ -5,14 +5,13 @@
 [ext_resource type="Texture2D" uid="uid://dnjok0de3mopo" path="res://addons/waterways_net/Icons/create.svg" id="4_cumdu"]
 [ext_resource type="Texture2D" uid="uid://cot00dv010gt2" path="res://addons/waterways_net/Icons/delete.svg" id="5_a4vrl"]
 
-[node name="RiverControl" type="HBoxContainer" node_paths=PackedStringArray("ConstraintButton", "RiverMenuButton", "LocalModeButton", "AddToStartButton", "SelectButton", "RemoveButton", "AddButton")]
+[node name="RiverControl" type="HBoxContainer" node_paths=PackedStringArray("ConstraintButton", "RiverMenuButton", "LocalModeButton", "SelectButton", "RemoveButton", "AddButton")]
 offset_right = 128.0
 offset_bottom = 26.0
 script = ExtResource("1_miwrb")
 ConstraintButton = NodePath("Constraints")
 RiverMenuButton = NodePath("RiverMenu")
 LocalModeButton = NodePath("LocalMode")
-AddToStartButton = NodePath("AddToStart")
 SelectButton = NodePath("Select")
 RemoveButton = NodePath("Remove")
 AddButton = NodePath("Add")
@@ -32,6 +31,7 @@ layout_mode = 2
 [node name="Select" type="Button" parent="."]
 layout_mode = 2
 toggle_mode = true
+button_pressed = true
 icon = ExtResource("3_c7fmo")
 flat = true
 
@@ -75,7 +75,3 @@ popup/item_7/id = 7
 [node name="LocalMode" type="CheckBox" parent="."]
 layout_mode = 2
 text = "Local Mode"
-
-[node name="AddToStart" type="CheckBox" parent="."]
-layout_mode = 2
-text = "Add To Start"

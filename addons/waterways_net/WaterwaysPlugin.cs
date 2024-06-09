@@ -224,7 +224,7 @@ public partial class WaterwaysPlugin : EditorPlugin
                     return 0;
                 }
 
-                CommitPointAdd(newPoint.Value, segment, RiverControl.IsAddingToStart);
+                CommitPointAdd(newPoint.Value, segment, RiverCurveHelper.IsStartPointNear(RiverManager, newPoint.Value));
                 break;
             }
 
