@@ -8,9 +8,9 @@ public static class PropertyGenerator
     public const string Name = "name";
     public const string Type = "type";
     public const string Hint = "hint";
-    public const string HintString = "hint_string";
     public const string Usage = "usage";
     public const string Revert = "revert";
+    public const string HintString = "hint_string";
 
     public static Dictionary CreateCustomProperty(PropertyUsageFlags usage, string name, Variant.Type type, PropertyHint? hint = null, string hintString = null, Variant? revert = null)
     {

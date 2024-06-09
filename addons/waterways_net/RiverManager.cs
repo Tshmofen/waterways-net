@@ -10,6 +10,7 @@ namespace Waterways;
 [Tool]
 public partial class RiverManager : Node3D
 {
+    /// <summary> Is called when river update was initiated. </summary>
     [Signal] public delegate void RiverChangedEventHandler();
 
     public const string PluginBaseAlias = nameof(Node3D);
@@ -24,7 +25,7 @@ public partial class RiverManager : Node3D
     private MeshInstance3D _meshInstance;
     private int _steps = 2;
 
-    // Generated only if associated gizmo is assigned
+    /// <summary> Mesh used for editor selection. Generated only if associated gizmo is assigned. </summary>
     public TriangleMesh SelectMesh { get; private set; }
 
     #region Export Properties
@@ -248,6 +249,32 @@ public partial class RiverManager : Node3D
 
     #region Public Actions
 
+    /// <summary> Only works in Editor, associates gizmo with the river to acknowledge that SelectMesh should be generated. Only one gizmo can be associated. </summary>
+    public bool TryAssociateGizmo(EditorNode3DGizmo gizmo, bool forceAssociate = false)
+    {
+        if (!Engine.IsEditorHint())
+        {
+            return false;
+        }
+
+        _associatedGizmo ??= gizmo;
+
+        // TODO: Workaround for gizmo duplication Godot bug
+        if (forceAssociate && _associatedGizmo != gizmo)
+        {
+            _associatedGizmo = gizmo;
+        }
+
+        return _associatedGizmo == gizmo;
+    }
+
+    /// <summary> Forces deferred river generation along with (in Editor) gizmos update and select mesh generation. </summary>
+    public void UpdateRiver()
+    {
+        CallDeferred(MethodName.UpdateRiverImmediate);
+    }
+
+    /// <summary> Adds point to RiverManager Curve with width. Support adding for any index by inserting here, in case of PointCount insert (or -1) it will just be added to the end. </summary>
     public void AddPoint(Vector3 position, Vector3 direction, int index = -1, float width = -1)
     {
         if (index == -1 || index == Curve.PointCount)
@@ -282,6 +309,7 @@ public partial class RiverManager : Node3D
         UpdateRiver();
     }
 
+    /// <summary> Removes point and width at any given index, doesn't remove last 2 points. </summary>
     public void RemovePoint(int index)
     {
         if (Curve.PointCount <= 2)
@@ -294,6 +322,7 @@ public partial class RiverManager : Node3D
         UpdateRiver();
     }
 
+    /// <summary> Generates Mesh for collision generation or any other usages. Doesn't add it to the tree. </summary>
     public MeshInstance3D GetMeshCopy()
     {
         var newMesh = (MeshInstance3D)_meshInstance.Duplicate();
@@ -303,6 +332,7 @@ public partial class RiverManager : Node3D
         return newMesh;
     }
 
+    /// <summary> Moves node origin to the center of all Curve points, useful for better river manipulation. </summary>
     public void RecenterRiver()
     {
         var centerPoint = Vector3.Zero;
@@ -324,24 +354,6 @@ public partial class RiverManager : Node3D
         }
 
         UpdateRiver();
-    }
-
-    public void UpdateRiver()
-    {
-        CallDeferred(MethodName.UpdateRiverImmediate);
-    }
-
-    public bool TryAssociateGizmo(EditorNode3DGizmo gizmo, bool forceHandle = false)
-    {
-        _associatedGizmo ??= gizmo;
-
-        // TODO: Workaround for gizmo duplication Godot bug
-        if (forceHandle && _associatedGizmo != gizmo)
-        {
-            _associatedGizmo = gizmo;
-        }
-
-        return _associatedGizmo == gizmo;
     }
 
     #endregion

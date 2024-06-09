@@ -24,6 +24,54 @@ public partial class WaterwaysPlugin : EditorPlugin
 
     #region Util
 
+    private void OnSelectionChange()
+    {
+        var selectedNode = Selection.GetSelectedNodes().FirstOrDefault();
+
+        if (selectedNode is not RiverManager riverManager || riverManager == null)
+        {
+            RiverManager = null;
+            SwitchRiverControl(false);
+            return;
+        }
+
+        RiverManager = riverManager;
+        SwitchRiverControl(true);
+    }
+
+    private void OnMenuActionPressed(RiverMenuActionType action)
+    {
+        if (RiverManager == null)
+        {
+            return;
+        }
+
+        switch (action)
+        {
+            case RiverMenuActionType.GenerateMeshSibling:
+                if (RiverManager.Owner != null)
+                {
+                    var meshCopy = RiverManager.GetMeshCopy();
+                    RiverManager.GetParent().AddChild(meshCopy);
+                    meshCopy.Owner = RiverManager.GetTree().EditedSceneRoot;
+                }
+                else
+                {
+                    GD.PushWarning("Cannot create MeshInstance3D sibling when River is root.");
+                }
+
+                break;
+
+            case RiverMenuActionType.RecenterRiver:
+                RiverManager.RecenterRiver();
+                var undoRedo = GetUndoRedo();
+                var riverId = undoRedo.GetObjectHistoryId(RiverManager);
+                undoRedo.GetHistoryUndoRedo(riverId).ClearHistory();
+                GD.PushWarning("RiverManager UndoRedo history was cleared.");
+                break;
+        }
+    }
+
     private void AddCustomType(string type, string @base, string scriptPath, string iconPath)
     {
         var script = ResourceLoader.Load<Script>($"{PluginPath}/{scriptPath}");
@@ -41,21 +89,6 @@ public partial class WaterwaysPlugin : EditorPlugin
         {
             RemoveControlFromContainer(CustomControlContainer.SpatialEditorMenu, RiverControl);
         }
-    }
-
-    private void OnSelectionChange()
-    {
-        var selectedNode = Selection.GetSelectedNodes().FirstOrDefault();
-
-        if (selectedNode is not RiverManager riverManager || riverManager == null)
-        {
-            RiverManager = null;
-            SwitchRiverControl(false);
-            return;
-        }
-
-        RiverManager = riverManager;
-        SwitchRiverControl(true);
     }
 
     private void CommitPointAdd(Vector3 point, int segment, bool addToStart)
@@ -96,7 +129,7 @@ public partial class WaterwaysPlugin : EditorPlugin
 
         if (index == RiverManager.Curve.PointCount - 1)
         {
-            ur.AddUndoMethod(RiverManager, RiverManager.MethodName.AddPoint, RiverManager.Curve.GetPointPosition(index), Vector3.Zero, - 1, -1);
+            ur.AddUndoMethod(RiverManager, RiverManager.MethodName.AddPoint, RiverManager.Curve.GetPointPosition(index), Vector3.Zero, -1, -1);
         }
         else
         {
@@ -107,39 +140,6 @@ public partial class WaterwaysPlugin : EditorPlugin
         ur.CommitAction();
     }
 
-    private void OnMenuActionPressed(RiverMenuActionType action)
-    {
-        if (RiverManager == null)
-        {
-            return;
-        }
-
-        switch (action)
-        {
-            case RiverMenuActionType.GenerateMeshSibling:
-                if (RiverManager.Owner != null)
-                {
-                    var meshCopy = RiverManager.GetMeshCopy();
-                    RiverManager.GetParent().AddChild(meshCopy);
-                    meshCopy.Owner = RiverManager.GetTree().EditedSceneRoot;
-                }
-                else
-                {
-                    GD.PushWarning("Cannot create MeshInstance3D sibling when River is root.");
-                }
-
-                break;
-
-            case RiverMenuActionType.RecenterRiver:
-                RiverManager.RecenterRiver();
-                var undoRedo = GetUndoRedo();
-                var riverId = undoRedo.GetObjectHistoryId(RiverManager);
-                undoRedo.GetHistoryUndoRedo(riverId).ClearHistory();
-                GD.PushWarning("RiverManager UndoRedo history was cleared.");
-                break;
-        }
-    }
-
     #endregion
 
     public override void _EnterTree()
@@ -147,13 +147,14 @@ public partial class WaterwaysPlugin : EditorPlugin
         RiverControl = ResourceLoader.Load<PackedScene>(PluginPath + RiverControlNodePath).Instantiate<RiverControl>();
         RiverControl.MenuAction += OnMenuActionPressed;
         RiverGizmo = new RiverGizmo { EditorPlugin = this };
+
         Selection = EditorInterface.Singleton.GetSelection();
-        Selection.Connect(EditorSelection.SignalName.SelectionChanged, Callable.From(OnSelectionChange));
+        Selection.SelectionChanged += OnSelectionChange;
+        OnSelectionChange();
 
         AddNode3DGizmoPlugin(RiverGizmo);
         AddCustomType(RiverManager.PluginNodeAlias, RiverManager.PluginBaseAlias, RiverManager.ScriptPath, RiverManager.IconPath);
         AddCustomType(RiverFloatSystem.PluginNodeAlias, RiverFloatSystem.PluginBaseAlias, RiverFloatSystem.ScriptPath, RiverFloatSystem.IconPath);
-        OnSelectionChange();
     }
 
     public override void _ExitTree()
@@ -162,12 +163,7 @@ public partial class WaterwaysPlugin : EditorPlugin
         RemoveCustomType(RiverManager.PluginNodeAlias);
         RemoveNode3DGizmoPlugin(RiverGizmo);
         SwitchRiverControl(false);
-        
-        // Is connected check in case of reloaded assemblies
-        if (Selection.IsConnected(EditorSelection.SignalName.SelectionChanged, Callable.From(OnSelectionChange)))
-        {
-            Selection.Disconnect(EditorSelection.SignalName.SelectionChanged, Callable.From(OnSelectionChange));
-        }
+        Selection.SelectionChanged -= OnSelectionChange;
     }
 
     public override bool _Handles(GodotObject @object)
@@ -211,7 +207,7 @@ public partial class WaterwaysPlugin : EditorPlugin
                     return 0;
                 }
 
-                CommitPointAdd(newPoint.Value, segment, RiverCurveHelper.IsStartPointNear(RiverManager, newPoint.Value));
+                CommitPointAdd(newPoint.Value, segment, RiverCurveHelper.IsStartPointCloser(RiverManager, newPoint.Value));
                 break;
             }
 

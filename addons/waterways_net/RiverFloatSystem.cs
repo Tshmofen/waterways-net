@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace Waterways;
 
+[Tool]
 public partial class RiverFloatSystem : Node3D
 {
     public const string PluginNodeAlias = nameof(RiverFloatSystem);
@@ -134,13 +135,20 @@ public partial class RiverFloatSystem : Node3D
 
     public override void _Ready()
     {
+        if (Engine.IsEditorHint())
+        {
+            return;
+        }
+
         _riverManager = GetParentOrNull<RiverManager>();
+
         if (_riverManager != null)
         {
             _riverManager.RiverChanged += GenerateFloatSystem;
         }
     }
 
+    /// <summary> Returns global height of the River collision from the given point. In case no water is found at the given point, the DefaultHeight is returned. </summary>
     public float GetWaterHeight(Vector3 globalPosition)
     {
         if (_riverBody == null)
@@ -158,6 +166,7 @@ public partial class RiverFloatSystem : Node3D
         return DefaultHeight;
     }
 
+    /// <summary> Returns direction (in global transform) to the next river point from the given global position. </summary>
     public Vector3 GetWaterFlowDirection(Vector3 globalPosition)
     {
         // no river or not enough info for interpolation

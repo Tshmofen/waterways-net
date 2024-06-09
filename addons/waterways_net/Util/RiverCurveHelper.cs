@@ -1,5 +1,4 @@
 ﻿using Godot;
-using System.Security.Cryptography;
 using Waterways.Data;
 
 namespace Waterways.Util;
@@ -112,7 +111,7 @@ public static class RiverCurveHelper
         return newPosition != null ? river.ToLocal(newPosition.Value) : null;
     }
 
-    public static bool IsStartPointNear(RiverManager river, Vector3 point)
+    public static bool IsStartPointCloser(RiverManager river, Vector3 point)
     {
         var curve = river.Curve;
         var startDistance = curve.GetPointPosition(0).DistanceSquaredTo(point);
