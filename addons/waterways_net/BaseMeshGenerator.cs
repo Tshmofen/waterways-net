@@ -23,8 +23,6 @@ public abstract partial class BaseMeshGenerator : Node3D
 
     #region Export
 
-    [ExportCategory("Shape Settings")]
-
     private int _shapeStepLengthDivs = 3;
     [Export(PropertyHint.Range, "1,8")]
     public int ShapeStepLengthDivs

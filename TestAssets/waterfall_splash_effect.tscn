@@ -1,0 +1,42 @@
+[gd_scene load_steps=8 format=3 uid="uid://df6ddrcx6oiwt"]
+
+[ext_resource type="Shader" uid="uid://bfqfcsvkr48kx" path="res://TestAssets/Shaders/water_splash.tres" id="1_lumri"]
+[ext_resource type="Texture2D" uid="uid://cn7v0tyc6r0w2" path="res://TestAssets/Shaders/splash_01.png" id="2_2nlfr"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_3onhb"]
+render_priority = 0
+shader = ExtResource("1_lumri")
+shader_parameter/DissolveSpeed = Vector2(0, 0)
+shader_parameter/DissolveAmount = 0.0
+shader_parameter/ParticalTexture = ExtResource("2_2nlfr")
+
+[sub_resource type="Curve" id="Curve_ua7j4"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.184524, 1), 0.0, 0.0, 0, 0, Vector2(0.488095, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="CurveTexture" id="CurveTexture_itjgn"]
+curve = SubResource("Curve_ua7j4")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_hgxww"]
+emission_shape = 3
+emission_box_extents = Vector3(4, 0.1, 0.7)
+angle_min = -360.0
+angle_max = 360.0
+inherit_velocity_ratio = 1.0
+initial_velocity_max = 1.0
+gravity = Vector3(0, 0.5, 0)
+scale_min = 4.0
+scale_max = 4.0
+scale_curve = SubResource("CurveTexture_itjgn")
+color = Color(1.1, 1.2, 1.2, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_fnask"]
+
+[node name="WaterfallSplashEffect" type="Node3D"]
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="."]
+material_override = SubResource("ShaderMaterial_3onhb")
+amount = 30
+lifetime = 1.5
+process_material = SubResource("ParticleProcessMaterial_hgxww")
+draw_pass_1 = SubResource("QuadMesh_fnask")
