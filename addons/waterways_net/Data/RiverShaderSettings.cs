@@ -191,7 +191,13 @@ public partial class RiverShaderSettings : Resource
 
     public RiverShaderSettings()
     {
+        Material ??= new ShaderMaterial();
         RiverShaderHelper.SetStandardMaterialShader(Material, _matShaderType);
+    }
+
+    public RiverShaderSettings(ShaderMaterial material) : base()
+    {
+        Material = material;
     }
 
     public override Array<Dictionary> _GetPropertyList()
@@ -273,6 +279,8 @@ public partial class RiverShaderSettings : Resource
                 Set(propertyName, PropertyGetRevert(propertyName));
             }
         }
+
+        EmitSignal(GodotObject.SignalName.PropertyListChanged);
     }
 
     #endregion

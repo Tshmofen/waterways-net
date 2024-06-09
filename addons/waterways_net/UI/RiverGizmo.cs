@@ -300,8 +300,8 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
             plugin.AddUndoProperty(river, nameof(RiverManager.PointWidths), riverWidthsUndo);
         }
 
-        plugin.AddDoMethod(river, RiverManager.MethodName.UpdateRiver);
-        plugin.AddUndoMethod(river, RiverManager.MethodName.UpdateRiver);
+        plugin.AddDoMethod(river, BaseMeshGenerator.MethodName.UpdateMesh);
+        plugin.AddUndoMethod(river, BaseMeshGenerator.MethodName.UpdateMesh);
         plugin.CommitAction();
 
         _Redraw(gizmo);

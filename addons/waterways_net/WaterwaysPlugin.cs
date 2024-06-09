@@ -63,7 +63,7 @@ public partial class WaterwaysPlugin : EditorPlugin
                 break;
 
             case RiverMenuActionType.RecenterRiver:
-                RiverManager.RecenterRiver();
+                RiverManager.RecenterCurve();
                 var undoRedo = GetUndoRedo();
                 var riverId = undoRedo.GetObjectHistoryId(RiverManager);
                 undoRedo.GetHistoryUndoRedo(riverId).ClearHistory();
@@ -98,25 +98,25 @@ public partial class WaterwaysPlugin : EditorPlugin
 
         if (segment == -1)
         {
-            ur.AddDoMethod(RiverManager, RiverManager.MethodName.AddPoint, point, Vector3.Zero, addToStart ? 0 : -1, -1);
+            ur.AddDoMethod(RiverManager, BaseMeshGenerator.MethodName.AddPoint, point, Vector3.Zero, addToStart ? 0 : -1, -1);
         }
         else
         {
-            ur.AddDoMethod(RiverManager, RiverManager.MethodName.AddPoint, point, Vector3.Zero, segment + 1, -1);
+            ur.AddDoMethod(RiverManager, BaseMeshGenerator.MethodName.AddPoint, point, Vector3.Zero, segment + 1, -1);
         }
 
-        ur.AddDoMethod(RiverManager, RiverManager.MethodName.UpdateRiver);
+        ur.AddDoMethod(RiverManager, BaseMeshGenerator.MethodName.UpdateMesh);
 
         if (segment == -1)
         {
-            ur.AddUndoMethod(RiverManager, RiverManager.MethodName.RemovePoint, addToStart ? 0 : RiverManager.Curve.PointCount);
+            ur.AddUndoMethod(RiverManager, BaseMeshGenerator.MethodName.RemovePoint, addToStart ? 0 : RiverManager.Curve.PointCount);
         }
         else
         {
-            ur.AddUndoMethod(RiverManager, RiverManager.MethodName.RemovePoint, segment + 1);
+            ur.AddUndoMethod(RiverManager, BaseMeshGenerator.MethodName.RemovePoint, segment + 1);
         }
 
-        ur.AddUndoMethod(RiverManager, RiverManager.MethodName.UpdateRiver);
+        ur.AddUndoMethod(RiverManager, BaseMeshGenerator.MethodName.UpdateMesh);
         ur.CommitAction();
     }
 
@@ -124,19 +124,19 @@ public partial class WaterwaysPlugin : EditorPlugin
     {
         var ur = GetUndoRedo();
         ur.CreateAction(RemovePointMessage);
-        ur.AddDoMethod(RiverManager, RiverManager.MethodName.RemovePoint, index);
-        ur.AddDoMethod(RiverManager, RiverManager.MethodName.UpdateRiver);
+        ur.AddDoMethod(RiverManager, BaseMeshGenerator.MethodName.RemovePoint, index);
+        ur.AddDoMethod(RiverManager, BaseMeshGenerator.MethodName.UpdateMesh);
 
         if (index == RiverManager.Curve.PointCount - 1)
         {
-            ur.AddUndoMethod(RiverManager, RiverManager.MethodName.AddPoint, RiverManager.Curve.GetPointPosition(index), Vector3.Zero, -1, -1);
+            ur.AddUndoMethod(RiverManager, BaseMeshGenerator.MethodName.AddPoint, RiverManager.Curve.GetPointPosition(index), Vector3.Zero, -1, -1);
         }
         else
         {
-            ur.AddUndoMethod(RiverManager, RiverManager.MethodName.AddPoint, RiverManager.Curve.GetPointPosition(index), RiverManager.Curve.GetPointOut(index), index - 1, RiverManager.PointWidths[index]);
+            ur.AddUndoMethod(RiverManager, BaseMeshGenerator.MethodName.AddPoint, RiverManager.Curve.GetPointPosition(index), RiverManager.Curve.GetPointOut(index), index - 1, RiverManager.PointWidths[index]);
         }
 
-        ur.AddUndoMethod(RiverManager, RiverManager.MethodName.UpdateRiver);
+        ur.AddUndoMethod(RiverManager, BaseMeshGenerator.MethodName.UpdateMesh);
         ur.CommitAction();
     }
 

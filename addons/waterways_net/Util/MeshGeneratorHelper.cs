@@ -3,7 +3,7 @@ using Godot;
 
 namespace Waterways.Util;
 
-public static class RiverGenerator
+public static class MeshGeneratorHelper
 {
     #region Inner Util
 
@@ -19,7 +19,7 @@ public static class RiverGenerator
         return (int)sideFloat;
     }
 
-    private static List<float> GenerateRiverWidthValues(Curve3D curve, int steps, int stepLengthDivs, IList<float> widths)
+    private static List<float> GenerateWidthValues(Curve3D curve, int steps, int stepLengthDivs, IList<float> widths)
     {
         var riverWidthValues = new List<float>();
 
@@ -57,7 +57,7 @@ public static class RiverGenerator
 
     #endregion
 
-    public static Mesh GenerateRiverMesh(Curve3D curve, int steps, int stepLengthDivs, int stepWidthDivs, float smoothness, IList<float> riverWidths)
+    public static Mesh GenerateCurvePlaneMesh(Curve3D curve, int steps, int stepLengthDivs, int stepWidthDivs, float smoothness, IList<float> riverWidths)
     {
         var surface = new SurfaceTool();
         surface.Begin(Mesh.PrimitiveType.Triangles);
@@ -66,7 +66,7 @@ public static class RiverGenerator
         surface.SetSmoothGroup(0);
 
         // Generating the verts
-        var riverWidthsValues = GenerateRiverWidthValues(curve, steps, stepLengthDivs, riverWidths);
+        var riverWidthsValues = GenerateWidthValues(curve, steps, stepLengthDivs, riverWidths);
         for (var step = 0; step < (steps * stepLengthDivs) + 1; step++)
         {
             var position = curve.SampleBaked(step / (float)(steps * stepLengthDivs) * curveLength);

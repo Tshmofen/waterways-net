@@ -144,7 +144,7 @@ public partial class RiverFloatSystem : Node3D
 
         if (_riverManager != null)
         {
-            _riverManager.RiverChanged += GenerateFloatSystem;
+            _riverManager.MeshUpdated += GenerateFloatSystem;
         }
     }
 
