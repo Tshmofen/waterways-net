@@ -43,7 +43,7 @@ public partial class RiverManager : Node3D
             if (material != null)
             {
                 _shaderSettings.Material = material;
-                CallDeferred(MethodName.UpdateRiver);
+                UpdateRiver();
             }
         }
     }
@@ -57,7 +57,7 @@ public partial class RiverManager : Node3D
         set
         {
             _shapeStepLengthDivs = value;
-            CallDeferred(MethodName.UpdateRiver);
+            UpdateRiver();
         }
     }
 
@@ -68,7 +68,7 @@ public partial class RiverManager : Node3D
         set
         {
             _shapeStepWidthDivs = value;
-            CallDeferred(MethodName.UpdateRiver);
+            UpdateRiver();
         }
     }
 
@@ -79,7 +79,7 @@ public partial class RiverManager : Node3D
         set
         {
             _shapeSmoothness = value;
-            CallDeferred(MethodName.UpdateRiver);
+            UpdateRiver();
         }
     }
 
@@ -89,13 +89,13 @@ public partial class RiverManager : Node3D
         get => _pointWidths;
         set
         {
-            if (value == null || value.Count != _pointWidths.Count)
+            if (value == null)
             {
                 return;
             }
 
             _pointWidths = value;
-            CallDeferred(MethodName.UpdateRiver);
+            UpdateRiver();
         }
     }
 
@@ -111,7 +111,7 @@ public partial class RiverManager : Node3D
             }
 
             _curve = value;
-            CallDeferred(MethodName.UpdateRiver);
+            UpdateRiver();
         }
     }
 
