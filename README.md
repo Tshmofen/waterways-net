@@ -1,8 +1,8 @@
 # Godot 4 Waterways (.NET)
 
 <p align="center">
- <img height=260 src="https://github.com/Tshmofen/waterways-net/blob/rework/Images/river_flow.gif"/>
- <img height=260 src="https://github.com/Tshmofen/waterways-net/blob/rework/Images/waterfall.gif"/>
+ <img height=260 src="https://github.com/Tshmofen/waterways-net/blob/main/Images/river_flow.gif"/>
+ <img height=260 src="https://github.com/Tshmofen/waterways-net/blob/main/Images/waterfall.gif"/>
 </p>
 
 It is a port to `Godot 4`/`.NET 8.0` of a tool to generate river meshes with correct flow based on bezier curves. Visit the original page if you are interested in also using baking in the river, though, only for Godot 3: [https://github.com/Arnklit/Waterways](https://github.com/Arnklit/Waterways).  
@@ -31,7 +31,7 @@ Main Differences
 
 #### No additional licenses applied, just do not forget to mention the original authors and, well, enjoy the cool rivers! :)
 
-![Waterways-NET Add-on for Godot 4](https://github.com/Tshmofen/waterways-net/blob/rework/Images/river_test_editor.png)
+![Waterways-NET Add-on for Godot 4](https://github.com/Tshmofen/waterways-net/blob/main/Images/river_test_editor.png)
 
 # FAQ
 * Addon is throwing errors when I'm trying to enable it, what should I do?
