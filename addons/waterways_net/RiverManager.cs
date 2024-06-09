@@ -240,7 +240,7 @@ public partial class RiverManager : Node3D
 
     public void AddPoint(Vector3 position, Vector3 direction, int index = -1, float width = -1)
     {
-        if (index == -1)
+        if (index == -1 || index == Curve.PointCount)
         {
             var lastIndex = Curve.PointCount - 1;
             var distance = position.DistanceTo(Curve.GetPointPosition(lastIndex));
@@ -250,14 +250,23 @@ public partial class RiverManager : Node3D
             Curve.AddPoint(position, -newDirection, newDirection);
             PointWidths.Add(newWidth);
         }
+        else if (index == 0)
+        {
+            var distance = position.DistanceTo(Curve.GetPointPosition(0));
+            var newDirection = (direction != Vector3.Zero) ? direction : (Curve.GetPointPosition(0) - position).Normalized() * 0.25f * distance;
+            var newWidth = width > 0 ? width : PointWidths[0];
+
+            Curve.AddPoint(position, -newDirection, newDirection, 0);
+            PointWidths.Insert(0, newWidth);
+        }
         else
         {
-            var distance = Curve.GetPointPosition(index).DistanceTo(Curve.GetPointPosition(index + 1));
-            var newDirection = (direction != Vector3.Zero) ? direction : (Curve.GetPointPosition(index + 1) - Curve.GetPointPosition(index)).Normalized() * 0.25f * distance;
-            var newWidth = width > 0 ? width : (PointWidths[index] + PointWidths[index + 1]) / 2.0f; // We set the width to the average of the two surrounding widths
+            var distance = Curve.GetPointPosition(index - 1).DistanceTo(Curve.GetPointPosition(index));
+            var newDirection = (direction != Vector3.Zero) ? direction : (Curve.GetPointPosition(index) - Curve.GetPointPosition(index - 1)).Normalized() * 0.25f * distance;
+            var newWidth = width > 0 ? width : (PointWidths[index - 1] + PointWidths[index]) / 2.0f; // We set the width to the average of the two surrounding widths
 
-            Curve.AddPoint(position, -newDirection, newDirection, index + 1);
-            PointWidths.Insert(index + 1, newWidth);
+            Curve.AddPoint(position, -newDirection, newDirection, index);
+            PointWidths.Insert(index, newWidth);
         }
 
         UpdateRiver();

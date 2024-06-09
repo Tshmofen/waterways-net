@@ -1,4 +1,5 @@
 ﻿using Godot;
+using System.Security.Cryptography;
 using Waterways.Data;
 
 namespace Waterways.Util;
@@ -28,6 +29,7 @@ public static class RiverCurveHelper
 
     public static (int segment, Vector3? bakedPoint) GetClosestPosition(RiverManager river, Camera3D camera, Vector2 cameraPoint)
     {
+        var curve = river.Curve;
         var globalTransform = river.IsInsideTree() ? river.GlobalTransform : river.Transform;
         var globalInverse = globalTransform.AffineInverse();
 
@@ -39,10 +41,10 @@ public static class RiverCurveHelper
         var closestDistance = 4096f;
         var closestSegment = -1;
 
-        for (var p = 0; p < river.Curve.PointCount; p++)
+        for (var p = 0; p < curve.PointCount; p++)
         {
-            var p1 = river.Curve.GetPointPosition(p);
-            var p2 = river.Curve.GetPointPosition((p + 1) % river.Curve.PointCount);
+            var p1 = curve.GetPointPosition(p);
+            var p2 = curve.GetPointPosition((p + 1) % curve.PointCount);
             var result = Geometry3D.GetClosestPointsBetweenSegments(p1, p2, g1, g2);
             var dist = result[0].DistanceTo(result[1]);
 
@@ -56,7 +58,7 @@ public static class RiverCurveHelper
         }
 
         // Iterate through baked points to find the closest position on the curved path
-        var bakedCurvePoints = river.Curve.GetBakedPoints();
+        var bakedCurvePoints = curve.GetBakedPoints();
         var bakedClosestDistance = 4096f;
         var bakedClosestPoint = (Vector3?) null;
 

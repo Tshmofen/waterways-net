@@ -59,16 +59,25 @@ public partial class WaterwaysPlugin : EditorPlugin
         SwitchRiverControl(true);
     }
 
-    private void CommitPointAdd(Vector3 point, int segment)
+    private void CommitPointAdd(Vector3 point, int segment, bool addToStart)
     {
         var ur = GetUndoRedo();
         ur.CreateAction(AddPointMessage);
-        ur.AddDoMethod(RiverManager, RiverManager.MethodName.AddPoint, point, Vector3.Zero, segment, -1);
+
+        if (segment == -1)
+        {
+            ur.AddDoMethod(RiverManager, RiverManager.MethodName.AddPoint, point, Vector3.Zero, addToStart ? 0 : -1, -1);
+        }
+        else
+        {
+            ur.AddDoMethod(RiverManager, RiverManager.MethodName.AddPoint, point, Vector3.Zero, segment + 1, -1);
+        }
+
         ur.AddDoMethod(RiverManager, RiverManager.MethodName.UpdateRiver);
 
         if (segment == -1)
         {
-            ur.AddUndoMethod(RiverManager, RiverManager.MethodName.RemovePoint, RiverManager.Curve.PointCount);
+            ur.AddUndoMethod(RiverManager, RiverManager.MethodName.RemovePoint, addToStart ? 0 : RiverManager.Curve.PointCount);
         }
         else
         {
@@ -215,7 +224,7 @@ public partial class WaterwaysPlugin : EditorPlugin
                     return 0;
                 }
 
-                CommitPointAdd(newPoint.Value, segment);
+                CommitPointAdd(newPoint.Value, segment, RiverControl.IsAddingToStart);
                 break;
             }
 
