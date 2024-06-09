@@ -6,6 +6,11 @@ namespace Waterways;
 [Tool]
 public partial class RiverFloatSystem : Node3D
 {
+    public const string PluginNodeAlias = nameof(RiverFloatSystem);
+    public const string PluginBaseAlias = nameof(Node3D);
+    public const string ScriptPath = $"{nameof(RiverFloatSystem)}.cs";
+    public const string IconPath = "float.svg";
+
     private Curve3D _bakedCurve;
     private RiverManager _riverManager;
     private StaticBody3D _riverBody;
@@ -128,23 +133,22 @@ public partial class RiverFloatSystem : Node3D
         return [];
     }
 
-    public override void _EnterTree()
+    public override void _Ready()
     {
-        _riverManager = GetParentOrNull<RiverManager>();
-        if (_riverManager != null && !Engine.IsEditorHint())
+        if (Engine.IsEditorHint())
         {
-            _riverManager.RiverChanged += GenerateFloatSystem;
+            return;
         }
-    }
 
-    public override void _ExitTree()
-    {
+        _riverManager = GetParentOrNull<RiverManager>();
+
         if (_riverManager != null)
         {
-            _riverManager.RiverChanged -= GenerateFloatSystem;
+            _riverManager.MeshUpdated += GenerateFloatSystem;
         }
     }
 
+    /// <summary> Returns global height of the River collision from the given point. In case no water is found at the given point, the DefaultHeight is returned. </summary>
     public float GetWaterHeight(Vector3 globalPosition)
     {
         if (_riverBody == null)
@@ -162,6 +166,7 @@ public partial class RiverFloatSystem : Node3D
         return DefaultHeight;
     }
 
+    /// <summary> Returns direction (in global transform) to the next river point from the given global position. </summary>
     public Vector3 GetWaterFlowDirection(Vector3 globalPosition)
     {
         // no river or not enough info for interpolation

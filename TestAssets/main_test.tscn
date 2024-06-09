@@ -1,0 +1,393 @@
+[gd_scene load_steps=42 format=3 uid="uid://pgvwvu6wke6p"]
+
+[ext_resource type="Script" path="res://addons/zylann.hterrain/hterrain.gd" id="1_c2hoe"]
+[ext_resource type="Environment" uid="uid://cim0252dprrrv" path="res://TestAssets/default_env.tres" id="1_i3f35"]
+[ext_resource type="Resource" path="res://TestAssets/Terrain/data.hterrain" id="2_juqy4"]
+[ext_resource type="Script" path="res://addons/zylann.hterrain/hterrain_texture_set.gd" id="3_84qpo"]
+[ext_resource type="Texture2D" uid="uid://k8lt88ugpbm8" path="res://TestAssets/Terrain/Textures/grass_alb_bump.png" id="4_3arg6"]
+[ext_resource type="Texture2D" uid="uid://13thf406otb8" path="res://TestAssets/Terrain/Textures/dirt_alb_bump.png" id="5_ba170"]
+[ext_resource type="Texture2D" uid="uid://bwl0ymoej6jwx" path="res://TestAssets/Terrain/Textures/riverbed_alb_bump.png" id="6_npdy2"]
+[ext_resource type="Texture2D" uid="uid://d2ul8cjrj362o" path="res://TestAssets/Terrain/Textures/grass_nor_rough.png" id="7_5uvfw"]
+[ext_resource type="Texture2D" uid="uid://k4brb2w6y37u" path="res://TestAssets/Terrain/Textures/dirt_nor_rough.png" id="8_jy01s"]
+[ext_resource type="Texture2D" uid="uid://nw61drbjop33" path="res://TestAssets/Terrain/Textures/riverbed_nor_rough.png" id="9_kichf"]
+[ext_resource type="PackedScene" uid="uid://cyq12ycnotl2x" path="res://TestAssets/rock.tscn" id="10_ia66j"]
+[ext_resource type="Script" path="res://TestAssets/Scripts/FloatSpawner.cs" id="11_6teed"]
+[ext_resource type="ArrayMesh" uid="uid://yq6tp386v4i2" path="res://TestAssets/Model/rock.obj" id="11_34ive"]
+[ext_resource type="PackedScene" uid="uid://bn4fflqma5nvj" path="res://TestAssets/floating_cube.tscn" id="12_0hd0b"]
+[ext_resource type="Texture2D" uid="uid://cmgf3jwbnhxlg" path="res://TestAssets/Model/rock_albedo.png" id="12_0ug2n"]
+[ext_resource type="Script" path="res://TestAssets/Scripts/ObjectDestroyer.cs" id="12_hqmh7"]
+[ext_resource type="Script" path="res://addons/waterways_net/RiverManager.cs" id="13_dg81e"]
+[ext_resource type="Texture2D" uid="uid://cphlqcmoq01x5" path="res://TestAssets/Model/rock_normal.png" id="13_lye7l"]
+[ext_resource type="Texture2D" uid="uid://b85tlq8wcklbo" path="res://addons/waterways_net/Textures/water_normal_bump.png" id="14_mycmf"]
+[ext_resource type="Texture2D" uid="uid://cm8p03icrdab7" path="res://TestAssets/Model/rock_orm.png" id="14_y08bg"]
+[ext_resource type="Script" path="res://addons/waterways_net/Data/RiverShaderSettings.cs" id="15_pphx5"]
+[ext_resource type="Script" path="res://addons/waterways_net/RiverFloatSystem.cs" id="21_cu1h3"]
+[ext_resource type="Shader" uid="uid://bfqfcsvkr48kx" path="res://TestAssets/Shaders/water_splash.tres" id="22_1nyol"]
+[ext_resource type="Texture2D" uid="uid://cn7v0tyc6r0w2" path="res://TestAssets/Shaders/splash_01.png" id="23_udqqw"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_15nxs"]
+
+[sub_resource type="Resource" id="Resource_jdk66"]
+script = ExtResource("3_84qpo")
+mode = 0
+textures = [[ExtResource("4_3arg6"), ExtResource("5_ba170"), ExtResource("6_npdy2")], [ExtResource("7_5uvfw"), ExtResource("8_jy01s"), ExtResource("9_kichf")]]
+
+[sub_resource type="Resource" id="Resource_2i3e2"]
+script = ExtResource("15_pphx5")
+MatShaderType = 1
+mat_albedo_color_first = Color(0.376102, 0.404822, 0.50257, 1)
+mat_albedo_color_second = Color(0.188962, 0.26646, 0.258094, 1)
+mat_albedo_depth = 3.0
+mat_albedo_depth_curve = 0.25
+mat_transparency_clarity = 12.0
+mat_transparency_depth_curve = 0.125
+mat_transparency_refraction = 0.2
+mat_normal_scale = 1.25
+mat_normal_bump_texture = ExtResource("14_mycmf")
+mat_flow_speed = 0.6
+mat_flow_base = 0.2
+mat_flow_steepness = 5.0
+mat_flow_distance = 1.0
+mat_flow_pressure = 1.0
+mat_flow_max = 4.0
+mat_foam_color = Color(0.793429, 0.818541, 0.872368, 1)
+mat_foam_amount = 2.0
+mat_foam_steepness = 2.0
+mat_foam_smoothness = 0.45
+mat_uv_scale = Vector3(2, 1, 1)
+mat_roughness = 0.2
+mat_edge_fade = 0.25
+LodLod0Distance = 50.0
+_selectedShader = 1
+
+[sub_resource type="Curve3D" id="Curve3D_v1n6a"]
+resource_local_to_scene = true
+bake_interval = 0.05
+_data = {
+"points": PackedVector3Array(-3.54596, 0.142921, -4.43361, 3.54596, -0.142921, 4.43361, -16.2033, 2.55085, -39.3207, -1.92814, -0.301395, -3.25125, 1.92814, 0.301395, 3.25125, -7.00658, -0.415245, -24.7892, -0.758025, -0.153267, -2.91529, 0.758025, 0.153267, 2.91529, -2.14075, -0.345051, -7.42294, 3.28793, -0.0342751, -9.96773, -3.28793, 0.0342751, 9.96773, -2.03336, -0.810101, 9.07495, 2.35744, 0.0164261, -2.79135, -2.35744, -0.0164261, 2.79135, -7.86718, -0.817085, 23.175, 5.3857, -0.871243, -2.40109, -5.3857, 0.871243, 2.40109, -25.6885, 0.992832, 35.2528, 6.89437, -0.848625, -2.45419, -6.89437, 0.848625, 2.45419, -57.1386, 3.49468, 44.3398, 2.41856, -0.391121, -3.886, -2.41856, 0.391121, 3.886, -80.088, 8.47322, 57.3421, 1.22588, 0.369118, -3.23756, -1.22588, -0.369118, 3.23756, -85.9448, 9.15034, 72.5185),
+"tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0)
+}
+point_count = 9
+
+[sub_resource type="BoxShape3D" id="12"]
+size = Vector3(11.484, 6.85648, 7.49257)
+
+[sub_resource type="Resource" id="Resource_hcpjo"]
+script = ExtResource("15_pphx5")
+MatShaderType = 1
+mat_albedo_color_first = Color(0.199068, 0.216831, 0.280952, 1)
+mat_albedo_color_second = Color(0.179338, 0.255103, 0.247529, 1)
+mat_albedo_depth = 10.0
+mat_albedo_depth_curve = 0.25
+mat_transparency_clarity = 30.0
+mat_transparency_depth_curve = 0.2
+mat_transparency_refraction = 0.3
+mat_normal_scale = 1.5
+mat_normal_bump_texture = ExtResource("14_mycmf")
+mat_flow_speed = 0.7
+mat_flow_base = 0.1
+mat_flow_steepness = 4.0
+mat_flow_distance = 1.0
+mat_flow_pressure = 4.0
+mat_flow_max = 5.0
+mat_foam_color = Color(0.825629, 0.881875, 0.846203, 1)
+mat_foam_amount = 1.5
+mat_foam_steepness = 1.3
+mat_foam_smoothness = 1.0
+mat_uv_scale = Vector3(2, 1, 2)
+mat_roughness = 0.2
+mat_edge_fade = 1.0
+LodLod0Distance = 50.0
+_selectedShader = 1
+
+[sub_resource type="Curve3D" id="Curve3D_ky46n"]
+resource_local_to_scene = true
+bake_interval = 0.05
+_data = {
+"points": PackedVector3Array(0.084465, -0.146484, -1.69027, -0.084465, 0.146484, 1.69027, 1.42289, 11.0863, -10.6748, -0.00475311, 0.0897598, -2.25465, 0.00475311, -0.0897598, 2.25465, 0.688255, 9.05883, -1.42258, 0.176039, 9.1869, -4.01779, -0.176039, -9.1869, 4.01779, 1.57412, -3.33429, 5.97314, 0.131452, 0.230003, -3.07791, -0.131452, -0.230003, 3.07791, 3.09595, -24.2445, 15.5665),
+"tilts": PackedFloat32Array(0, 0, 0, 0)
+}
+point_count = 4
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5716f"]
+render_priority = 0
+shader = ExtResource("22_1nyol")
+shader_parameter/DissolveSpeed = Vector2(0, 0)
+shader_parameter/DissolveAmount = 0.0
+shader_parameter/ParticalTexture = ExtResource("23_udqqw")
+
+[sub_resource type="Curve" id="Curve_8pi3w"]
+max_value = 2.0
+_data = [Vector2(0.550725, 2), 0.0, 0.0, 0, 0]
+point_count = 1
+
+[sub_resource type="CurveTexture" id="CurveTexture_e38d7"]
+curve = SubResource("Curve_8pi3w")
+
+[sub_resource type="Curve" id="Curve_ua7j4"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.184524, 1), 0.0, 0.0, 0, 0, Vector2(0.488095, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="CurveTexture" id="CurveTexture_itjgn"]
+curve = SubResource("Curve_ua7j4")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_n7jnb"]
+emission_shape = 3
+emission_box_extents = Vector3(4, 0.1, 0.7)
+angle_min = -360.0
+angle_max = 360.0
+inherit_velocity_ratio = 1.0
+initial_velocity_max = 1.0
+gravity = Vector3(0, 0.5, 0)
+scale_min = 4.0
+scale_max = 4.0
+scale_curve = SubResource("CurveTexture_itjgn")
+emission_curve = SubResource("CurveTexture_e38d7")
+
+[sub_resource type="QuadMesh" id="QuadMesh_fnask"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_y44by"]
+emission_shape = 3
+emission_box_extents = Vector3(4, 20, 0.5)
+angle_min = -360.0
+angle_max = 360.0
+inherit_velocity_ratio = 1.0
+direction = Vector3(0, 0, 0)
+initial_velocity_max = 1.0
+gravity = Vector3(0, 0.5, 0)
+scale_min = 4.0
+scale_max = 4.0
+scale_curve = SubResource("CurveTexture_itjgn")
+emission_curve = SubResource("CurveTexture_e38d7")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sn1j4"]
+albedo_texture = ExtResource("12_0ug2n")
+roughness_texture = ExtResource("14_y08bg")
+normal_enabled = true
+normal_texture = ExtResource("13_lye7l")
+uv1_scale = Vector3(4, 4, 4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h5u8u"]
+albedo_texture = ExtResource("12_0ug2n")
+roughness_texture = ExtResource("14_y08bg")
+normal_enabled = true
+normal_texture = ExtResource("13_lye7l")
+
+[node name="World" type="Node3D"]
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextPanel" type="Panel" parent="UI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -48.0
+offset_right = 320.0
+offset_bottom = -8.0
+grow_vertical = 0
+
+[node name="RichTextLabel" type="Label" parent="UI/TextPanel"]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+text = "Press [Space] to spawn a floating cube"
+label_settings = SubResource("LabelSettings_15nxs")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DirectionalLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.73341, -0.233814, -0.638311, 0.356404, -0.667331, 0.653946, -0.578867, -0.707107, -0.406095, 0, 100, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("1_i3f35")
+
+[node name="Camera" type="Camera3D" parent="."]
+transform = Transform3D(0.999123, 0.00727164, -0.0412395, 0, 0.984808, 0.173648, 0.0418757, -0.173496, 0.983944, 6.113, 50, 10.848)
+fov = 80.0
+
+[node name="HTerrain" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -93, 0, 0)
+script = ExtResource("1_c2hoe")
+map_scale = Vector3(2, 2, 2)
+centered = true
+_terrain_data = ExtResource("2_juqy4")
+chunk_size = 32
+collision_enabled = true
+collision_layer = 1
+collision_mask = 1
+shader_type = "Classic4"
+custom_shader = null
+custom_globalmap_shader = null
+texture_set = SubResource("Resource_jdk66")
+render_layers = 1
+cast_shadow = 1
+shader_params/u_ground_uv_scale_per_texture = Vector4(1, 1, 1, 1)
+shader_params/u_depth_blending = true
+shader_params/u_triplanar = true
+shader_params/u_tile_reduction = Vector4(1, 1, 0, 1)
+shader_params/u_globalmap_blend_start = 0.0
+shader_params/u_globalmap_blend_distance = null
+shader_params/u_colormap_opacity_per_texture = Vector4(1, 1, 1, 1)
+shader_params/u_specular = 0.5
+
+[node name="RiverManager" type="Node3D" parent="."]
+transform = Transform3D(-0.0584003, 0, -0.998293, 0, 1, 0, 0.998293, 0, -0.0584003, 0.452626, 33.1977, -7.67319)
+script = ExtResource("13_dg81e")
+ShaderSettings = SubResource("Resource_2i3e2")
+PointWidths = [6.33827, 7.97592, 7.08766, 5.21408, 7.80158, 6.03617, 6.81221, 7.42093, 6.06767]
+Curve = SubResource("Curve3D_v1n6a")
+
+[node name="RiverFloatSystem" type="Node3D" parent="RiverManager"]
+script = ExtResource("21_cu1h3")
+
+[node name="FloatSpawner" type="Node3D" parent="RiverManager" node_paths=PackedStringArray("FloatSystem")]
+transform = Transform3D(-0.695286, 0, -0.718734, 0, 1, 0, 0.718734, 0, -0.695286, -14.2729, 5.3905, -35.8118)
+script = ExtResource("11_6teed")
+SpawnScene = ExtResource("12_0hd0b")
+FloatSystem = NodePath("../RiverFloatSystem")
+
+[node name="Marker3D" type="Marker3D" parent="RiverManager/FloatSpawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1)
+
+[node name="Marker3D2" type="Marker3D" parent="RiverManager/FloatSpawner"]
+
+[node name="DestroyCubesArea" type="Area3D" parent="RiverManager"]
+transform = Transform3D(-0.246559, 0, 0.969128, 0, 1, 0, -0.969128, 0, -0.246559, -71.5412, 4.1686, 49.8946)
+script = ExtResource("12_hqmh7")
+
+[node name="CollisionShape" type="CollisionShape3D" parent="RiverManager/DestroyCubesArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.46612)
+shape = SubResource("12")
+
+[node name="RiverManagerWaterfall" type="Node3D" parent="."]
+transform = Transform3D(0.625964, 0, -0.779852, 0, 1, 0, 0.779852, 0, 0.625964, 44.5139, 58.5356, -31.4447)
+script = ExtResource("13_dg81e")
+ShaderSettings = SubResource("Resource_hcpjo")
+ShapeStepLengthDivs = 1
+PointWidths = [5.83558, 7.46584, 9.01672, 8.41666]
+Curve = SubResource("Curve3D_ky46n")
+
+[node name="ParticlesDown" type="GPUParticles3D" parent="RiverManagerWaterfall"]
+transform = Transform3D(0.982117, 0, 0.188273, 0, 1, 0, -0.188273, 0, 0.982117, 5.43934, -22.7479, 15.2223)
+material_override = SubResource("ShaderMaterial_5716f")
+cast_shadow = 0
+amount = 30
+lifetime = 1.5
+process_material = SubResource("ParticleProcessMaterial_n7jnb")
+draw_pass_1 = SubResource("QuadMesh_fnask")
+
+[node name="ParticlesFull" type="GPUParticles3D" parent="RiverManagerWaterfall"]
+transform = Transform3D(0.978757, -0.0791313, -0.189135, 0.145528, 0.91795, 0.369039, 0.144414, -0.388724, 0.909966, 1.94218, -9.49375, 7.44989)
+visible = false
+material_override = SubResource("ShaderMaterial_5716f")
+cast_shadow = 0
+amount = 30
+lifetime = 1.5
+visibility_aabb = AABB(-4, -21.255, -1.72311, 8, 42.5099, 3.44621)
+process_material = SubResource("ParticleProcessMaterial_y44by")
+draw_pass_1 = SubResource("QuadMesh_fnask")
+
+[node name="Clutter" type="Node3D" parent="."]
+
+[node name="Boulders" type="Node3D" parent="Clutter"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.34785, 0)
+
+[node name="Hill" type="Node3D" parent="Clutter/Boulders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.34785, 0)
+
+[node name="rock2" type="MeshInstance3D" parent="Clutter/Boulders/Hill"]
+transform = Transform3D(6.12025, -18.6749, 3.71395, -12.9147, -1.20486, 15.2237, -13.9913, -7.05686, -12.4276, 51.364, 41.3095, -18.4528)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock3" type="MeshInstance3D" parent="Clutter/Boulders/Hill"]
+transform = Transform3D(-13.9237, -14.2859, 1.43002, -1.08378, 3.03218, 19.7391, -14.3163, 13.6645, -2.88509, 46.6911, 33.2892, -29.5711)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock9" type="MeshInstance3D" parent="Clutter/Boulders/Hill"]
+transform = Transform3D(9.70198, 7.01143, 9.03943, -10.8894, 9.29264, 4.47971, -3.50607, -9.45974, 11.1005, -6.76497, 31.5032, -39.9855)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock4" type="MeshInstance3D" parent="Clutter/Boulders/Hill"]
+transform = Transform3D(-12.9947, -14.2859, -5.20096, -10.1283, 3.03218, 16.9771, -11.3382, 13.6645, -9.20472, 49.2224, 48.8381, -35.4204)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock7" type="MeshInstance3D" parent="Clutter/Boulders/Hill"]
+transform = Transform3D(-15.6329, -11.751, -4.18654, -7.32887, 3.22018, 18.3281, -10.0946, 15.8601, -6.82311, 37.7799, 38.5004, -35.8373)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock8" type="MeshInstance3D" parent="Clutter/Boulders/Hill"]
+transform = Transform3D(-10.033, 6.53503, 16.0197, 15.8461, 10.9048, 5.47581, -6.94536, 15.4395, -10.6481, 28.6695, 32.4099, -30.9013)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock5" type="MeshInstance3D" parent="Clutter/Boulders/Hill"]
+transform = Transform3D(-15.3283, -12.557, 2.71399, -10.1283, 14.4111, 9.47299, -7.90322, 5.88585, -17.4039, 55.086, 56.0384, -24.7842)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock6" type="MeshInstance3D" parent="Clutter/Boulders/Hill"]
+transform = Transform3D(3.14512, -3.41568, -19.4535, -1.39498, 19.611, -3.66887, 19.7018, 1.93387, 2.84564, 45.4997, 58.6841, -42.1882)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock10" type="MeshInstance3D" parent="Clutter/Boulders/Hill"]
+transform = Transform3D(0.786281, -0.853921, -4.86339, -0.348746, 4.90276, -0.917217, 4.92546, 0.483456, 0.711429, 37.1326, 53.557, -31.76)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_h5u8u")
+
+[node name="rock13" type="MeshInstance3D" parent="Clutter/Boulders/Hill"]
+transform = Transform3D(2.84486, -2.82126, -2.9912, -1.79244, 2.42263, -3.98974, 3.70053, 3.34236, 0.367019, 41.0493, 35.8655, -15.0349)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_h5u8u")
+
+[node name="rock12" type="MeshInstance3D" parent="Clutter/Boulders/Hill"]
+transform = Transform3D(0.786281, -0.853921, -4.86339, -0.348746, 4.90276, -0.917217, 4.92546, 0.483456, 0.711429, 33.6127, 42.1458, -26.9653)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_h5u8u")
+
+[node name="rock11" type="MeshInstance3D" parent="Clutter/Boulders/Hill"]
+transform = Transform3D(4.78641, 0.0703089, -1.44408, -0.348746, 4.90276, -0.917217, 1.4031, 0.978758, 4.69823, 41.3046, 65.7158, -36.2035)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_h5u8u")
+
+[node name="rock" parent="Clutter/Boulders" instance=ExtResource("10_ia66j")]
+transform = Transform3D(-0.0272564, -1.93744, 0, 1.93744, -0.0272564, 0, 0, 0, 1.93763, -6.24104, 39.4553, 5.9383)
+
+[node name="rock2" parent="Clutter/Boulders" instance=ExtResource("10_ia66j")]
+transform = Transform3D(-0.0121911, -0.866568, -1.73301, 1.93744, -0.0272564, 0, -0.024378, -1.73284, 0.866654, 10.8656, 33.8974, -13.7797)
+
+[node name="rock3" parent="Clutter/Boulders" instance=ExtResource("10_ia66j")]
+transform = Transform3D(-0.0121911, -0.866568, -1.73301, 1.93744, -0.0272564, 0, -0.024378, -1.73284, 0.866654, 28.3986, 33.8974, -10.4222)
+
+[node name="rock4" parent="Clutter/Boulders" instance=ExtResource("10_ia66j")]
+transform = Transform3D(-1.55289, 0.535772, 1.02757, -1.1586, -0.681639, -1.3955, -0.024378, -1.73284, 0.866654, 19.3941, 33.8974, -15.4462)
+
+[node name="rock5" parent="Clutter/Boulders" instance=ExtResource("10_ia66j")]
+transform = Transform3D(-1.55289, 0.535772, 1.02757, -1.1586, -0.681639, -1.3955, -0.024378, -1.73284, 0.866654, -10.894, 33.2029, -7.39029)
