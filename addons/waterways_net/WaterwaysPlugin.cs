@@ -1,7 +1,6 @@
 #if TOOLS
 
 using Godot;
-using System;
 using System.Linq;
 using Waterways.Data.UI;
 using Waterways.UI;
@@ -143,17 +142,14 @@ public partial class WaterwaysPlugin : EditorPlugin
 
     #endregion
 
-    public WaterwaysPlugin()
+    public override void _EnterTree()
     {
         RiverControl = ResourceLoader.Load<PackedScene>(PluginPath + RiverControlNodePath).Instantiate<RiverControl>();
         RiverControl.MenuAction += OnMenuActionPressed;
         RiverGizmo = new RiverGizmo { EditorPlugin = this };
         Selection = EditorInterface.Singleton.GetSelection();
-        Selection.SelectionChanged += OnSelectionChange;
-    }
+        Selection.Connect(EditorSelection.SignalName.SelectionChanged, Callable.From(OnSelectionChange));
 
-    public override void _EnterTree()
-    {
         AddNode3DGizmoPlugin(RiverGizmo);
         AddCustomType(RiverManager.PluginNodeAlias, RiverManager.PluginBaseAlias, RiverManager.ScriptPath, RiverManager.IconPath);
         AddCustomType(RiverFloatSystem.PluginNodeAlias, RiverFloatSystem.PluginBaseAlias, RiverFloatSystem.ScriptPath, RiverFloatSystem.IconPath);
@@ -166,20 +162,11 @@ public partial class WaterwaysPlugin : EditorPlugin
         RemoveCustomType(RiverManager.PluginNodeAlias);
         RemoveNode3DGizmoPlugin(RiverGizmo);
         SwitchRiverControl(false);
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        try
+        
+        // Is connected check in case of reloaded assemblies
+        if (Selection.IsConnected(EditorSelection.SignalName.SelectionChanged, Callable.From(OnSelectionChange)))
         {
-            Selection.SelectionChanged -= OnSelectionChange;
-            RiverControl.MenuAction -= OnMenuActionPressed;
-            RiverControl.Dispose();
-            RiverGizmo.Dispose();
-        }
-        catch (ObjectDisposedException ex)
-        {
-            GD.PushWarning($"Error disposing Waterways plugin. {ex.Message}");
+            Selection.Disconnect(EditorSelection.SignalName.SelectionChanged, Callable.From(OnSelectionChange));
         }
     }
 

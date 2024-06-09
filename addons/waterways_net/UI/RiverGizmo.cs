@@ -181,6 +181,12 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         var state = new HandleState(river, index);
         var curve = river.Curve;
 
+        if (!river.TryAssociateGizmo(gizmo, true))
+        {
+            // TODO: Workaround for gizmo duplication Godot bug
+            return;
+        }
+
         if (_handleBaseTransform == null)
         {
             var z = curve.GetPointOut(state.RiverPointIndex).Normalized();
@@ -303,13 +309,20 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
 
     public override void _Redraw(EditorNode3DGizmo gizmo)
     {
-        if (gizmo.GetNode3D() is not RiverManager river)
+        gizmo.Clear();
+        var river = (RiverManager) gizmo.GetNode3D();
+
+        if (!river.TryAssociateGizmo(gizmo))
         {
-            gizmo.Clear();
+            // TODO: Workaround for gizmo duplication Godot bug
             return;
         }
 
-        gizmo.Clear();
+        if (river.SelectMesh != null)
+        {
+            gizmo.AddCollisionTriangles(river.SelectMesh);
+        }
+
         DrawPath(gizmo, river.Curve);
         DrawHandles(gizmo, river);
     }

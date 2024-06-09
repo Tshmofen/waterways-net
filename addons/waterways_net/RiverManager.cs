@@ -20,8 +20,12 @@ public partial class RiverManager : Node3D
     private const string RiverManagerStamp = "RiverManager";
     private const string RiverCreationStamp = "RiverCreation";
 
+    private EditorNode3DGizmo _associatedGizmo;
     private MeshInstance3D _meshInstance;
     private int _steps = 2;
+
+    // Generated only if associated gizmo is assigned
+    public TriangleMesh SelectMesh { get; private set; }
 
     #region Export Properties
 
@@ -185,6 +189,12 @@ public partial class RiverManager : Node3D
     {
         GenerateRiver();
         UpdateGizmos();
+
+        if (_associatedGizmo != null && _meshInstance.Mesh != null)
+        {
+            SelectMesh = _meshInstance.Mesh.GenerateTriangleMesh();
+        } 
+
         EmitSignal(SignalName.RiverChanged);
     }
 
@@ -319,6 +329,19 @@ public partial class RiverManager : Node3D
     public void UpdateRiver()
     {
         CallDeferred(MethodName.UpdateRiverImmediate);
+    }
+
+    public bool TryAssociateGizmo(EditorNode3DGizmo gizmo, bool forceHandle = false)
+    {
+        _associatedGizmo ??= gizmo;
+
+        // TODO: Workaround for gizmo duplication Godot bug
+        if (forceHandle && _associatedGizmo != gizmo)
+        {
+            _associatedGizmo = gizmo;
+        }
+
+        return _associatedGizmo == gizmo;
     }
 
     #endregion

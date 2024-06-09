@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3 uid="uid://pgvwvu6wke6p"]
+[gd_scene load_steps=27 format=3 uid="uid://pgvwvu6wke6p"]
 
 [ext_resource type="Script" path="res://addons/zylann.hterrain/hterrain.gd" id="1_c2hoe"]
 [ext_resource type="Resource" path="res://TestAssets/Terrain/data.hterrain" id="2_juqy4"]
@@ -53,7 +53,7 @@ textures = [[ExtResource("4_3arg6"), ExtResource("5_ba170"), ExtResource("6_npdy
 [sub_resource type="BoxShape3D" id="12"]
 size = Vector3(11.484, 6.85648, 7.49257)
 
-[sub_resource type="Resource" id="Resource_ya1xk"]
+[sub_resource type="Resource" id="Resource_mj0bx"]
 script = ExtResource("15_pphx5")
 MatShaderType = 1
 mat_albedo_color_first = Color(0.6, 0.7, 0.65, 1)
@@ -81,11 +81,48 @@ mat_edge_fade = 0.25
 LodLod0Distance = 50.0
 _selectedShader = 1
 
-[sub_resource type="Curve3D" id="Curve3D_hcu2u"]
+[sub_resource type="Curve3D" id="Curve3D_47v75"]
 resource_local_to_scene = true
 bake_interval = 0.05
 _data = {
-"points": PackedVector3Array(-4.26787, -0.487607, -1.58157, 4.26787, 0.487607, 1.58157, -17.9104, 0.893408, -26.5247, -1.68525, -0.138311, -3.74917, 1.68525, 0.138311, 3.74917, -0.846165, 2.07594, -17.8785, 0.164482, 0.260015, -4.6556, -0.164482, -0.260015, 4.6556, 0.828424, 1.84419, -11.5226, 1.86872, 0.598525, -4.30282, -1.86872, -0.598525, 4.30282, -0.247051, 1.67422, -5.93859, 1.63826, 0.0144882, -4.71801, -1.63826, -0.0144882, 4.71801, -9.10021, 0.215706, 5.56689, -1.98489, 0.140596, -2.28747, 1.98489, -0.140596, 2.28747, -6.94817, -0.0180511, 16.3869, -3.9264, 0.622681, -0.587288, 3.9264, -0.622681, 0.587288, 8.46148, -2.42933, 20.9845, -3.43755, -0.00758171, 0.297213, 3.43755, 0.00758171, -0.297213, 25.7621, -4.2561, 18.9263),
+"points": PackedVector3Array(-4.26787, -0.487607, -1.58157, 4.26787, 0.487607, 1.58157, -17.9104, 0.893408, -26.5247, -1.68525, -0.138311, -3.74917, 1.68525, 0.138311, 3.74917, -0.846165, 2.07594, -17.8785, 0.164482, 0.260015, -4.6556, -0.164482, -0.260015, 4.6556, 0.293756, 1.98563, -11.2419, 1.86872, 0.598525, -4.30282, -1.86872, -0.598525, 4.30282, -1.76039, 1.90223, -5.71158, 1.46096, -0.0807748, -4.67628, -1.46096, 0.0807748, 4.67628, -8.04282, 1.29904, 4.36364, -1.98489, 0.140596, -2.28747, 1.98489, -0.140596, 2.28747, -6.84095, -0.387516, 16.3327, -3.9264, 0.622681, -0.587288, 3.9264, -0.622681, 0.587288, 8.41849, -2.25892, 20.8619, -4.17084, 0.385916, 0.617207, 4.17084, -0.385916, -0.617207, 25.7621, -4.2561, 18.9263),
+"tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
+}
+point_count = 8
+
+[sub_resource type="Resource" id="Resource_tnsqg"]
+script = ExtResource("15_pphx5")
+MatShaderType = 1
+mat_albedo_color_first = Color(0.6, 0.7, 0.65, 1)
+mat_albedo_color_second = Color(0.25, 0.35, 0.35, 1)
+mat_albedo_depth = 10.0
+mat_albedo_depth_curve = 0.25
+mat_transparency_clarity = 10.0
+mat_transparency_depth_curve = 0.25
+mat_transparency_refraction = 0.05
+mat_normal_scale = 1.0
+mat_normal_bump_texture = ExtResource("14_mycmf")
+mat_flow_speed = 1.0
+mat_flow_base = 0.0
+mat_flow_steepness = 2.0
+mat_flow_distance = 1.0
+mat_flow_pressure = 1.0
+mat_flow_max = 4.0
+mat_foam_color = Color(0.9, 0.9, 0.9, 1)
+mat_foam_amount = 2.0
+mat_foam_steepness = 2.0
+mat_foam_smoothness = 0.3
+mat_uv_scale = Vector3(1, 1, 1)
+mat_roughness = 0.2
+mat_edge_fade = 0.25
+LodLod0Distance = 50.0
+_selectedShader = 1
+
+[sub_resource type="Curve3D" id="Curve3D_gm085"]
+resource_local_to_scene = true
+bake_interval = 0.05
+_data = {
+"points": PackedVector3Array(-4.26787, -0.487607, -1.58157, 4.26787, 0.487607, 1.58157, -17.9104, 0.893408, -26.5247, -1.68525, -0.138311, -3.74917, 1.68525, 0.138311, 3.74917, -0.846165, 2.07594, -17.8785, 0.0552812, 0.379754, -4.58507, -0.0552812, -0.379754, 4.58507, -0.0328865, 1.79463, -11.9132, 2.03787, 0.288942, -4.22748, -2.03787, -0.288942, 4.22748, -1.76039, 1.90223, -5.71158, -0.283867, 0.443042, -5.50283, 0.283867, -0.443042, 5.50283, -3.18681, 1.17395, 5.17205, -2.28777, 0.50338, -2.57411, 2.28777, -0.50338, 2.57411, -0.695202, 0.275296, 15.2831, -3.9264, 0.622681, -0.587288, 3.9264, -0.622681, 0.587288, 8.41849, -2.25892, 20.8619, -4.17084, 0.385916, 0.617207, 4.17084, -0.385916, -0.617207, 25.7621, -4.2561, 18.9263),
 "tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
 }
 point_count = 8
@@ -170,9 +207,19 @@ shape = SubResource("12")
 [node name="RiverManager" type="Node3D" parent="."]
 transform = Transform3D(-0.0913279, 0, -0.995821, 0, 1, 0, 0.995821, 0, -0.0913279, 31.1561, 4.65235, 25.455)
 script = ExtResource("13_dg81e")
-ShaderSettings = SubResource("Resource_ya1xk")
-PointWidths = [6.65039, 8.22813, 8.2714, 7.5414, 7.15067, 8.11395, 7.36977, 5.05967]
-Curve = SubResource("Curve3D_hcu2u")
+ShaderSettings = SubResource("Resource_mj0bx")
+PointWidths = [6.65039, 8.22813, 8.2714, 7.24315, 8.19708, 10.8306, 6.52299, 6.14167]
+Curve = SubResource("Curve3D_47v75")
 
 [node name="RiverFloatSystem" type="Node3D" parent="RiverManager"]
+script = ExtResource("17_c4a1i")
+
+[node name="RiverManager2" type="Node3D" parent="."]
+transform = Transform3D(-0.0913279, 0, -0.995821, 0, 1, 0, 0.995821, 0, -0.0913279, 32.5907, 9.02217, 41.0271)
+script = ExtResource("13_dg81e")
+ShaderSettings = SubResource("Resource_tnsqg")
+PointWidths = [6.65039, 5.03725, 3.71264, 3.41709, 7.16862, 6.0103, 7.47328, 6.14167]
+Curve = SubResource("Curve3D_gm085")
+
+[node name="RiverFloatSystem" type="Node3D" parent="RiverManager2"]
 script = ExtResource("17_c4a1i")
