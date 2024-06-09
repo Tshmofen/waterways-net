@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://pgvwvu6wke6p"]
+[gd_scene load_steps=29 format=3 uid="uid://pgvwvu6wke6p"]
 
 [ext_resource type="Script" path="res://addons/zylann.hterrain/hterrain.gd" id="1_c2hoe"]
 [ext_resource type="Resource" path="res://TestAssets/Terrain/data.hterrain" id="2_juqy4"]
@@ -11,12 +11,15 @@
 [ext_resource type="Texture2D" uid="uid://nw61drbjop33" path="res://TestAssets/Terrain/Textures/riverbed_nor_rough.png" id="9_kichf"]
 [ext_resource type="PackedScene" uid="uid://cyq12ycnotl2x" path="res://TestAssets/rock.tscn" id="10_ia66j"]
 [ext_resource type="Script" path="res://TestAssets/Scripts/FloatSpawner.cs" id="11_6teed"]
+[ext_resource type="ArrayMesh" uid="uid://yq6tp386v4i2" path="res://TestAssets/Model/rock.obj" id="11_34ive"]
 [ext_resource type="PackedScene" uid="uid://bn4fflqma5nvj" path="res://TestAssets/floating_cube.tscn" id="12_0hd0b"]
+[ext_resource type="Texture2D" uid="uid://cmgf3jwbnhxlg" path="res://TestAssets/Model/rock_albedo.png" id="12_0ug2n"]
 [ext_resource type="Script" path="res://TestAssets/Scripts/ObjectDestroyer.cs" id="12_hqmh7"]
 [ext_resource type="Script" path="res://addons/waterways_net/RiverManager.cs" id="13_dg81e"]
+[ext_resource type="Texture2D" uid="uid://cphlqcmoq01x5" path="res://TestAssets/Model/rock_normal.png" id="13_lye7l"]
 [ext_resource type="Texture2D" uid="uid://b85tlq8wcklbo" path="res://addons/waterways_net/Textures/water_normal_bump.png" id="14_mycmf"]
+[ext_resource type="Texture2D" uid="uid://cm8p03icrdab7" path="res://TestAssets/Model/rock_orm.png" id="14_y08bg"]
 [ext_resource type="Script" path="res://addons/waterways_net/Data/RiverShaderSettings.cs" id="15_pphx5"]
-[ext_resource type="Script" path="res://addons/waterways_net/RiverFloatSystem.cs" id="17_c4a1i"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_42iq4"]
 sky_top_color = Color(0.352941, 0.517647, 0.505882, 1)
@@ -31,29 +34,35 @@ sky_material = SubResource("ProceduralSkyMaterial_42iq4")
 background_mode = 2
 sky = SubResource("Sky_4khfi")
 ambient_light_source = 2
-ambient_light_color = Color(0.470588, 0.647059, 0.760784, 1)
+ambient_light_color = Color(0.474665, 0.711564, 0.724297, 1)
 ambient_light_energy = 0.3
 tonemap_mode = 2
 glow_levels/1 = 1.0
 glow_levels/2 = 1.0
 fog_enabled = true
-fog_light_color = Color(0.505882, 0.623529, 0.768627, 1)
-fog_light_energy = 0.8
-fog_sun_scatter = 1.0
-fog_density = 0.005
+fog_light_color = Color(0.548847, 0.705046, 0.828447, 1)
+fog_sun_scatter = 0.5
+fog_density = 0.003
+fog_aerial_perspective = 0.2
 adjustment_enabled = true
 adjustment_brightness = 1.1
-adjustment_contrast = 1.1
+adjustment_contrast = 1.2
 
 [sub_resource type="Resource" id="Resource_jdk66"]
 script = ExtResource("3_84qpo")
 mode = 0
 textures = [[ExtResource("4_3arg6"), ExtResource("5_ba170"), ExtResource("6_npdy2")], [ExtResource("7_5uvfw"), ExtResource("8_jy01s"), ExtResource("9_kichf")]]
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sn1j4"]
+albedo_texture = ExtResource("12_0ug2n")
+roughness_texture = ExtResource("14_y08bg")
+normal_enabled = true
+normal_texture = ExtResource("13_lye7l")
+
 [sub_resource type="BoxShape3D" id="12"]
 size = Vector3(11.484, 6.85648, 7.49257)
 
-[sub_resource type="Resource" id="Resource_q6ukm"]
+[sub_resource type="Resource" id="Resource_o070k"]
 script = ExtResource("15_pphx5")
 MatShaderType = 1
 mat_albedo_color_first = Color(0.6, 0.7, 0.65, 1)
@@ -81,64 +90,28 @@ mat_edge_fade = 0.25
 LodLod0Distance = 50.0
 _selectedShader = 1
 
-[sub_resource type="Curve3D" id="Curve3D_cfolm"]
+[sub_resource type="Curve3D" id="Curve3D_b6rac"]
 resource_local_to_scene = true
 bake_interval = 0.05
 _data = {
-"points": PackedVector3Array(-4.26787, -0.487607, -1.58157, 4.26787, 0.487607, 1.58157, -17.9104, 0.893408, -26.5247, -1.68525, -0.138311, -3.74917, 1.68525, 0.138311, 3.74917, -0.846165, 2.07594, -17.8785, 0.164482, 0.260015, -4.6556, -0.164482, -0.260015, 4.6556, 0.293756, 1.98563, -11.2419, 1.86872, 0.598525, -4.30282, -1.86872, -0.598525, 4.30282, -1.76039, 1.90223, -5.71158, 1.46096, -0.0807748, -4.67628, -1.46096, 0.0807748, 4.67628, -8.04282, 1.29904, 4.36364, -1.98489, 0.140596, -2.28747, 1.98489, -0.140596, 2.28747, -6.84095, -0.387516, 16.3327, -3.9264, 0.622681, -0.587288, 3.9264, -0.622681, 0.587288, 8.41849, -2.25892, 20.8619, -4.17084, 0.385916, 0.617207, 4.17084, -0.385916, -0.617207, 25.7621, -4.2561, 18.9263),
-"tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
+"points": PackedVector3Array(-3.54596, 0.142921, -4.43361, 3.54596, -0.142921, 4.43361, -16.2033, 2.55085, -39.3207, -1.92814, -0.301395, -3.25125, 1.92814, 0.301395, 3.25125, -7.00658, -0.415245, -24.7892, -0.758025, -0.153267, -2.91529, 0.758025, 0.153267, 2.91529, -2.14075, -0.345051, -7.42294, 3.28793, -0.0342751, -9.96773, -3.28793, 0.0342751, 9.96773, -2.02899, -0.923592, 9.13994, 2.35744, 0.0164261, -2.79135, -2.35744, -0.0164261, 2.79135, -7.86718, -0.817085, 23.175, 5.3857, -0.871243, -2.40109, -5.3857, 0.871243, 2.40109, -25.6885, 0.992832, 35.2528, 6.89437, -0.848625, -2.45419, -6.89437, 0.848625, 2.45419, -57.1386, 3.49468, 44.3398, 2.41856, -0.391121, -3.886, -2.41856, 0.391121, 3.886, -80.088, 8.47322, 57.3421, 1.22588, 0.369118, -3.23756, -1.22588, -0.369118, 3.23756, -85.9448, 9.15034, 72.5185),
+"tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
-point_count = 8
-
-[sub_resource type="Resource" id="Resource_xe8vi"]
-script = ExtResource("15_pphx5")
-MatShaderType = 1
-mat_albedo_color_first = Color(0.6, 0.7, 0.65, 1)
-mat_albedo_color_second = Color(0.25, 0.35, 0.35, 1)
-mat_albedo_depth = 10.0
-mat_albedo_depth_curve = 0.25
-mat_transparency_clarity = 10.0
-mat_transparency_depth_curve = 0.25
-mat_transparency_refraction = 0.05
-mat_normal_scale = 1.0
-mat_normal_bump_texture = ExtResource("14_mycmf")
-mat_flow_speed = 1.0
-mat_flow_base = 0.0
-mat_flow_steepness = 2.0
-mat_flow_distance = 1.0
-mat_flow_pressure = 1.0
-mat_flow_max = 4.0
-mat_foam_color = Color(0.9, 0.9, 0.9, 1)
-mat_foam_amount = 2.0
-mat_foam_steepness = 2.0
-mat_foam_smoothness = 0.3
-mat_uv_scale = Vector3(1, 1, 1)
-mat_roughness = 0.2
-mat_edge_fade = 0.25
-LodLod0Distance = 50.0
-_selectedShader = 1
-
-[sub_resource type="Curve3D" id="Curve3D_6mseg"]
-resource_local_to_scene = true
-bake_interval = 0.05
-_data = {
-"points": PackedVector3Array(-4.26787, -0.487607, -1.58157, 4.26787, 0.487607, 1.58157, -19.129, 0.693354, -26.3016, -1.68525, -0.138311, -3.74917, 1.68525, 0.138311, 3.74917, -2.06475, 1.87589, -17.6554, 0.0552812, 0.379754, -4.58507, -0.0552812, -0.379754, 4.58507, -1.25147, 1.59458, -11.6901, 2.03787, 0.288942, -4.22748, -2.03787, -0.288942, 4.22748, -2.97898, 1.70218, -5.4885, -0.283867, 0.443042, -5.50283, 0.283867, -0.443042, 5.50283, -5.41768, 1.55512, 4.9693, -2.28777, 0.50338, -2.57411, 2.28777, -0.50338, 2.57411, -1.91716, -0.208056, 15.6142, -3.9264, 0.622681, -0.587288, 3.9264, -0.622681, 0.587288, 7.1999, -2.45897, 21.085, -4.17084, 0.385916, 0.617207, 4.17084, -0.385916, -0.617207, 24.5435, -4.45615, 19.1494),
-"tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
-}
-point_count = 8
+point_count = 9
 
 [node name="World" type="Node3D"]
 
 [node name="DirectionalLight" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -0.707107, 0.707107, 0, -0.707107, -0.707107, 0, 100, 0)
+transform = Transform3D(0.73341, -0.233814, -0.638311, 0.356404, -0.667331, 0.653946, -0.578867, -0.707107, -0.406095, 0, 100, 0)
 shadow_enabled = true
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("3")
 
 [node name="HTerrain" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -33.295, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -93, 0, 0)
 script = ExtResource("1_c2hoe")
+map_scale = Vector3(2, 2, 2)
 centered = true
 _terrain_data = ExtResource("2_juqy4")
 chunk_size = 32
@@ -151,7 +124,7 @@ custom_globalmap_shader = null
 texture_set = SubResource("Resource_jdk66")
 render_layers = 1
 cast_shadow = 1
-shader_params/u_ground_uv_scale_per_texture = Vector4(5, 5, 4, 5)
+shader_params/u_ground_uv_scale_per_texture = Vector4(2, 2, 2, 2)
 shader_params/u_depth_blending = true
 shader_params/u_triplanar = true
 shader_params/u_tile_reduction = Vector4(1, 1, 0, 1)
@@ -163,38 +136,67 @@ shader_params/u_specular = 0.5
 [node name="Boulders" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.34785, 0)
 
+[node name="Hill" type="Node3D" parent="Boulders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.34785, 0)
+
+[node name="rock2" type="MeshInstance3D" parent="Boulders/Hill"]
+transform = Transform3D(-7.10392, -18.6411, 1.43002, -11.1647, 5.45689, 15.6708, -14.9962, 4.76791, -12.3443, 50.5136, 41.3095, -17.6291)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock3" type="MeshInstance3D" parent="Boulders/Hill"]
+transform = Transform3D(-13.9237, -14.2859, 1.43002, -1.08378, 3.03218, 19.7391, -14.3163, 13.6645, -2.88509, 44.1793, 33.2892, -27.3966)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock9" type="MeshInstance3D" parent="Boulders/Hill"]
+transform = Transform3D(-9.92954, -7.67529, -8.21548, -10.8894, 9.29264, 4.47971, 2.79736, 8.92954, -11.7234, -5.33382, 31.5032, -37.2101)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock4" type="MeshInstance3D" parent="Boulders/Hill"]
+transform = Transform3D(-12.9947, -14.2859, -5.20096, -10.1283, 3.03218, 16.9771, -11.3382, 13.6645, -9.20472, 47.2736, 48.8381, -34.1184)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock7" type="MeshInstance3D" parent="Boulders/Hill"]
+transform = Transform3D(-16.2859, -10.9862, 3.75151, -1.20121, 8.02313, 18.2808, -11.5467, 14.6606, -7.19302, 38.0219, 38.5004, -34.1636)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock8" type="MeshInstance3D" parent="Boulders/Hill"]
+transform = Transform3D(-16.1187, 4.15768, 11.086, 10.5931, 13.429, 10.3657, -5.28881, 14.2259, -13.025, 25.0834, 29.45, -28.6479)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock5" type="MeshInstance3D" parent="Boulders/Hill"]
+transform = Transform3D(-12.9947, -13.5999, 6.79557, -10.1283, 14.4111, 9.47299, -11.3382, 2.71357, -16.2506, 53.8979, 56.0384, -30.8889)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
+[node name="rock6" type="MeshInstance3D" parent="Boulders/Hill"]
+transform = Transform3D(-11.2419, -12.303, -11.0569, -15.2927, 12.8259, 1.27721, 6.30508, 9.17242, -16.6166, 55.4883, 61.0773, -35.1688)
+mesh = ExtResource("11_34ive")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_sn1j4")
+
 [node name="rock" parent="Boulders" instance=ExtResource("10_ia66j")]
-transform = Transform3D(1.93763, 0, 0, 0, 1.93763, 0, 0, 0, 1.93763, 17.3029, 5.49123, 20.0435)
-
-[node name="rock3" parent="Boulders" instance=ExtResource("10_ia66j")]
-transform = Transform3D(-1.47896, -1.40825, 1.82294, -2.13628, 0.0281061, -1.71147, 0.861729, -2.34726, -1.11417, 25.9731, 6.35812, 9.9031)
-
-[node name="rock4" parent="Boulders" instance=ExtResource("10_ia66j")]
-transform = Transform3D(0.128921, -1.37736, -0.966411, 0.0521873, 0.972051, -1.37844, 1.68177, 0.0754216, 0.116857, 36.7424, 7.95035, 18.9191)
-
-[node name="rock5" parent="Boulders" instance=ExtResource("10_ia66j")]
-transform = Transform3D(-0.374877, 1.34976, 0.94091, 0.0517605, 0.97422, -1.37692, -1.64453, -0.27702, -0.257821, 47.108, 8.55401, 26.4051)
-
-[node name="rock8" parent="Boulders" instance=ExtResource("10_ia66j")]
-transform = Transform3D(-0.374877, 1.34976, 0.94091, 0.0517605, 0.97422, -1.37692, -1.64453, -0.27702, -0.257821, 56.1498, 9.48382, 22.3297)
-
-[node name="rock2" parent="Boulders" instance=ExtResource("10_ia66j")]
-transform = Transform3D(-1.0405, -0.496952, 1.55719, -0.416811, 1.86555, 0.316854, -1.58052, -0.164824, -1.10869, 4.8688, 2.9612, 43.2117)
-
-[node name="rock6" parent="Boulders" instance=ExtResource("10_ia66j")]
-transform = Transform3D(-1.61107, -1.99939, 1.90954, -1.3608, 2.49729, 1.4667, -2.40667, -0.0736063, -2.10758, 12.8833, 2.27671, 37.5785)
-
-[node name="rock7" parent="Boulders" instance=ExtResource("10_ia66j")]
-transform = Transform3D(1.20075, -2.0075, -2.18348, -2.50558, -1.94717, 0.412345, -1.58735, 1.55497, -2.30257, 6.75927, 4.68998, 22.7198)
+transform = Transform3D(1.93763, 0, 0, 0, 1.93763, 0, 0, 0, 1.93763, -9.51027, 41.6634, 11.3927)
 
 [node name="Camera" type="Camera3D" parent="."]
 transform = Transform3D(0.677773, -0.256857, 0.688947, 0.100967, 0.960635, 0.258819, -0.728305, -0.10586, 0.677027, 44, 15, 30)
 
-[node name="FloatSpawner" type="Node3D" parent="Camera" node_paths=PackedStringArray("FloatSystem")]
+[node name="FloatSpawner" type="Node3D" parent="Camera"]
 transform = Transform3D(1, 0, -2.98023e-08, 0, 1, 0, 2.98023e-08, 0, 1, 0, -1, 0)
 script = ExtResource("11_6teed")
 SpawnScene = ExtResource("12_0hd0b")
-FloatSystem = NodePath("../../RiverManager/RiverFloatSystem")
 
 [node name="DestroyCubesArea" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.90241, 1.76456, 50.3508)
@@ -205,21 +207,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.46612)
 shape = SubResource("12")
 
 [node name="RiverManager" type="Node3D" parent="."]
-transform = Transform3D(-0.0913279, 0, -0.995821, 0, 1, 0, 0.995821, 0, -0.0913279, 31.1561, 4.65235, 25.455)
+transform = Transform3D(-0.0584003, 0, -0.998293, 0, 1, 0, 0.998293, 0, -0.0584003, 0.452626, 33.1977, -7.67319)
 script = ExtResource("13_dg81e")
-ShaderSettings = SubResource("Resource_q6ukm")
-PointWidths = [6.65039, 8.22813, 8.2714, 7.24315, 8.19708, 10.8306, 6.52299, 6.14167]
-Curve = SubResource("Curve3D_cfolm")
-
-[node name="RiverFloatSystem" type="Node3D" parent="RiverManager"]
-script = ExtResource("17_c4a1i")
-
-[node name="RiverManager2" type="Node3D" parent="."]
-transform = Transform3D(-0.0913279, 0, -0.995821, 0, 1, 0, 0.995821, 0, -0.0913279, 32.7016, 9.22222, 42.261)
-script = ExtResource("13_dg81e")
-ShaderSettings = SubResource("Resource_xe8vi")
-PointWidths = [6.65039, 5.03725, 3.71264, 3.41709, 7.16862, 6.0103, 7.47328, 6.14167]
-Curve = SubResource("Curve3D_6mseg")
-
-[node name="RiverFloatSystem" type="Node3D" parent="RiverManager2"]
-script = ExtResource("17_c4a1i")
+ShaderSettings = SubResource("Resource_o070k")
+PointWidths = [6.33827, 7.97592, 7.08766, 5.21408, 7.80158, 6.03617, 6.81221, 7.42093, 6.06767]
+Curve = SubResource("Curve3D_b6rac")
