@@ -14,7 +14,10 @@ public abstract partial class BaseMeshGenerator : Node3D
     private const string GeneratorStamp = "BaseMeshGenerator";
     private const string CreationStamp = "MeshGeneratorCreation";
 
+    #if TOOLS
     private EditorNode3DGizmo _associatedGizmo;
+    #endif
+
     private MeshInstance3D _meshInstance;
     private int _steps = 2;
 
@@ -170,10 +173,12 @@ public abstract partial class BaseMeshGenerator : Node3D
         GenerateActualMesh();
         UpdateGizmos();
 
+        #if TOOLS
         if (_associatedGizmo != null && _meshInstance.Mesh != null)
         {
             SelectMesh = _meshInstance.Mesh.GenerateTriangleMesh();
         }
+        #endif
 
         EmitSignal(SignalName.MeshUpdated);
     }
@@ -226,6 +231,7 @@ public abstract partial class BaseMeshGenerator : Node3D
         CallDeferred(MethodName.UpdateMeshImmediate);
     }
 
+    #if TOOLS
     /// <summary> Only works in Editor, associates gizmo with the river to acknowledge that SelectMesh should be generated. Only one gizmo can be associated. </summary>
     public bool TryAssociateGizmo(EditorNode3DGizmo gizmo, bool forceAssociate = false)
     {
@@ -244,6 +250,7 @@ public abstract partial class BaseMeshGenerator : Node3D
 
         return _associatedGizmo == gizmo;
     }
+    #endif
 
     /// <summary> Adds point to RiverManager Curve with width. Support adding for any index by inserting here, in case of PointCount insert (or -1) it will just be added to the end. </summary>
     public void AddPoint(Vector3 position, Vector3 direction, int index = -1, float width = -1)

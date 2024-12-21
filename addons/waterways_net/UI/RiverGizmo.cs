@@ -1,4 +1,6 @@
-﻿using Godot;
+﻿#if TOOLS
+
+using Godot;
 using System.Collections.Generic;
 using System.Linq;
 using Waterways.Data;
@@ -327,3 +329,5 @@ public partial class RiverGizmo : EditorNode3DGizmoPlugin
         DrawHandles(gizmo, river);
     }
 }
+
+#endif

@@ -227,4 +227,12 @@ public partial class WaterwaysPlugin : EditorPlugin
     }
 }
 
+#else
+
+public static class WaterwaysPlugin
+{
+    public const string PluginPath = "res://addons/waterways_net";
+    public const string RiverControlNodePath = "/UI/river_control.tscn";
+}
+
 #endif
