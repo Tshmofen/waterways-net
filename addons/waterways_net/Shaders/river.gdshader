@@ -135,7 +135,6 @@ void fragment() {
 	
 	flow = (flow - 0.5) * 2.0; // unpack the flow vectors
 	
-	// YENİ: Flow direction'ı vektör ile kontrol et
 	flow *= flow_direction;
 	
 	// Calculate the steepness map
