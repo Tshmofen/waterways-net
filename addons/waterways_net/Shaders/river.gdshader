@@ -40,6 +40,7 @@ uniform float flow_steepness : hint_range(0.0, 8.0) = 2.0;
 uniform float flow_distance : hint_range(0.0, 8.0) = 1.0;
 uniform float flow_pressure : hint_range(0.0, 8.0) = 1.0;
 uniform float flow_max : hint_range(0.0, 8.0) = 4.0;
+uniform vec2 flow_direction = vec2(1.0, 1.0);
 
 // Foam
 uniform vec4 foam_color : source_color = vec4(0.9, 0.9, 0.9, 1.0);
@@ -133,6 +134,8 @@ void fragment() {
 	}
 	
 	flow = (flow - 0.5) * 2.0; // unpack the flow vectors
+	
+	flow *= flow_direction;
 	
 	// Calculate the steepness map
 	vec3 flow_viewspace = flow.x * TANGENT + flow.y * BINORMAL;
